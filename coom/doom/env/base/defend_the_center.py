@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import List
 
 from coom.doom.env.base.scenario import DoomEnv
 
@@ -15,7 +16,7 @@ class DefendTheCenter(DoomEnv):
         super().__init__(args, task, task_id, num_tasks)
         self.kill_reward = kill_reward
 
-    def get_available_actions(self):
+    def get_available_actions(self) -> List[List[float]]:
         actions = []
         attack = [[0.0], [1.0]]
         t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]

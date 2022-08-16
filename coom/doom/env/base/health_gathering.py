@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import List
 
 from coom.doom.env.base.scenario import DoomEnv
 
@@ -10,7 +11,7 @@ class HealthGathering(DoomEnv):
         self.reward_frame_survived = frame_survived_reward
         super().__init__(args, task, task_id, num_tasks)
 
-    def get_available_actions(self):
+    def get_available_actions(self) -> List[List[float]]:
         actions = []
         speed = [[0.0], [1.0]]
         m_forward = [[0.0], [1.0]]

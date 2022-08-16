@@ -23,5 +23,5 @@ class HealthGatheringImpl(HealthGathering):
     def get_statistics(self) -> Dict[str, float]:
         return {'kits_obtained': self.kits_obtained}
 
-    def clear_episode_statistics(self):
+    def clear_episode_statistics(self) -> None:
         self.kits_obtained = 0

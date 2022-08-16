@@ -39,7 +39,7 @@ class SeekAndSlayImpl(SeekAndSlay):
 
         return reward
 
-    def distance_traversed(self):
+    def distance_traversed(self) -> float:
         current_coords = [self.game_variable_buffer[-1][3],
                           self.game_variable_buffer[-1][4]]
         past_coords = [self.game_variable_buffer[0][3],
@@ -55,7 +55,7 @@ class SeekAndSlayImpl(SeekAndSlay):
                       'hits_taken': self.hits_taken}
         return statistics
 
-    def clear_episode_statistics(self):
+    def clear_episode_statistics(self) -> None:
         self.ammo_used = 0
         self.hits_taken = 0
         self.distance_buffer.clear()
