@@ -2,14 +2,16 @@ from argparse import Namespace
 from enum import Enum
 from pathlib import Path
 
+from gym.wrappers import FrameStack, NormalizeObservation
+
 from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
 from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
 from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
 from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
+from coom.doom.env.utils.wrappers import RescaleWrapper, ResizeWrapper
 from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.utils import get_activation_from_str
-from coom.utils.wrappers import OneHotAdder
 from input_args import single_parse_args
 
 
@@ -20,23 +22,7 @@ class DoomScenario(Enum):
     DODGE_PROJECTILES = DodgeProjectilesImpl
 
 
-def main(
-    logger: EpochLogger,
-    args: Namespace,
-    # task: str,
-    # seed: int,
-    # steps: int,
-    # log_every: int,
-    # replay_size: int,
-    # batch_size: int,
-    # hidden_sizes: Iterable[int],
-    # activation: Callable,
-    # use_layer_norm: bool,
-    # lr: float,
-    # gamma: float,
-    # alpha: str,
-    # target_output_std: float,
-):
+def main(logger: EpochLogger, args: Namespace):
     actor_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
@@ -54,20 +40,21 @@ def main(
     scenario_class = DoomScenario[args.scenario.upper()].value
 
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
-    args.res = (args.skip_num, args.frame_size, args.frame_size)
 
     task = 'default'
     one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
     one_hot_len = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
-    env = scenario_class(args, task, one_hot_idx, one_hot_len)
 
-    # env = OneHotAdder(env, one_hot_idx=one_hot_idx, one_hot_len=one_hot_len)
+    env = scenario_class(args, task, one_hot_idx, one_hot_len)
+    env = ResizeWrapper(env, args.frame_height, args.frame_width)
+    env = RescaleWrapper(env)
+    env = NormalizeObservation(env)
+    env = FrameStack(env, args.frame_stack)
 
     sac = SAC(
         env,
         [env],
         logger,
-        res=args.res,
         seed=args.seed,
         steps=args.steps,
         log_every=args.log_every,

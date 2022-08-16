@@ -100,14 +100,14 @@ def cl_parse_args(args=None):
         "--alpha",
         default="auto",
         help="Entropy regularization coefficient. "
-        "Can be either float value, or 'auto', in which case it is dynamically tuned.",
+             "Can be either float value, or 'auto', in which case it is dynamically tuned.",
     )
     parser.add_argument(
         "--target_output_std",
         type=float,
         default=0.089,
         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation "
-        "of the action distribution on every dimension matches target_output_std.",
+             "of the action distribution on every dimension matches target_output_std.",
     )
     parser.add_argument(
         "--cl_method",
@@ -115,7 +115,7 @@ def cl_parse_args(args=None):
         choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
         default=None,
         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl',"
-        "'packnet', 'agem', respective method will be used.",
+             "'packnet', 'agem', respective method will be used.",
     )
     parser.add_argument(
         "--packnet_retrain_steps",
@@ -134,21 +134,21 @@ def cl_parse_args(args=None):
         type=float,
         default=0.0,
         help="Regularization strength for continual learning methods. "
-        "Valid for 'l2', 'ewc', 'mas' continual learning methods.",
+             "Valid for 'l2', 'ewc', 'mas' continual learning methods.",
     )
     parser.add_argument(
         "--vcl_first_task_kl",
         type=str2bool,
         default=False,
         help="If True, use KL regularization also for the first task in 'vcl' continual learning"
-        "method.",
+             "method.",
     )
     parser.add_argument(
         "--episodic_mem_per_task",
         type=int,
         default=0,
         help="Number of examples to keep in additional memory per task. Valid for 'agem' continual"
-        "learning method.",
+             "learning method.",
     )
     parser.add_argument(
         "--episodic_batch_size",
@@ -171,7 +171,7 @@ def cl_parse_args(args=None):
         type=str2bool,
         default=False,
         help="If True, uniform exploration for start_steps steps is used only in the first task"
-        "(in continual learning). Otherwise, it is used in every task",
+             "(in continual learning). Otherwise, it is used in every task",
     )
 
     parser.add_argument('--scenario', type=str, default=None,
@@ -216,9 +216,11 @@ def cl_parse_args(args=None):
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--variable_queue_len', type=int, default=5)
     parser.add_argument('--normalize', type=bool, default=True)
+    parser.add_argument('--frame-height', type=int, default=84)
+    parser.add_argument('--frame-width', type=int, default=84)
     parser.add_argument('--frame-size', type=int, default=84)
-    parser.add_argument('--frames-stack', type=int, default=4)
-    parser.add_argument('--skip-num', type=int, default=4)
+    parser.add_argument('--frame-stack', type=int, default=4)
+    parser.add_argument('--frame-skip', type=int, default=4)
     parser.add_argument('--resume-path', type=str, default=None)
     parser.add_argument('--save_interval', type=int, default=20)
     parser.add_argument(
@@ -269,12 +271,6 @@ def cl_parse_args(args=None):
     parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
     parser.add_argument('--add_speed', default=False, action='store_true')
-
-
-
-
-
-
 
     return parser.parse_args(args=args)
 
@@ -348,14 +344,14 @@ def mt_parse_args(args=None):
         "--alpha",
         default="auto",
         help="Entropy regularization coefficient. "
-        "Can be either float value, or 'auto', in which case it is dynamically tuned.",
+             "Can be either float value, or 'auto', in which case it is dynamically tuned.",
     )
     parser.add_argument(
         "--target_output_std",
         type=float,
         default=0.089,
         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation "
-        "of the action distribution on every dimension matches target_output_std.",
+             "of the action distribution on every dimension matches target_output_std.",
     )
     parser.add_argument(
         "--use_popart", type=str2bool, default=True, help="Whether use PopArt normalization"
@@ -435,18 +431,15 @@ def single_parse_args(args=None):
         type=float_or_str,
         default="auto",
         help="Entropy regularization coefficient. "
-        "Can be either float value, or 'auto', in which case it is dynamically tuned.",
+             "Can be either float value, or 'auto', in which case it is dynamically tuned.",
     )
     parser.add_argument(
         "--target_output_std",
         type=float,
         default=0.089,
         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation "
-        "of the action distribution on every dimension matches target_output_std.",
+             "of the action distribution on every dimension matches target_output_std.",
     )
-
-
-
 
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
@@ -490,9 +483,11 @@ def single_parse_args(args=None):
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--variable_queue_len', type=int, default=5)
     parser.add_argument('--normalize', type=bool, default=True)
+    parser.add_argument('--frame-height', type=int, default=84)
+    parser.add_argument('--frame-width', type=int, default=84)
     parser.add_argument('--frame-size', type=int, default=84)
-    parser.add_argument('--frames-stack', type=int, default=4)
-    parser.add_argument('--skip-num', type=int, default=4)
+    parser.add_argument('--frame-stack', type=int, default=4)
+    parser.add_argument('--frame-skip', type=int, default=4)
     parser.add_argument('--resume-path', type=str, default=None)
     parser.add_argument('--save_interval', type=int, default=20)
     parser.add_argument(
@@ -543,7 +538,5 @@ def single_parse_args(args=None):
     parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
     parser.add_argument('--add_speed', default=False, action='store_true')
-
-
 
     return parser.parse_args(args=args)
