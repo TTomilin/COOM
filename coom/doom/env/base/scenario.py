@@ -12,7 +12,7 @@ class DoomEnv(gym.Env):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks: int):
         super().__init__()
-        self.name = args.scenario
+        self.name = task
         self.task_id = task_id
         self.num_tasks = num_tasks
         self.save_lmp = args.save_lmp
