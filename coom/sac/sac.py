@@ -8,6 +8,7 @@ import gym
 import numpy as np
 import tensorflow as tf
 
+from coom.doom.env.base.scenario import DoomEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -19,9 +20,10 @@ from coom.utils.utils import reset_optimizer, reset_weights, set_seed
 class SAC:
     def __init__(
         self,
-        env: gym.Env,
-        test_envs: List[gym.Env],
+        env: DoomEnv,
+        test_envs: List[DoomEnv],
         logger: EpochLogger,
+        res: Tuple[int, int, int],
         actor_cl: type = models.MlpActor,
         actor_kwargs: Dict = None,
         critic_cl: type = models.MlpCritic,
@@ -29,7 +31,7 @@ class SAC:
         seed: int = 0,
         steps: int = 1_000_000,
         log_every: int = 20_000,
-        replay_size: int = 1_000_000,
+        replay_size: int = 10000,  # TODO optimize this
         gamma: float = 0.99,
         polyak: float = 0.995,
         lr: float = 1e-3,
@@ -115,9 +117,10 @@ class SAC:
             critic_kwargs = {}
 
         self.env = env
-        self.num_tasks = env.num_envs
+        self.num_tasks = env.num_tasks
         self.test_envs = test_envs
         self.logger = logger
+        self.res = res
         self.critic_cl = critic_cl
         self.critic_kwargs = critic_kwargs
         self.steps = steps
@@ -143,24 +146,26 @@ class SAC:
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
-        self.obs_dim = env.observation_space.shape[0]
-        self.act_dim = env.action_space.shape[0]
-        # This implementation assumes all dimensions share the same bound!
-        assert np.all(env.action_space.high == env.action_space.high[0])
+        self.obs_shape = env.observation_space.shape
+        self.act_dim = env.action_space.n
+        print("Observations shape:", self.obs_shape)  # should be N_FRAMES x H x W
+        print("Actions shape:", self.act_dim)
 
         # Share information about action space with policy architecture
+        actor_kwargs["state_space"] = env.observation_space
         actor_kwargs["action_space"] = env.action_space
-        actor_kwargs["input_dim"] = self.obs_dim
-        critic_kwargs["input_dim"] = self.obs_dim + self.act_dim
+        actor_kwargs["num_tasks"] = env.num_tasks
+        critic_kwargs["state_space"] = env.observation_space
+        critic_kwargs["num_tasks"] = env.num_tasks
 
         # Create experience buffer
         if buffer_type == BufferType.FIFO:
             self.replay_buffer = ReplayBuffer(
-                obs_dim=self.obs_dim, act_dim=self.act_dim, size=replay_size
+                obs_shape=self.obs_shape, act_dim=self.act_dim, size=replay_size
             )
         elif buffer_type == BufferType.RESERVOIR:
             self.replay_buffer = ReservoirReplayBuffer(
-                obs_dim=self.obs_dim, act_dim=self.act_dim, size=replay_size
+                obs_shape=self.obs_shape, act_dim=self.act_dim, size=replay_size
             )
 
         # Create actor and critic networks
@@ -197,7 +202,7 @@ class SAC:
             else:
                 target_1d_entropy = np.log(target_output_std * math.sqrt(2 * math.pi * math.e))
                 self.target_entropy = (
-                    np.prod(env.action_space.shape).astype(np.float32) * target_1d_entropy
+                    np.prod(env.action_space.n).astype(np.float32) * target_1d_entropy
                 )
 
     def adjust_gradients(
@@ -229,21 +234,21 @@ class SAC:
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
 
-    def get_log_alpha(self, obs: tf.Tensor) -> tf.Tensor:
-        return tf.squeeze(tf.linalg.matmul(obs[:, -self.num_tasks :], self.all_log_alpha))
+    def get_log_alpha(self, one_hot: tf.Tensor) -> tf.Tensor:
+        return tf.squeeze(tf.linalg.matmul(tf.expand_dims(tf.convert_to_tensor(one_hot), 1), self.all_log_alpha))
 
     @tf.function
-    def get_action(self, o: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)) -> tf.Tensor:
-        mu, log_std, pi, logp_pi = self.actor(tf.expand_dims(o, 0))
+    def get_action(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)) -> tf.Tensor:
+        mu, log_std, pi, logp_pi = self.actor(tf.expand_dims(obs, 0), one_hot_task_id)
         if deterministic:
-            return mu[0]
+            return tf.argmax(mu, -1)
         else:
-            return pi[0]
+            return tf.argmax(pi, -1)
 
     def get_action_test(
-        self, o: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
+        self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
     ) -> tf.Tensor:
-        return self.get_action(o, deterministic)
+        return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
         @tf.function
@@ -283,28 +288,35 @@ class SAC:
         actions: tf.Tensor,
         rewards: tf.Tensor,
         done: tf.Tensor,
+        one_hot: tf.Tensor,
     ) -> Tuple[Tuple[List[tf.Tensor], List[tf.Tensor], List[tf.Tensor]], Dict]:
         with tf.GradientTape(persistent=True) as g:
             if self.auto_alpha:
-                log_alpha = self.get_log_alpha(obs)
+                log_alpha = self.get_log_alpha(one_hot)
             else:
                 log_alpha = tf.math.log(self.alpha)
 
             # Main outputs from computation graph
-            mu, log_std, pi, logp_pi = self.actor(obs)
-            q1 = self.critic1(obs, actions)
-            q2 = self.critic2(obs, actions)
+            mu, log_std, pi, logp_pi = self.actor(obs, one_hot)
+            # q1 = self.critic1(obs, actions)
+            # q2 = self.critic2(obs, actions)
+            q1 = self.critic1(obs, one_hot)
+            q2 = self.critic2(obs, one_hot)
 
             # compose q with pi, for pi-learning
-            q1_pi = self.critic1(obs, pi)
-            q2_pi = self.critic2(obs, pi)
+            # q1_pi = self.critic1(obs, pi)
+            # q2_pi = self.critic2(obs, pi)
+            q1_pi = self.critic1(obs, one_hot)
+            q2_pi = self.critic2(obs, one_hot)
 
             # get actions and log probs of actions for next states, for Q-learning
-            _, _, pi_next, logp_pi_next = self.actor(next_obs)
+            _, _, pi_next, logp_pi_next = self.actor(next_obs, one_hot)
 
             # target q values, using actions from *current* policy
-            target_q1 = self.target_critic1(next_obs, pi_next)
-            target_q2 = self.target_critic2(next_obs, pi_next)
+            # target_q1 = self.target_critic1(next_obs, pi_next)
+            # target_q2 = self.target_critic2(next_obs, pi_next)
+            target_q1 = self.target_critic1(next_obs, one_hot)
+            target_q2 = self.target_critic2(next_obs, one_hot)
 
             # Min Double-Q:
             min_q_pi = tf.minimum(q1_pi, q2_pi)
@@ -399,10 +411,10 @@ class SAC:
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
     def test_agent(self, deterministic, num_episodes) -> None:
-        avg_success = []
         mode = "deterministic" if deterministic else "stochastic"
         for seq_idx, test_env in enumerate(self.test_envs):
             key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}/"
+            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
             self.on_test_start(seq_idx)
 
@@ -410,7 +422,7 @@ class SAC:
                 obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
                 while not (done or (episode_len == self.max_episode_len)):
                     obs, reward, done, _ = test_env.step(
-                        self.get_action_test(tf.convert_to_tensor(obs), tf.constant(deterministic))
+                        self.get_action_test(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec), tf.constant(deterministic))
                     )
                     episode_return += reward
                     episode_len += 1
@@ -422,11 +434,6 @@ class SAC:
 
             self.logger.log_tabular(key_prefix + "return", with_min_and_max=True)
             self.logger.log_tabular(key_prefix + "ep_length", average_only=True)
-            env_success = test_env.pop_successes()
-            avg_success += env_success
-            self.logger.log_tabular(key_prefix + "success", np.mean(env_success))
-        key = f"test/{mode}/average_success"
-        self.logger.log_tabular(key, np.mean(avg_success))
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -477,8 +484,8 @@ class SAC:
         self.logger.log_tabular("train/loss_reg", average_only=True)
         self.logger.log_tabular("train/agem_violation", average_only=True)
 
-        avg_success = np.mean(self.env.pop_successes())
-        self.logger.log_tabular("train/success", avg_success)
+        # avg_success = np.mean(self.env.pop_successes())
+        # self.logger.log_tabular("train/success", avg_success)
         if "seq_idx" in info:
             self.logger.log_tabular("train/active_env", info["seq_idx"])
 
@@ -507,7 +514,7 @@ class SAC:
         if self.reset_buffer_on_task_change:
             assert self.buffer_type == BufferType.FIFO
             self.replay_buffer = ReplayBuffer(
-                obs_dim=self.obs_dim, act_dim=self.act_dim, size=self.replay_size
+                obs_shape=self.obs_shape, act_dim=self.act_dim, size=self.replay_size
             )
         if self.reset_critic_on_task_change:
             reset_weights(self.critic1, self.critic_cl, self.critic_kwargs)
@@ -552,7 +559,8 @@ class SAC:
             if current_task_timestep > self.start_steps or (
                 self.agent_policy_exploration and current_task_idx > 0
             ):
-                action = self.get_action(tf.convert_to_tensor(obs))
+                one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
+                action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec)).numpy()[0]
             else:
                 action = self.env.action_space.sample()
 
@@ -561,15 +569,11 @@ class SAC:
             episode_return += reward
             episode_len += 1
 
-            # Ignore the "done" signal if it comes from hitting the time
-            # horizon (that is, when it's an artificial terminal signal
-            # that isn't based on the agent's state)
-            done_to_store = done
-            if episode_len == self.max_episode_len or info.get("TimeLimit.truncated"):
-                done_to_store = False
+            # Extract task ids from the info dict
+            one_hot_vec = create_one_hot_vec(info['num_tasks'], info['task_id'])
 
             # Store experience to replay buffer
-            self.replay_buffer.store(obs, action, reward, next_obs, done_to_store)
+            self.replay_buffer.store(obs, action, reward, next_obs, done, one_hot_vec)
 
             # Super critical, easy to overlook step: make sure to update
             # most recent observation!
@@ -598,11 +602,12 @@ class SAC:
                     )
                     self._log_after_update(results)
 
-            if (
-                self.env.name == "ContinualLearningEnv"
-                and current_task_timestep + 1 == self.env.steps_per_env
-            ):
-                self.on_task_end(current_task_idx)
+            # TODO create a distinction in the environment between continual and single task learning
+            # if (
+            #     self.env.name == "ContinualLearningEnv"
+            #     and current_task_timestep + 1 == self.env.steps_per_env
+            # ):
+            #     self.on_task_end(current_task_idx)
 
             # End of epoch wrap-up
             if ((global_timestep + 1) % self.log_every == 0) or (global_timestep + 1 == self.steps):
@@ -619,3 +624,9 @@ class SAC:
                 self._log_after_epoch(epoch, current_task_timestep, global_timestep, info)
 
             current_task_timestep += 1
+
+
+def create_one_hot_vec(num_tasks, task_id):
+    one_hot_vec = np.zeros(num_tasks)
+    one_hot_vec[task_id] = 1.0
+    return one_hot_vec

@@ -1,4 +1,6 @@
+from argparse import Namespace
 from copy import deepcopy
+from enum import Enum
 from typing import Any, Dict, List, Tuple, Union
 
 import gym
@@ -6,7 +8,19 @@ import metaworld
 import numpy as np
 from gym.wrappers import TimeLimit
 
+from coom.doom.env.base.scenario import DoomEnv
+from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
+from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
+from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
+from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
 from coom.utils.wrappers import OneHotAdder, RandomizationWrapper, SuccessCounter
+
+
+class DoomScenario(Enum):
+    DEFEND_THE_CENTER = DefendTheCenterImpl
+    HEALTH_GATHERING = HealthGatheringImpl
+    SEEK_AND_SLAY = SeekAndSlayImpl
+    DODGE_PROJECTILES = DodgeProjectilesImpl
 
 
 def get_mt50() -> metaworld.MT50:
@@ -17,6 +31,7 @@ def get_mt50() -> metaworld.MT50:
     return MT50
 
 
+# TODO Remove
 MT50 = get_mt50()
 META_WORLD_TIME_HORIZON = 200
 MT50_TASK_NAMES = list(MT50.train_classes)
@@ -77,6 +92,32 @@ def get_single_env(
     env = SuccessCounter(env)
     env.name = task_name
     env.num_envs = 1
+    return env
+
+def get_single_env_doom(
+    args: Namespace,
+    task: Union[int, str],
+    one_hot_idx: int = 0,
+    one_hot_len: int = 1
+) -> DoomEnv:
+    """Returns a single task environment.
+
+    Args:
+      task: task name
+      one_hot_idx: one-hot identifier (indicates order among different tasks that we consider)
+      one_hot_len: length of the one-hot encoding, number of tasks that we consider
+
+    Returns:
+      DoomEnv: single-task Doom environment
+    """
+
+    # Determine scenario and algorithm classes
+    scenario_class = DoomScenario[args.scenario.upper()].value
+
+    args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+    args.res = (args.skip_num, args.frame_size, args.frame_size)
+
+    env = scenario_class(args, task, one_hot_idx, one_hot_len)
     return env
 
 
@@ -171,6 +212,45 @@ def get_cl_env(
         env = SuccessCounter(env)
         envs.append(env)
     cl_env = ContinualLearningEnv(envs, steps_per_task)
+    cl_env.name = "ContinualLearningEnv"
+    return cl_env
+
+def get_cl_env_doom(
+    args: Namespace, randomization: str = "random_init_all"
+) -> gym.Env:
+    """Returns continual learning environment.
+
+    Args:
+      tasks: list of task names or MT50 numbers
+      steps_per_task: steps the agent will spend in each of single environments
+      randomization: randomization kind, one of 'deterministic', 'random_init_all',
+                     'random_init_fixed20', 'random_init_small_box'.
+
+    Returns:
+      gym.Env: continual learning environment
+    """
+
+    # Determine scenario and algorithm classes
+    scenario_class = DoomScenario[args.scenario.upper()].value
+    # task_names = [get_task_name(task) for task in tasks]
+    num_tasks = len(args.tasks)
+    envs = []
+    # for i, task_name in enumerate(task_names):
+    for task in enumerate(args.tasks):
+
+        args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+        args.res = (args.skip_num, args.frame_size, args.frame_size)
+
+        env = scenario_class(args, 'default')
+
+        # env = MT50.train_classes[task_name]()
+        # env = RandomizationWrapper(env, get_subtasks(task), randomization)
+        # env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
+        env.name = task
+        env = TimeLimit(env, META_WORLD_TIME_HORIZON)
+        env = SuccessCounter(env)
+        envs.append(env)
+    cl_env = ContinualLearningEnv(envs, args.steps_per_task)
     cl_env.name = "ContinualLearningEnv"
     return cl_env
 

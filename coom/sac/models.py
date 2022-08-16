@@ -4,8 +4,10 @@ import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
+from tensorflow.keras.layers import Conv2D, Flatten, Dense, Activation, LayerNormalization, Concatenate
 
 from coom.envs import MW_ACT_LEN, MW_OBS_LEN
+
 
 EPS = 1e-8
 
@@ -35,18 +37,31 @@ def apply_squashing_func(
 
 
 def mlp(
-    input_dim: int, hidden_sizes: Iterable[int], activation: Callable, use_layer_norm: bool = False
+        channels: int,
+        height: int,
+        width: int,
+        num_tasks: int,
+        hidden_sizes: Tuple[int],
+        activation: Callable,
+        use_layer_norm: bool = False
 ) -> Model:
-    model = tf.keras.Sequential()
-    model.add(Input(shape=(input_dim,)))
-    model.add(tf.keras.layers.Dense(hidden_sizes[0]))
+    task_input = Input(shape=(num_tasks,), name='task_input')
+    conv_in = Input(shape=(height, width, channels))
+    conv_head = Conv2D(32, 8, strides=4, activation="relu")(conv_in)
+    conv_head = Conv2D(64, 4, strides=2, activation="relu")(conv_head)
+    conv_head = Conv2D(64, 3, strides=1, activation="relu")(conv_head)
+    conv_head = Flatten()(conv_head)
+    # TODO Try adding a dense layer here
+    model = Concatenate()([conv_head, task_input])
+    model = Dense(hidden_sizes[0])(model)
     if use_layer_norm:
-        model.add(tf.keras.layers.LayerNormalization())
-        model.add(tf.keras.layers.Activation(tf.nn.tanh))
+        model = LayerNormalization()(model)
+        model = Activation(tf.nn.tanh)(model)
     else:
-        model.add(tf.keras.layers.Activation(activation))
-    for size in hidden_sizes[1:]:
-        model.add(tf.keras.layers.Dense(size, activation=activation))
+        model = Activation(activation)(model)
+    for size in hidden_sizes[1:]:  # TODO Try adding more dense layer here
+        model = Dense(size, activation=activation)(model)
+    model = Model(inputs=[conv_in, task_input], outputs=model)
     return model
 
 
@@ -72,9 +87,10 @@ def _choose_head(out: tf.Tensor, obs: tf.Tensor, num_heads: int) -> tf.Tensor:
 class MlpActor(Model):
     def __init__(
         self,
-        input_dim: int,
-        action_space: gym.Space,
-        hidden_sizes: Iterable[int] = (256, 256),
+        state_space: gym.spaces.Box,
+        action_space: gym.spaces.Discrete,
+        num_tasks: int,
+        hidden_sizes: Tuple[int] = (256, 256),
         activation: Callable = tf.tanh,
         use_layer_norm: bool = False,
         num_heads: int = 1,
@@ -85,35 +101,33 @@ class MlpActor(Model):
         # if True, one-hot encoding of the task will not be appended to observation.
         self.hide_task_id = hide_task_id
 
-        if self.hide_task_id:
-            input_dim = MW_OBS_LEN
-
-        self.core = mlp(input_dim, hidden_sizes, activation, use_layer_norm=use_layer_norm)
+        self.core = mlp(*state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm=use_layer_norm)
         self.head_mu = tf.keras.Sequential(
             [
                 Input(shape=(hidden_sizes[-1],)),
-                tf.keras.layers.Dense(action_space.shape[0] * num_heads),
+                Dense(action_space.n * num_heads),
             ]
         )
         self.head_log_std = tf.keras.Sequential(
             [
                 Input(shape=(hidden_sizes[-1],)),
-                tf.keras.layers.Dense(action_space.shape[0] * num_heads),
+                Dense(action_space.n * num_heads),
             ]
         )
         self.action_space = action_space
 
-    def call(self, x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
-        obs = x
-        if self.hide_task_id:
-            x = x[:, :MW_OBS_LEN]
-        x = self.core(x)
-        mu = self.head_mu(x)
-        log_std = self.head_log_std(x)
+    def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
+        obs = tf.transpose(obs, [0, 2, 3, 1])
+        initial_obs = obs
+
+        obs = self.core([obs, one_hot_task_id])
+        mu = self.head_mu(obs)
+        log_std = self.head_log_std(obs)
 
         if self.num_heads > 1:
-            mu = _choose_head(mu, obs, self.num_heads)
-            log_std = _choose_head(log_std, obs, self.num_heads)
+            # FIXME This will fail since the observation does not contain the one-hot encoded task id vector
+            mu = _choose_head(mu, initial_obs, self.num_heads)
+            log_std = _choose_head(log_std, initial_obs, self.num_heads)
 
         log_std = tf.clip_by_value(log_std, LOG_STD_MIN, LOG_STD_MAX)
         std = tf.exp(log_std)
@@ -123,9 +137,9 @@ class MlpActor(Model):
         mu, pi, logp_pi = apply_squashing_func(mu, pi, logp_pi)
 
         # Make sure actions are in correct range
-        action_scale = self.action_space.high[0]
-        mu *= action_scale
-        pi *= action_scale
+        # action_scale = self.action_space.n  # TODO Verify whether this is necessary for discrete action spaces
+        # mu *= action_scale
+        # pi *= action_scale
 
         return mu, log_std, pi, logp_pi
 
@@ -146,7 +160,8 @@ class MlpActor(Model):
 class MlpCritic(Model):
     def __init__(
         self,
-        input_dim: int,
+        state_space: gym.spaces.Box,
+        num_tasks: int,
         hidden_sizes: Iterable[int] = (256, 256),
         activation: Callable = tf.tanh,
         use_layer_norm: bool = False,
@@ -159,22 +174,21 @@ class MlpCritic(Model):
             num_heads  # if True, one-hot encoding of the task will not be appended to observation.
         )
 
-        if self.hide_task_id:
-            input_dim = MW_OBS_LEN + MW_ACT_LEN
-        self.core = mlp(input_dim, hidden_sizes, activation, use_layer_norm=use_layer_norm)
+        self.core = mlp(*state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm=use_layer_norm)
         self.head = tf.keras.Sequential(
-            [Input(shape=(hidden_sizes[-1],)), tf.keras.layers.Dense(num_heads)]
+            [Input(shape=(hidden_sizes[-1],)), Dense(num_heads)]
         )
 
-    def call(self, x: tf.Tensor, a: tf.Tensor) -> tf.Tensor:
-        obs = x
-        if self.hide_task_id:
-            x = x[:, :MW_OBS_LEN]
-        x = self.head(self.core(tf.concat([x, a], axis=-1)))
+    # def call(self, x: tf.Tensor, a: tf.Tensor) -> tf.Tensor:
+    def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
+        obs = tf.transpose(obs, [0, 2, 3, 1])
+        initial_obs = obs
+        # x = self.head(self.core(tf.concat([x, a], axis=-1)))
+        obs = self.head(self.core([obs, one_hot_task_id]))
         if self.num_heads > 1:
-            x = _choose_head(x, obs, self.num_heads)
-        x = tf.squeeze(x, axis=1)
-        return x
+            obs = _choose_head(obs, initial_obs, self.num_heads)
+        obs = tf.squeeze(obs, axis=1)
+        return obs
 
     @property
     def common_variables(self) -> List[tf.Variable]:
@@ -204,18 +218,21 @@ class PopArtMlpCritic(MlpCritic):
 
     @tf.function
     def unnormalize(self, x: tf.Tensor, obs: tf.Tensor) -> tf.Tensor:
+        # TODO Rewrite
         moment1 = tf.squeeze(obs[:, -self.num_heads :] @ self.moment1, axis=1)
         sigma = tf.squeeze(obs[:, -self.num_heads :] @ self.sigma, axis=1)
         return x * sigma + moment1
 
     @tf.function
     def normalize(self, x: tf.Tensor, obs: tf.Tensor) -> tf.Tensor:
+        # TODO Rewrite
         moment1 = tf.squeeze(obs[:, -self.num_heads :] @ self.moment1, axis=1)
         sigma = tf.squeeze(obs[:, -self.num_heads :] @ self.sigma, axis=1)
         return (x - moment1) / sigma
 
     @tf.function
     def update_stats(self, returns: tf.Tensor, obs: tf.Tensor) -> None:
+        # TODO Rewrite
         task_counts = tf.reduce_sum(obs[:, -self.num_heads :], axis=0)
         batch_moment1 = tf.reduce_sum(
             tf.expand_dims(returns, 1) * obs[:, -self.num_heads :], axis=0

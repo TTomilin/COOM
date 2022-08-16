@@ -1,5 +1,5 @@
 import random
-from typing import Dict
+from typing import Dict, Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -8,22 +8,24 @@ import tensorflow as tf
 class ReplayBuffer:
     """A simple FIFO experience replay buffer for SAC agents."""
 
-    def __init__(self, obs_dim: int, act_dim: int, size: int) -> None:
-        self.obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
-        self.next_obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
+    def __init__(self, obs_shape: Iterable[int], act_dim: int, size: int) -> None:
+        self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
+        self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros([size, act_dim], dtype=np.float32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
+        self.one_hot_buf = np.zeros(size, dtype=np.float32)
         self.ptr, self.size, self.max_size = 0, 0, size
 
     def store(
-        self, obs: np.ndarray, action: np.ndarray, reward: float, next_obs: np.ndarray, done: bool
+        self, obs: np.ndarray, action: np.ndarray, reward: float, next_obs: np.ndarray, done: bool, one_hot: np.ndarray
     ) -> None:
         self.obs_buf[self.ptr] = obs
         self.next_obs_buf[self.ptr] = next_obs
         self.actions_buf[self.ptr] = action
         self.rewards_buf[self.ptr] = reward
         self.done_buf[self.ptr] = done
+        self.one_hot_buf[self.ptr] = one_hot
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
@@ -35,6 +37,7 @@ class ReplayBuffer:
             actions=tf.convert_to_tensor(self.actions_buf[idxs]),
             rewards=tf.convert_to_tensor(self.rewards_buf[idxs]),
             done=tf.convert_to_tensor(self.done_buf[idxs]),
+            one_hot=tf.convert_to_tensor(self.one_hot_buf[idxs])
         )
 
 
@@ -47,6 +50,7 @@ class EpisodicMemory:
         self.actions_buf = np.zeros([size, act_dim], dtype=np.float32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
+        # self.one_hot_buf[self.ptr] = one_hot
         self.size, self.max_size = 0, size
 
     def store_multiple(
@@ -56,6 +60,7 @@ class EpisodicMemory:
         rewards: np.ndarray,
         next_obs: np.ndarray,
         done: np.ndarray,
+        one_hot: np.ndarray,
     ) -> None:
         assert len(obs) == len(actions) == len(rewards) == len(next_obs) == len(done)
         assert self.size + len(obs) <= self.max_size
@@ -67,6 +72,7 @@ class EpisodicMemory:
         self.actions_buf[range_start:range_end] = actions
         self.rewards_buf[range_start:range_end] = rewards
         self.done_buf[range_start:range_end] = done
+        # self.one_hot_buf[range_start:range_end] = one_hot
         self.size = self.size + len(obs)
 
     def sample_batch(self, batch_size: int) -> Dict[str, tf.Tensor]:
@@ -84,12 +90,12 @@ class EpisodicMemory:
 class ReservoirReplayBuffer(ReplayBuffer):
     """Buffer for SAC agents implementing reservoir sampling."""
 
-    def __init__(self, obs_dim: int, act_dim: int, size: int) -> None:
-        super().__init__(obs_dim, act_dim, size)
+    def __init__(self, obs_shape: Iterable[int], act_dim: int, size: int) -> None:
+        super().__init__(obs_shape, act_dim, size)
         self.timestep = 0
 
     def store(
-        self, obs: np.ndarray, action: np.ndarray, reward: float, next_obs: np.ndarray, done: bool
+        self, obs: np.ndarray, action: np.ndarray, reward: float, next_obs: np.ndarray, done: bool, one_hot: np.ndarray
     ) -> None:
         current_t = self.timestep
         self.timestep += 1
@@ -105,5 +111,6 @@ class ReservoirReplayBuffer(ReplayBuffer):
         self.next_obs_buf[buffer_idx] = next_obs
         self.actions_buf[buffer_idx] = action
         self.rewards_buf[buffer_idx] = reward
-        self.done_buf[buffer_idx] = done
+        self.done_buf[buffer_idx] = done,
+        self.one_hot_buf[buffer_idx] = one_hot
         self.size = min(self.size + 1, self.max_size)
