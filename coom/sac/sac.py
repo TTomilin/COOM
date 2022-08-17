@@ -248,7 +248,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        @tf.function
+        # @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
@@ -294,17 +294,17 @@ class SAC:
                 log_alpha = tf.math.log(self.alpha)
 
             # Main outputs from computation graph
-            mu, log_std, pi, logp_pi = self.actor(obs, one_hot)
+            mu, _, pi, logp_pi = self.actor(obs, one_hot)
             # q1 = self.critic1(obs, actions)
             # q2 = self.critic2(obs, actions)
             q1 = self.critic1(obs, one_hot)
             q2 = self.critic2(obs, one_hot)
 
             # compose q with pi, for pi-learning
-            # q1_pi = self.critic1(obs, pi)
-            # q2_pi = self.critic2(obs, pi)
-            q1_pi = self.critic1(obs, one_hot)
-            q2_pi = self.critic2(obs, one_hot)
+            q1_pi = self.critic1(obs, pi)
+            q2_pi = self.critic2(obs, pi)
+            # q1_pi = self.critic1(obs, one_hot)
+            # q2_pi = self.critic2(obs, one_hot)
 
             # get actions and log probs of actions for next states, for Q-learning
             _, _, pi_next, logp_pi_next = self.actor(next_obs, one_hot)

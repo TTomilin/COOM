@@ -6,8 +6,6 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Conv2D, Flatten, Dense, Activation, LayerNormalization, Concatenate
 
-from coom.envs import MW_ACT_LEN, MW_OBS_LEN
-
 
 EPS = 1e-8
 

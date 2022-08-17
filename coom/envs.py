@@ -4,7 +4,6 @@ from enum import Enum
 from typing import Any, Dict, List, Tuple, Union
 
 import gym
-import metaworld
 import numpy as np
 from gym.wrappers import TimeLimit
 
@@ -13,7 +12,6 @@ from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
 from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
 from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
 from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
-from coom.utils.wrappers import OneHotAdder, RandomizationWrapper, SuccessCounter
 
 
 class DoomScenario(Enum):
@@ -23,37 +21,21 @@ class DoomScenario(Enum):
     DODGE_PROJECTILES = DodgeProjectilesImpl
 
 
-def get_mt50() -> metaworld.MT50:
-    saved_random_state = np.random.get_state()
-    np.random.seed(1)
-    MT50 = metaworld.MT50()
-    np.random.set_state(saved_random_state)
-    return MT50
-
-
-# TODO Remove
-MT50 = get_mt50()
-META_WORLD_TIME_HORIZON = 200
-MT50_TASK_NAMES = list(MT50.train_classes)
-MW_OBS_LEN = 12
-MW_ACT_LEN = 4
-
-
-def get_task_name(name_or_number: Union[int, str]) -> str:
-    try:
-        index = int(name_or_number)
-        return MT50_TASK_NAMES[index]
-    except:
-        return name_or_number
-
-
-def set_simple_goal(env: gym.Env, name: str) -> None:
-    goal = [task for task in MT50.train_tasks if task.env_name == name][0]
-    env.set_task(goal)
-
-
-def get_subtasks(name: str) -> List[metaworld.Task]:
-    return [s for s in MT50.train_tasks if s.env_name == name]
+# def get_task_name(name_or_number: Union[int, str]) -> str:
+#     try:
+#         index = int(name_or_number)
+#         return MT50_TASK_NAMES[index]
+#     except:
+#         return name_or_number
+#
+#
+# def set_simple_goal(env: gym.Env, name: str) -> None:
+#     goal = [task for task in MT50.train_tasks if task.env_name == name][0]
+#     env.set_task(goal)
+#
+#
+# def get_subtasks(name: str) -> List[metaworld.Task]:
+#     return [s for s in MT50.train_tasks if s.env_name == name]
 
 
 def get_mt50_idx(env: gym.Env) -> int:
@@ -61,38 +43,6 @@ def get_mt50_idx(env: gym.Env) -> int:
     assert len(idx) == 1
     return idx[0]
 
-
-def get_single_env(
-    task: Union[int, str],
-    one_hot_idx: int = 0,
-    one_hot_len: int = 1,
-    randomization: str = "random_init_all",
-) -> gym.Env:
-    """Returns a single task environment.
-
-    Appends one-hot embedding to the observation, so that the model that operates on many envs
-    can differentiate between them.
-
-    Args:
-      task: task name or MT50 number
-      one_hot_idx: one-hot identifier (indicates order among different tasks that we consider)
-      one_hot_len: length of the one-hot encoding, number of tasks that we consider
-      randomization: randomization kind, one of 'deterministic', 'random_init_all',
-                     'random_init_fixed20', 'random_init_small_box'.
-
-    Returns:
-      gym.Env: single-task environment
-    """
-    task_name = get_task_name(task)
-    env = MT50.train_classes[task_name]()
-    env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
-    env = OneHotAdder(env, one_hot_idx=one_hot_idx, one_hot_len=one_hot_len)
-    # Currently TimeLimit is needed since SuccessCounter looks at dones.
-    env = TimeLimit(env, META_WORLD_TIME_HORIZON)
-    env = SuccessCounter(env)
-    env.name = task_name
-    env.num_envs = 1
-    return env
 
 def get_single_env_doom(
     args: Namespace,
@@ -200,17 +150,17 @@ def get_cl_env(
     Returns:
       gym.Env: continual learning environment
     """
-    task_names = [get_task_name(task) for task in tasks]
-    num_tasks = len(task_names)
+    # task_names = [get_task_name(task) for task in tasks]
+    # num_tasks = len(task_names)
     envs = []
-    for i, task_name in enumerate(task_names):
-        env = MT50.train_classes[task_name]()
-        env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
-        env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
-        env.name = task_name
-        env = TimeLimit(env, META_WORLD_TIME_HORIZON)
-        env = SuccessCounter(env)
-        envs.append(env)
+    # for i, task_name in enumerate(task_names):
+    #     env = MT50.train_classes[task_name]()
+    #     env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
+    #     env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
+    #     env.name = task_name
+    #     env = TimeLimit(env, META_WORLD_TIME_HORIZON)
+    #     env = SuccessCounter(env)
+    #     envs.append(env)
     cl_env = ContinualLearningEnv(envs, steps_per_task)
     cl_env.name = "ContinualLearningEnv"
     return cl_env
@@ -232,10 +182,8 @@ def get_cl_env_doom(
 
     # Determine scenario and algorithm classes
     scenario_class = DoomScenario[args.scenario.upper()].value
-    # task_names = [get_task_name(task) for task in tasks]
     num_tasks = len(args.tasks)
     envs = []
-    # for i, task_name in enumerate(task_names):
     for task in enumerate(args.tasks):
 
         args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
@@ -243,12 +191,7 @@ def get_cl_env_doom(
 
         env = scenario_class(args, 'default')
 
-        # env = MT50.train_classes[task_name]()
-        # env = RandomizationWrapper(env, get_subtasks(task), randomization)
-        # env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
         env.name = task
-        env = TimeLimit(env, META_WORLD_TIME_HORIZON)
-        env = SuccessCounter(env)
         envs.append(env)
     cl_env = ContinualLearningEnv(envs, args.steps_per_task)
     cl_env.name = "ContinualLearningEnv"
@@ -324,17 +267,17 @@ def get_mt_env(
     Returns:
       gym.Env: continual learning environment
     """
-    task_names = [get_task_name(task) for task in tasks]
-    num_tasks = len(task_names)
+    # task_names = [get_task_name(task) for task in tasks]
+    # num_tasks = len(task_names)
     envs = []
-    for i, task_name in enumerate(task_names):
-        env = MT50.train_classes[task_name]()
-        env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
-        env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
-        env.name = task_name
-        env = TimeLimit(env, META_WORLD_TIME_HORIZON)
-        env = SuccessCounter(env)
-        envs.append(env)
+    # for i, task_name in enumerate(task_names):
+        # env = MT50.train_classes[task_name]()
+        # env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
+        # env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
+        # env.name = task_name
+        # env = TimeLimit(env, META_WORLD_TIME_HORIZON)
+        # env = SuccessCounter(env)
+        # envs.append(env)
     mt_env = MultiTaskEnv(envs, steps_per_task)
     mt_env.name = "MultiTaskEnv"
     return mt_env

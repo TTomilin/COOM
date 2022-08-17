@@ -5,7 +5,6 @@ import tensorflow as tf
 import tensorflow.keras as tfk
 from tensorflow.keras import Input, Model
 
-from coom.envs import MW_OBS_LEN
 from coom.sac.models import _choose_head, apply_squashing_func, gaussian_likelihood
 from coom.sac.sac import SAC
 
@@ -214,9 +213,6 @@ class VclMlpActor(Model):
         self.num_heads = num_heads
         self.hide_task_id = hide_task_id
 
-        if self.hide_task_id:
-            input_dim = MW_OBS_LEN
-
         self.core = variational_mlp(
             input_dim,
             hidden_sizes,
@@ -255,8 +251,6 @@ class VclMlpActor(Model):
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         input_x = x
         full_obs = x
-        if self.hide_task_id:
-            input_x = input_x[:, :MW_OBS_LEN]
         mus, pis = [], []
 
         for sample_idx in range(samples_num):
