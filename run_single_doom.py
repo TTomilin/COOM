@@ -12,6 +12,7 @@ from coom.doom.env.utils.wrappers import RescaleWrapper, ResizeWrapper
 from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.utils import get_activation_from_str
+from coom.utils.wandb import init_wandb
 from input_args import single_parse_args
 
 
@@ -73,4 +74,5 @@ def main(logger: EpochLogger, args: Namespace):
 if __name__ == "__main__":
     args = single_parse_args()
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
+    init_wandb(args)
     main(logger, args)

@@ -443,7 +443,7 @@ def single_parse_args(args=None):
 
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
-    parser.add_argument('--algorithm', type=str, default=None, choices=['dqn', 'ppo', 'rainbow'])
+    parser.add_argument('--algorithm', type=str, default='sac', choices=['sac'])
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--eps-test', type=float, default=0.005)
@@ -523,7 +523,7 @@ def single_parse_args(args=None):
     # WandB
     parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
     parser.add_argument('--wandb_user', default=None, type=str, help='WandB username (entity).')
-    parser.add_argument('--wandb_project', default='LevDoom', type=str, help='WandB "Project"')
+    parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
     parser.add_argument('--wandb_group', default=None, type=str, help='WandB "Group". Name of the env by default.')
     parser.add_argument('--wandb_job_type', default='default', type=str, help='WandB job type')
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
