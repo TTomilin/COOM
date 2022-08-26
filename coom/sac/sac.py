@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.framework import dtypes
 from tensorflow.python.ops.distributions.categorical import Categorical
 
 from coom.sac import models
@@ -242,7 +243,7 @@ class SAC:
 
         dist = Categorical(logits=logits)
         if deterministic:
-            return tf.math.argmax(logits, axis=-1)
+            return tf.math.argmax(logits, axis=-1, output_type=dtypes.int32)
         else:
             return dist.sample()
 
