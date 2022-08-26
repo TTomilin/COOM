@@ -41,7 +41,6 @@ class SAC:
             update_every: int = 50,
             num_test_eps_stochastic: int = 10,
             num_test_eps_deterministic: int = 1,
-            max_episode_len: int = 200,
             save_freq_epochs: int = 100,
             reset_buffer_on_task_change: bool = True,
             buffer_type: BufferType = BufferType.FIFO,
@@ -91,7 +90,6 @@ class SAC:
             evaluation.
           num_test_eps_deterministic: Number of episodes to test the deterministic policy in each
             evaluation.
-          max_episode_len: Maximum length of trajectory / episode / rollout.
           save_freq_epochs: How often, in epochs, to save the current policy and value function.
             (Epoch is defined as time between two subsequent evaluations, lasting log_every steps)
           reset_buffer_on_task_change: If True, replay buffer will be cleared after every task
@@ -133,7 +131,6 @@ class SAC:
         self.update_every = update_every
         self.num_test_eps_stochastic = num_test_eps_stochastic
         self.num_test_eps_deterministic = num_test_eps_deterministic
-        self.max_episode_len = max_episode_len
         self.save_freq_epochs = save_freq_epochs
         self.reset_buffer_on_task_change = reset_buffer_on_task_change
         self.buffer_type = buffer_type
@@ -415,7 +412,7 @@ class SAC:
 
             for j in range(num_episodes):
                 obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
-                while not (done or (episode_len == self.max_episode_len)):
+                while not done:
                     obs, reward, done, _ = test_env.step(
                         self.get_action_test(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec),
                                              tf.constant(deterministic))
@@ -575,7 +572,7 @@ class SAC:
             obs = next_obs
 
             # End of trajectory handling
-            if done or (episode_len == self.max_episode_len):
+            if done:
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len})
                 episode_return, episode_len = 0, 0
                 if global_timestep < self.steps - 1:
