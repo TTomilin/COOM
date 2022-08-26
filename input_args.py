@@ -485,7 +485,6 @@ def single_parse_args(args=None):
     parser.add_argument('--normalize', type=bool, default=True)
     parser.add_argument('--frame-height', type=int, default=84)
     parser.add_argument('--frame-width', type=int, default=84)
-    parser.add_argument('--frame-size', type=int, default=84)
     parser.add_argument('--frame-stack', type=int, default=4)
     parser.add_argument('--frame-skip', type=int, default=4)
     parser.add_argument('--resume-path', type=str, default=None)

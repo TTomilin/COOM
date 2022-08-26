@@ -65,7 +65,7 @@ def get_single_env_doom(
     scenario_class = DoomScenario[args.scenario.upper()].value
 
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
-    args.res = (args.frame_skip, args.frame_size, args.frame_size)
+    args.res = (args.frame_skip, args.frame_height, args.frame_width)
 
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
     return env
@@ -187,7 +187,7 @@ def get_cl_env_doom(
     for task in enumerate(args.tasks):
 
         args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
-        args.res = (args.frame_skip, args.frame_size, args.frame_size)
+        args.res = (args.frame_skip, args.frame_height, args.frame_width)
 
         env = scenario_class(args, 'default')
 

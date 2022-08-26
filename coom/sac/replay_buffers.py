@@ -8,10 +8,10 @@ import tensorflow as tf
 class ReplayBuffer:
     """A simple FIFO experience replay buffer for SAC agents."""
 
-    def __init__(self, obs_shape: Iterable[int], act_dim: int, size: int) -> None:
+    def __init__(self, obs_shape: Iterable[int], size: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
-        self.actions_buf = np.zeros([size, act_dim], dtype=np.float32)
+        self.actions_buf = np.zeros(size, dtype=np.int32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
         self.one_hot_buf = np.zeros(size, dtype=np.float32)
@@ -44,10 +44,10 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_dim: int, act_dim: int, size: int) -> None:
+    def __init__(self, obs_dim: int, size: int) -> None:
         self.obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
-        self.actions_buf = np.zeros([size, act_dim], dtype=np.float32)
+        self.actions_buf = np.zeros(size, dtype=np.int32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
         # self.one_hot_buf[self.ptr] = one_hot
@@ -90,8 +90,8 @@ class EpisodicMemory:
 class ReservoirReplayBuffer(ReplayBuffer):
     """Buffer for SAC agents implementing reservoir sampling."""
 
-    def __init__(self, obs_shape: Iterable[int], act_dim: int, size: int) -> None:
-        super().__init__(obs_shape, act_dim, size)
+    def __init__(self, obs_shape: Iterable[int], size: int) -> None:
+        super().__init__(obs_shape, size)
         self.timestep = 0
 
     def store(

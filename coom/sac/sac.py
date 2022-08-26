@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.ops.distributions.categorical import Categorical
 
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
@@ -152,16 +153,17 @@ class SAC:
         actor_kwargs["action_space"] = env.action_space
         actor_kwargs["num_tasks"] = env.num_tasks
         critic_kwargs["state_space"] = env.observation_space
+        critic_kwargs["action_space"] = env.action_space
         critic_kwargs["num_tasks"] = env.num_tasks
 
         # Create experience buffer
         if buffer_type == BufferType.FIFO:
             self.replay_buffer = ReplayBuffer(
-                obs_shape=self.obs_shape, act_dim=self.act_dim, size=replay_size
+                obs_shape=self.obs_shape, size=replay_size
             )
         elif buffer_type == BufferType.RESERVOIR:
             self.replay_buffer = ReservoirReplayBuffer(
-                obs_shape=self.obs_shape, act_dim=self.act_dim, size=replay_size
+                obs_shape=self.obs_shape, size=replay_size
             )
 
         # Create actor and critic networks
@@ -236,11 +238,13 @@ class SAC:
     @tf.function
     def get_action(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor,
                    deterministic: tf.Tensor = tf.constant(False)) -> tf.Tensor:
-        mu, log_std, pi, logp_pi = self.actor(tf.expand_dims(obs, 0), one_hot_task_id)
+        logits = self.actor(tf.expand_dims(obs, 0), one_hot_task_id)
+
+        dist = Categorical(logits=logits)
         if deterministic:
-            return tf.argmax(mu, -1)
+            return tf.math.argmax(logits, axis=-1)
         else:
-            return tf.argmax(pi, -1)
+            return dist.sample()
 
     def get_action_test(
             self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
@@ -248,7 +252,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        # @tf.function
+        @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
@@ -292,83 +296,76 @@ class SAC:
                 log_alpha = self.get_log_alpha(one_hot)
             else:
                 log_alpha = tf.math.log(self.alpha)
+            log_alpha_exp = tf.math.exp(log_alpha)
 
-            # Main outputs from computation graph
-            mu, _, pi, logp_pi = self.actor(obs, one_hot)
-            # q1 = self.critic1(obs, actions)
-            # q2 = self.critic2(obs, actions)
+            logits = self.actor(obs, one_hot)
+            dist = Categorical(logits=logits)
+            entropy = dist.entropy()
+
+            logits_next = self.actor(next_obs, one_hot)
+            dist_next = Categorical(logits=logits_next)
+            entropy_next = dist_next.entropy()
+
             q1 = self.critic1(obs, one_hot)
             q2 = self.critic2(obs, one_hot)
 
-            # compose q with pi, for pi-learning
-            q1_pi = self.critic1(obs, pi)
-            q2_pi = self.critic2(obs, pi)
-            # q1_pi = self.critic1(obs, one_hot)
-            # q2_pi = self.critic2(obs, one_hot)
+            # Q values of actions taken
+            q1_vals = tf.gather(q1, actions, axis=1, batch_dims=1)
+            q2_vals = tf.gather(q2, actions, axis=1, batch_dims=1)
 
-            # get actions and log probs of actions for next states, for Q-learning
-            _, _, pi_next, logp_pi_next = self.actor(next_obs, one_hot)
-
-            # target q values, using actions from *current* policy
-            # target_q1 = self.target_critic1(next_obs, pi_next)
-            # target_q2 = self.target_critic2(next_obs, pi_next)
+            # Target Q values
             target_q1 = self.target_critic1(next_obs, one_hot)
             target_q2 = self.target_critic2(next_obs, one_hot)
 
             # Min Double-Q:
-            min_q_pi = tf.minimum(q1_pi, q2_pi)
-            min_target_q = tf.minimum(target_q1, target_q2)
+            min_q = dist.probs * tf.stop_gradient(tf.minimum(q1, q2))
+            min_target_q = dist_next.probs * tf.minimum(target_q1, target_q2)
 
             # Entropy-regularized Bellman backup for Q functions, using Clipped Double-Q targets
             if self.critic_cl is PopArtMlpCritic:
                 q_backup = tf.stop_gradient(
                     self.critic1.normalize(
-                        rewards
-                        + self.gamma
-                        * (1 - done)
-                        * (
-                                self.critic1.unnormalize(min_target_q, next_obs)
-                                - tf.math.exp(log_alpha) * logp_pi_next
-                        ),
+                        rewards + self.gamma * (1 - done)
+                        * (self.critic1.unnormalize(min_target_q, next_obs) - log_alpha_exp * entropy_next),
                         obs,
                     )
                 )
             else:
                 q_backup = tf.stop_gradient(
-                    rewards
-                    + self.gamma
-                    * (1 - done)
-                    * (min_target_q - tf.math.exp(log_alpha) * logp_pi_next)
+                    rewards + self.gamma * (1 - done)
+                    * (tf.math.reduce_sum(min_target_q, axis=-1) - log_alpha_exp * entropy_next)
                 )
 
-            # Soft actor-critic losses
-            pi_loss = tf.reduce_mean(tf.math.exp(log_alpha) * logp_pi - min_q_pi)
-            q1_loss = 0.5 * tf.reduce_mean((q_backup - q1)**2)
-            q2_loss = 0.5 * tf.reduce_mean((q_backup - q2)**2)
+            # Critic loss
+            q1_loss = 0.5 * tf.reduce_mean((q_backup - q1_vals)**2)
+            q2_loss = 0.5 * tf.reduce_mean((q_backup - q2_vals)**2)
             value_loss = q1_loss + q2_loss
 
+            # Actor loss
+            actor_loss = -tf.reduce_mean(log_alpha_exp * entropy + tf.reduce_sum(min_q, axis=-1))
+
+            # Alpha loss
             if self.auto_alpha:
-                alpha_loss = -tf.reduce_mean(
-                    log_alpha * tf.stop_gradient(logp_pi + self.target_entropy)
-                )
+                log_prob = tf.stop_gradient(entropy) + self.target_entropy
+                alpha_loss = -tf.reduce_mean(log_alpha * log_prob)
 
             auxiliary_loss = self.get_auxiliary_loss(seq_idx)
             metrics = dict(
-                pi_loss=pi_loss,
+                pi_loss=actor_loss,
                 q1_loss=q1_loss,
                 q2_loss=q2_loss,
-                q1=q1,
-                q2=q2,
-                logp_pi=logp_pi,
+                q1=q1_vals,
+                q2=q2_vals,
+                entropy=entropy,
                 reg_loss=auxiliary_loss,
                 agem_violation=0,
             )
 
-            pi_loss += auxiliary_loss
+            actor_loss += auxiliary_loss
             value_loss += auxiliary_loss
 
         # Compute gradients
-        actor_gradients = g.gradient(pi_loss, self.actor.trainable_variables)
+        actor_gradients = g.gradient(actor_loss, self.actor.trainable_variables)
         critic_gradients = g.gradient(value_loss, self.critic_variables)
         if self.auto_alpha:
             alpha_gradient = g.gradient(alpha_loss, self.all_log_alpha)
@@ -438,7 +435,7 @@ class SAC:
             {
                 "train/q1_vals": results["q1"],
                 "train/q2_vals": results["q2"],
-                "train/log_pi": results["logp_pi"],
+                "train/entropy": results["entropy"],
                 "train/loss_pi": results["pi_loss"],
                 "train/loss_q1": results["q1_loss"],
                 "train/loss_q2": results["q2_loss"],

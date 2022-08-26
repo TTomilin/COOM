@@ -6,7 +6,6 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import Conv2D, Flatten, Dense, Activation, LayerNormalization, Concatenate
 
-
 EPS = 1e-8
 
 LOG_STD_MAX = 2
@@ -118,28 +117,14 @@ class MlpActor(Model):
         obs = tf.transpose(obs, [0, 2, 3, 1])
         initial_obs = obs
 
-        obs = self.core([obs, one_hot_task_id])
-        mu = self.head_mu(obs)
-        log_std = self.head_log_std(obs)
+        logits = self.core([obs, one_hot_task_id])
+        mu = self.head_mu(logits)
 
         if self.num_heads > 1:
             # FIXME This will fail since the observation does not contain the one-hot encoded task id vector
             mu = _choose_head(mu, initial_obs, self.num_heads)
-            log_std = _choose_head(log_std, initial_obs, self.num_heads)
 
-        log_std = tf.clip_by_value(log_std, LOG_STD_MIN, LOG_STD_MAX)
-        std = tf.exp(log_std)
-        pi = mu + tf.random.normal(tf.shape(input=mu)) * std
-        logp_pi = gaussian_likelihood(pi, mu, log_std)
-
-        mu, pi, logp_pi = apply_squashing_func(mu, pi, logp_pi)
-
-        # Make sure actions are in correct range
-        # action_scale = self.action_space.n  # TODO Verify whether this is necessary for discrete action spaces
-        # mu *= action_scale
-        # pi *= action_scale
-
-        return mu, log_std, pi, logp_pi
+        return mu
 
     @property
     def common_variables(self) -> List[tf.Variable]:
@@ -159,6 +144,7 @@ class MlpCritic(Model):
     def __init__(
         self,
         state_space: gym.spaces.Box,
+        action_space: gym.spaces.Discrete,
         num_tasks: int,
         hidden_sizes: Iterable[int] = (256, 256),
         activation: Callable = tf.tanh,
@@ -174,18 +160,17 @@ class MlpCritic(Model):
 
         self.core = mlp(*state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm=use_layer_norm)
         self.head = tf.keras.Sequential(
-            [Input(shape=(hidden_sizes[-1],)), Dense(num_heads)]
+            [Input(shape=(hidden_sizes[-1],)), Dense(num_heads * action_space.n)]
         )
 
     # def call(self, x: tf.Tensor, a: tf.Tensor) -> tf.Tensor:
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
         obs = tf.transpose(obs, [0, 2, 3, 1])
         initial_obs = obs
-        # x = self.head(self.core(tf.concat([x, a], axis=-1)))
         obs = self.head(self.core([obs, one_hot_task_id]))
         if self.num_heads > 1:
+            # TODO fix for multiple heads, currently output it num_heads * actions
             obs = _choose_head(obs, initial_obs, self.num_heads)
-        obs = tf.squeeze(obs, axis=1)
         return obs
 
     @property

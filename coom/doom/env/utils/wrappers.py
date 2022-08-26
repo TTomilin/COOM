@@ -7,7 +7,7 @@ from gym.spaces import Box
 
 
 class RescaleWrapper(gym.Wrapper):
-    """Scales the observation space to [-1, 1]."""
+    """Rescale the observation space to [-1, 1]."""
 
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
@@ -39,7 +39,7 @@ class NormalizeWrapper(gym.Wrapper):
 
 
 class ResizeWrapper(gym.Wrapper):
-    """Rescale the observation space."""
+    """Resize the observation space."""
 
     def __init__(self, env, height=84, width=84):
         gym.Wrapper.__init__(self, env)
