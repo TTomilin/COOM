@@ -73,6 +73,6 @@ def main(logger: EpochLogger, args: Namespace):
 
 if __name__ == "__main__":
     args = single_parse_args()
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     init_wandb(args)
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     main(logger, args)

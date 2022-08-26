@@ -217,6 +217,8 @@ class Logger:
             if "tensorboard" in self.logger_output:
                 tf.summary.scalar(key, data=val, step=step)
 
+        if "tensorboard" in self.logger_output:
+            tf.summary.flush()
         print("-" * n_slashes, flush=True)
         if self.output_file is not None:
             if self.first_row:

@@ -52,7 +52,8 @@ def init_wandb(cfg):
         cfg.wandb_unique_id = f'{cfg.algorithm}_seed_{cfg.seed}_{datetime.now().strftime("%Y%m%d_%H%M%S_%f")}'
 
     logging.info(
-        f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_user}, group: {cfg.wandb_group}, unique_id: {cfg.wandb_unique_id}')
+        f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_user}, '
+        f'group: {cfg.wandb_group}, unique_id: {cfg.wandb_unique_id}')
 
     # this can fail occasionally, so we try a couple more times
     @retry(3, exceptions=(Exception,))

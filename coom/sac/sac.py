@@ -467,7 +467,7 @@ class SAC:
         self.logger.log_tabular("current_task_steps", current_task_timestep + 1)
         self.logger.log_tabular("train/q1_vals", with_min_and_max=True)
         self.logger.log_tabular("train/q2_vals", with_min_and_max=True)
-        self.logger.log_tabular("train/log_pi", with_min_and_max=True)
+        self.logger.log_tabular("train/entropy", with_min_and_max=True)
         self.logger.log_tabular("train/loss_pi", average_only=True)
         self.logger.log_tabular("train/loss_q1", average_only=True)
         self.logger.log_tabular("train/loss_q2", average_only=True)
