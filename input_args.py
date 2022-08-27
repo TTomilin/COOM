@@ -522,10 +522,10 @@ def single_parse_args(args=None):
     )
     # WandB
     parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
-    parser.add_argument('--wandb_user', default=None, type=str, help='WandB username (entity).')
+    parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
     parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
     parser.add_argument('--wandb_group', default=None, type=str, help='WandB "Group". Name of the env by default.')
-    parser.add_argument('--wandb_job_type', default='default', type=str, help='WandB job type')
+    parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')

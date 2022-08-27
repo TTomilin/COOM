@@ -49,10 +49,10 @@ def init_wandb(cfg):
 
     if 'wandb_unique_id' not in cfg:
         # if we're going to restart the experiment, this will be saved to a json file
-        cfg.wandb_unique_id = f'{cfg.algorithm}_seed_{cfg.seed}_{datetime.now().strftime("%Y%m%d_%H%M%S_%f")}'
+        cfg.wandb_unique_id = f'{cfg.algorithm}_seed_{cfg.seed}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
 
     logging.info(
-        f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_user}, '
+        f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_entity}, '
         f'group: {cfg.wandb_group}, unique_id: {cfg.wandb_unique_id}')
 
     # this can fail occasionally, so we try a couple more times
@@ -60,11 +60,10 @@ def init_wandb(cfg):
     def init_wandb_func():
         wandb.init(
             dir=cfg.wandb_dir,
-            project=cfg.wandb_project, entity=cfg.wandb_user, sync_tensorboard=True,
+            project=cfg.wandb_project, entity=cfg.wandb_entity, sync_tensorboard=True,
             id=cfg.wandb_unique_id,
             name=cfg.wandb_unique_id,
             group=cfg.wandb_group, job_type=cfg.wandb_job_type, tags=cfg.wandb_tags,
-            # resume=True,
             resume=False,
             settings=wandb.Settings(start_method='fork'),
         )
