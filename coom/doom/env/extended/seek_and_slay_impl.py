@@ -59,3 +59,20 @@ class SeekAndSlayImpl(SeekAndSlay):
         self.ammo_used = 0
         self.hits_taken = 0
         self.distance_buffer.clear()
+
+    def get_available_actions(self):
+        actions = []
+        m_forward = [[0.0], [1.0]]
+        t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+        attack = [[0.0], [1.0]]
+        speed = [[0.0], [1.0]]
+
+        for t in t_left_right:
+            for m in m_forward:
+                for a in attack:
+                    if self.add_speed and m == [1.0]:
+                        for s in speed:
+                            actions.append(t + m + a + s)
+                    else:
+                        actions.append(t + m + a)
+        return actions

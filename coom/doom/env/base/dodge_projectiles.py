@@ -5,6 +5,13 @@ from coom.doom.env.base.scenario import DoomEnv
 
 
 class DodgeProjectiles(DoomEnv):
+    """
+    In this scenario, the agent is positioned in one end of a rectangular room, facing the opposite wall. Immobile
+    enemies, equipped with projectile attacks, are lined up in front of the opposing wall, equal distance from one
+    another. The objective is to survive as long as possible, ultimately until the termination of the episode. The agent
+    is given no weapon nor ammunition and can only move laterally to dodge enemy projectiles. The agent is rewarded for
+    each frame that it survives.
+    """
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, frame_survived_reward=0.01):
         super().__init__(args, task, task_id, num_tasks)

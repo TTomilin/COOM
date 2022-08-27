@@ -223,12 +223,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--frame-skip', type=int, default=4)
     parser.add_argument('--resume-path', type=str, default=None)
     parser.add_argument('--save_interval', type=int, default=20)
-    parser.add_argument(
-        '--watch',
-        default=False,
-        action='store_true',
-        help='watch the play of pre-trained policy only'
-    )
+    parser.add_argument('--watch', default=False, action='store_true', help='watch the play of pre-trained policy only')
     parser.add_argument(
         '--save-lmp',
         default=False,
@@ -382,6 +377,7 @@ def single_parse_args(args=None):
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=['default'])
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
+    parser.add_argument('--watch', default=False, action='store_true', help='watch the play of pre-trained policy only')
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"], default=["tsv", "tensorboard"], help="Types of logger used.")
     parser.add_argument("--group_id", type=str, default="default_group", help="Group ID, for grouping logs from different experiments into common directory")

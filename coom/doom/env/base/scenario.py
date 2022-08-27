@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Any, List
 import gym
 import numpy as np
 import vizdoom as vzd
-from vizdoom import ScreenResolution
+from vizdoom import ScreenResolution, Button
 
 
 class DoomEnv(gym.Env):
@@ -16,35 +16,39 @@ class DoomEnv(gym.Env):
         self.task_id = task_id
         self.num_tasks = num_tasks
         self.frame_skip = args.frame_skip
-        # TODO remove hard coded path
-        wad_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{task}.wad"
+
+        # Create the Doom game instance
         self.game = vzd.DoomGame()
         self.game.load_config(args.cfg_path)
-        self.game.set_doom_scenario_path(wad_path)
+        self.game.set_doom_scenario_path(f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{task}.wad")  # TODO remove hard coded path
         self.game.set_window_visible(args.render)
-        if args.watch:
+        if args.watch or args.render:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
-        self.game_res = (self.game.get_screen_height(), self.game.get_screen_width())
-        self.observation_space = gym.spaces.Box(
-            low=0, high=255, shape=self.game_res, dtype=np.uint8
-        )
+        if args.add_speed:  # Add SPEED action to the available in-game actions
+            actions = self.game.get_available_buttons()
+            actions.append(Button.SPEED)
+            self.game.set_available_buttons(actions)
         self.game.init()
 
-        # Initialize and fill game variable queue
+        # Define the observation space
+        self.game_res = (self.game.get_screen_height(), self.game.get_screen_width())
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.game_res, dtype=np.uint8)
+
+        # Define the action space
+        self.available_actions = self.get_available_actions()
+        self.action_num = len(self.available_actions)
+        self.action_space = gym.spaces.Discrete(self.action_num)
+
+        # Initialize the game variable queue
         self.game_variable_buffer = deque(maxlen=args.variable_queue_len)
         for _ in range(args.variable_queue_len):
             self.game_variable_buffer.append(self.game.get_state().game_variables)
 
         self.extra_statistics = ['kills', 'health', 'ammo', 'movement', 'kits_obtained', 'hits_taken']
-        self.available_actions = self.get_available_actions()
-        self.action_num = len(self.available_actions)
-        self.action_space = gym.spaces.Discrete(self.action_num)
-        self.spec = gym.envs.registration.EnvSpec("coom-v0")
-        self.count = 0
+        self.spec = gym.envs.registration.EnvSpec(f"{task}-v0")
 
     def reset(self) -> np.ndarray:
         self.game.new_episode()
-        self.count += 1
         self.clear_episode_statistics()
         return self.game.get_state().screen_buffer
 
