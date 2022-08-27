@@ -44,7 +44,6 @@ class DoomEnv(gym.Env):
         for _ in range(args.variable_queue_len):
             self.game_variable_buffer.append(self.game.get_state().game_variables)
 
-        self.extra_statistics = ['kills', 'health', 'ammo', 'movement', 'kits_obtained', 'hits_taken']
         self.spec = gym.envs.registration.EnvSpec(f"{task}-v0")
 
     def reset(self) -> np.ndarray:
@@ -73,7 +72,7 @@ class DoomEnv(gym.Env):
     def get_available_actions(self) -> List[List[float]]:
         raise NotImplementedError
 
-    def get_statistics(self) -> Dict[str, float]:
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
         return {}
 
     def render(self, mode="human"):

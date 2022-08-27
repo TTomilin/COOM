@@ -3,12 +3,12 @@ import os
 import time
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
 from tensorflow.python.ops.distributions.categorical import Categorical
 
+from coom.doom.env.base.scenario import DoomEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -20,17 +20,16 @@ from coom.utils.utils import reset_optimizer, reset_weights, set_seed
 class SAC:
     def __init__(
             self,
-            env: gym.Env,
-            test_envs: List[gym.Env],
+            env: DoomEnv,
+            test_envs: List[DoomEnv],
             logger: EpochLogger,
             actor_cl: type = models.MlpActor,
-            actor_kwargs: Dict = None,
             critic_cl: type = models.MlpCritic,
-            critic_kwargs: Dict = None,
+            policy_kwargs: Dict = None,
             seed: int = 0,
             steps: int = 1_000_000,
             log_every: int = 20_000,
-            replay_size: int = 10000,  # TODO optimize this
+            replay_size: int = 100000,
             gamma: float = 0.99,
             polyak: float = 0.995,
             lr: float = 1e-3,
@@ -108,17 +107,15 @@ class SAC:
         """
         set_seed(seed, env=env)
 
-        if actor_kwargs is None:
-            actor_kwargs = {}
-        if critic_kwargs is None:
-            critic_kwargs = {}
+        if policy_kwargs is None:
+            policy_kwargs = {}
 
         self.env = env
         self.num_tasks = env.num_tasks
         self.test_envs = test_envs
         self.logger = logger
         self.critic_cl = critic_cl
-        self.critic_kwargs = critic_kwargs
+        self.policy_kwargs = policy_kwargs
         self.steps = steps
         self.log_every = log_every
         self.replay_size = replay_size
@@ -146,13 +143,10 @@ class SAC:
         print("Observations shape:", self.obs_shape)  # should be N_FRAMES x H x W
         print("Actions shape:", self.act_dim)
 
-        # Share information about action space with policy architecture
-        actor_kwargs["state_space"] = env.observation_space
-        actor_kwargs["action_space"] = env.action_space
-        actor_kwargs["num_tasks"] = env.num_tasks
-        critic_kwargs["state_space"] = env.observation_space
-        critic_kwargs["action_space"] = env.action_space
-        critic_kwargs["num_tasks"] = env.num_tasks
+        # Share environment information with the policy architecture
+        policy_kwargs["state_space"] = env.observation_space
+        policy_kwargs["action_space"] = env.action_space
+        policy_kwargs["num_tasks"] = env.num_tasks
 
         # Create experience buffer
         if buffer_type == BufferType.FIFO:
@@ -165,14 +159,14 @@ class SAC:
             )
 
         # Create actor and critic networks
-        self.actor = actor_cl(**actor_kwargs)
+        self.actor = actor_cl(**policy_kwargs)
 
-        self.critic1 = critic_cl(**critic_kwargs)
-        self.target_critic1 = critic_cl(**critic_kwargs)
+        self.critic1 = critic_cl(**policy_kwargs)
+        self.target_critic1 = critic_cl(**policy_kwargs)
         self.target_critic1.set_weights(self.critic1.get_weights())
 
-        self.critic2 = critic_cl(**critic_kwargs)
-        self.target_critic2 = critic_cl(**critic_kwargs)
+        self.critic2 = critic_cl(**policy_kwargs)
+        self.target_critic2 = critic_cl(**policy_kwargs)
         self.target_critic2.set_weights(self.critic2.get_weights())
 
         self.critic_variables = self.critic1.trainable_variables + self.critic2.trainable_variables
@@ -405,7 +399,7 @@ class SAC:
     def test_agent(self, deterministic, num_episodes) -> None:
         mode = "deterministic" if deterministic else "stochastic"
         for seq_idx, test_env in enumerate(self.test_envs):
-            key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}/"
+            key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
             one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
             self.on_test_start(seq_idx)
@@ -419,14 +413,15 @@ class SAC:
                     )
                     episode_return += reward
                     episode_len += 1
-                self.logger.store(
-                    {key_prefix + "return": episode_return, key_prefix + "ep_length": episode_len}
-                )
+                self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+                self.logger.store(self.env.get_statistics(key_prefix))
 
             self.on_test_end(seq_idx)
 
-            self.logger.log_tabular(key_prefix + "return", with_min_and_max=True)
-            self.logger.log_tabular(key_prefix + "ep_length", average_only=True)
+            self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
+            self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
+            for stat in self.env.get_statistics(key_prefix).keys():
+                self.logger.log_tabular(stat, average_only=True)
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -476,9 +471,9 @@ class SAC:
                 self.logger.log_tabular(f"train/popart_std/{task_idx}", average_only=True)
         self.logger.log_tabular("train/loss_reg", average_only=True)
         self.logger.log_tabular("train/agem_violation", average_only=True)
+        for stat in self.env.get_statistics('train').keys():
+            self.logger.log_tabular(stat, average_only=True)
 
-        # avg_success = np.mean(self.env.pop_successes())
-        # self.logger.log_tabular("train/success", avg_success)
         if "seq_idx" in info:
             self.logger.log_tabular("train/active_env", info["seq_idx"])
 
@@ -510,9 +505,9 @@ class SAC:
                 obs_shape=self.obs_shape, act_dim=self.act_dim, size=self.replay_size
             )
         if self.reset_critic_on_task_change:
-            reset_weights(self.critic1, self.critic_cl, self.critic_kwargs)
+            reset_weights(self.critic1, self.critic_cl, self.policy_kwargs)
             self.target_critic1.set_weights(self.critic1.get_weights())
-            reset_weights(self.critic2, self.critic_cl, self.critic_kwargs)
+            reset_weights(self.critic2, self.critic_cl, self.policy_kwargs)
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
@@ -549,9 +544,7 @@ class SAC:
             # Until start_steps have elapsed, randomly sample actions
             # from a uniform distribution for better exploration. Afterwards,
             # use the learned policy.
-            if current_task_timestep > self.start_steps or (
-                    self.agent_policy_exploration and current_task_idx > 0
-            ):
+            if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
                 action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec)).numpy()[0]
             else:
@@ -574,15 +567,14 @@ class SAC:
             # End of trajectory handling
             if done:
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len})
+                self.logger.store(self.env.get_statistics('train'))
+                self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
                 if global_timestep < self.steps - 1:
                     obs = self.env.reset()
 
             # Update handling
-            if (
-                    current_task_timestep >= self.update_after
-                    and current_task_timestep % self.update_every == 0
-            ):
+            if (current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0):
 
                 for j in range(self.update_every):
                     batch = self.replay_buffer.sample_batch(self.batch_size)
@@ -609,7 +601,7 @@ class SAC:
                 if (epoch % self.save_freq_epochs == 0) or (global_timestep + 1 == self.steps):
                     self.save_model(current_task_idx)
 
-                # Test the performance of stochastic and detemi version of the agent.
+                # Test the performance of stochastic and deterministic version of the agent.
                 self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
                 self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
 

@@ -46,13 +46,13 @@ class SeekAndSlayImpl(SeekAndSlay):
                        self.game_variable_buffer[0][4]]
         return spatial.distance.euclidean(current_coords, past_coords)
 
-    def get_statistics(self) -> Dict[str, float]:
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
-        statistics = {'health': variables[0],
-                      'kills': variables[1],
-                      'ammo': self.ammo_used,
-                      'movement': np.mean(self.distance_buffer),
-                      'hits_taken': self.hits_taken}
+        statistics = {f'{mode}/health': variables[0],
+                      f'{mode}/kills': variables[1],
+                      f'{mode}/ammo': self.ammo_used,
+                      f'{mode}/movement': np.mean(self.distance_buffer).round(3),
+                      f'{mode}/hits_taken': self.hits_taken}
         return statistics
 
     def clear_episode_statistics(self) -> None:

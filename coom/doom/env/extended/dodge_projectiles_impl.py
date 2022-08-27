@@ -20,8 +20,8 @@ class DodgeProjectilesImpl(DodgeProjectiles):
             self.hits_taken += 1
         return reward
 
-    def get_statistics(self) -> Dict[str, float]:
-        return {'hits_taken': self.hits_taken}
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+        return {f'{mode}/hits_taken': self.hits_taken}
 
     def clear_episode_statistics(self) -> None:
         self.hits_taken = 0

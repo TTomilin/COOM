@@ -24,12 +24,7 @@ class DoomScenario(Enum):
 
 
 def main(logger: EpochLogger, args: Namespace):
-    actor_kwargs = dict(
-        hidden_sizes=args.hidden_sizes,
-        activation=get_activation_from_str(args.activation),
-        use_layer_norm=args.use_layer_norm,
-    )
-    critic_kwargs = dict(
+    policy_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
         use_layer_norm=args.use_layer_norm,
@@ -58,8 +53,7 @@ def main(logger: EpochLogger, args: Namespace):
         log_every=args.log_every,
         replay_size=args.replay_size,
         batch_size=args.batch_size,
-        actor_kwargs=actor_kwargs,
-        critic_kwargs=critic_kwargs,
+        policy_kwargs=policy_kwargs,
         lr=args.lr,
         alpha=args.alpha,
         gamma=args.gamma,

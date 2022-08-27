@@ -20,8 +20,8 @@ class HealthGatheringImpl(HealthGathering):
             self.kits_obtained += 1
         return reward
 
-    def get_statistics(self) -> Dict[str, float]:
-        return {'kits_obtained': self.kits_obtained}
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+        return {f'{mode}/kits_obtained': self.kits_obtained}
 
     def clear_episode_statistics(self) -> None:
         self.kits_obtained = 0

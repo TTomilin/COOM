@@ -294,7 +294,7 @@ class EpochLogger(Logger):
         else:
             stats = self.get_stats(key)
             super().log_tabular(key if average_only else key + "/avg", stats[0])
-            if not (average_only):
+            if not average_only:
                 super().log_tabular(key + "/std", stats[1])
             if with_min_and_max:
                 super().log_tabular(key + "/max", stats[3])

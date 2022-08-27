@@ -24,6 +24,6 @@ class DefendTheCenterImpl(DefendTheCenter):
 
         return reward
 
-    def get_statistics(self) -> Dict[str, float]:
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
-        return {'kills': variables[0], 'ammo': variables[2]}
+        return {f'{mode}/kills': variables[0], f'{mode}/ammo': variables[2]}
