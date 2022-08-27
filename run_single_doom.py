@@ -46,15 +46,12 @@ def main(logger: EpochLogger, args: Namespace):
     one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
     one_hot_len = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
 
-    env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    env = ResizeWrapper(env, args.frame_height, args.frame_width)
-    env = RescaleWrapper(env)
-    env = NormalizeObservation(env)
-    env = FrameStack(env, args.frame_stack)
+    env = create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task)
+    test_envs = [create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task) for task in args.test_tasks]
 
     sac = SAC(
         env,
-        [env],
+        test_envs,
         logger,
         seed=args.seed,
         steps=args.steps,
@@ -69,6 +66,15 @@ def main(logger: EpochLogger, args: Namespace):
         target_output_std=args.target_output_std,
     )
     sac.run()
+
+
+def create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task):
+    env = scenario_class(args, task, one_hot_idx, one_hot_len)
+    env = ResizeWrapper(env, args.frame_height, args.frame_width)
+    env = RescaleWrapper(env)
+    env = NormalizeObservation(env)
+    env = FrameStack(env, args.frame_stack)
+    return env
 
 
 if __name__ == "__main__":

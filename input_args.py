@@ -382,7 +382,7 @@ def single_parse_args(args=None):
         type=str,
         nargs="+",
         choices=["neptune", "tensorboard", "tsv"],
-        default=["tsv"],
+        default=["tensorboard"],
         help="Types of logger used.",
     )
     parser.add_argument(
