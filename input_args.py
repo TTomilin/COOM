@@ -376,109 +376,29 @@ def mt_parse_args(args=None):
 
 def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
-    parser.add_argument("--task", type=str, help="Name of the task")
-    parser.add_argument(
-        "--logger_output",
-        type=str,
-        nargs="+",
-        choices=["neptune", "tensorboard", "tsv"],
-        default=["tensorboard"],
-        help="Types of logger used.",
-    )
-    parser.add_argument(
-        "--group_id",
-        type=str,
-        default="default_group",
-        help="Group ID, for grouping logs from different experiments into common directory",
-    )
-    parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
-    parser.add_argument(
-        "--steps", type=sci2int, default=int(1e6), help="Number of steps the algorithm will run for"
-    )
-    parser.add_argument(
-        "--log_every",
-        type=sci2int,
-        default=int(2e4),
-        help="Number of steps between subsequent evaluations and logging",
-    )
-    parser.add_argument(
-        "--replay_size", type=sci2int, default=int(1e4), help="Size of the replay buffer"
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=128, help="Minibatch size for the optimization"
-    )
-    parser.add_argument(
-        "--hidden_sizes",
-        type=int,
-        nargs="+",
-        # default=[256, 256, 256, 256],
-        default=[256, 256],
-        help="Hidden sizes list for the MLP models",
-    )
-    parser.add_argument(
-        "--activation", type=str, default="lrelu", help="Activation kind for the models"
-    )
-    parser.add_argument(
-        "--use_layer_norm",
-        type=str2bool,
-        default=True,
-        help="Whether or not use layer normalization",
-    )
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
-    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
-    parser.add_argument(
-        "--alpha",
-        type=float_or_str,
-        default="auto",
-        help="Entropy regularization coefficient. "
-             "Can be either float value, or 'auto', in which case it is dynamically tuned.",
-    )
-    parser.add_argument(
-        "--target_output_std",
-        type=float,
-        default=0.089,
-        help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation "
-             "of the action distribution on every dimension matches target_output_std.",
-    )
-
-    parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
+    parser.add_argument('--scenario', type=str, default=None, choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
     parser.add_argument('--algorithm', type=str, default='sac', choices=['sac'])
+    parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=['default'])
-    parser.add_argument('--eps-test', type=float, default=0.005)
-    parser.add_argument('--eps-train', type=float, default=1.)
-    parser.add_argument('--eps-train-final', type=float, default=0.05)
-    parser.add_argument('--buffer-size', type=int, default=100000)
-    # parser.add_argument('--lr', type=float, default=0.00002)
-    # parser.add_argument('--alpha', type=float, default=0.6)
-    parser.add_argument('--beta', type=float, default=0.4)
-    parser.add_argument('--num-atoms', type=int, default=51)
-    parser.add_argument('--v-min', type=float, default=-10.)
-    parser.add_argument('--v-max', type=float, default=10.)
-    parser.add_argument('--n-step', type=int, default=3)
-    parser.add_argument('--target-update-freq', type=int, default=500)
-    parser.add_argument('--epoch', type=int, default=300)
-    parser.add_argument('--step-per-epoch', type=int, default=100000)
-    parser.add_argument('--step-per-collect', type=int, default=1000)
-    parser.add_argument('--repeat-per-collect', type=int, default=4)
-    parser.add_argument('--update-per-step', type=float, default=0.1)
-    parser.add_argument('--batch-size', type=int, default=256)
-    parser.add_argument('--hidden-size', type=int, default=512)
-    parser.add_argument('--training-num', type=int, default=10)
-    parser.add_argument('--test-num', type=int, default=100)
-    parser.add_argument('--rew-norm', type=int, default=False)
-    parser.add_argument('--vf-coef', type=float, default=0.5)
-    parser.add_argument('--ent-coef', type=float, default=0.01)
-    parser.add_argument('--gae-lambda', type=float, default=0.95)
-    parser.add_argument('--lr-decay', type=int, default=True)
-    parser.add_argument('--max-grad-norm', type=float, default=0.5)
-    parser.add_argument('--eps-clip', type=float, default=0.2)
-    parser.add_argument('--dual-clip', type=float, default=None)
-    parser.add_argument('--value-clip', type=int, default=0)
-    parser.add_argument('--norm-adv', type=int, default=1)
-    parser.add_argument('--recompute-adv', type=int, default=0)
-    parser.add_argument('--logdir', type=str, default='log')
+    parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
+    # Logging
+    parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"], default=["tsv", "tensorboard"], help="Types of logger used.")
+    parser.add_argument("--group_id", type=str, default="default_group", help="Group ID, for grouping logs from different experiments into common directory")
+    parser.add_argument("--log_every", type=sci2int, default=int(1000), help="Number of steps between subsequent evaluations and logging")
+    # Model
+    parser.add_argument("--hidden_sizes", type=int, nargs="+", default=[256, 256], help="Hidden sizes list for the MLP models")
+    parser.add_argument("--activation", type=str, default="lrelu", help="Activation kind for the models")
+    parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
+    # Learning
+    parser.add_argument("--steps", type=sci2int, default=int(1e7), help="Number of steps the algorithm will run for")
+    parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
+    parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
+    parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
+    parser.add_argument("--alpha", type=float_or_str, default="auto", help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
+    parser.add_argument("--target_output_std", type=float, default=0.089, help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
+    # DOOM
     parser.add_argument('--render_sleep', type=float, default=0.)
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--variable_queue_len', type=int, default=5)
@@ -487,39 +407,6 @@ def single_parse_args(args=None):
     parser.add_argument('--frame-width', type=int, default=84)
     parser.add_argument('--frame-stack', type=int, default=4)
     parser.add_argument('--frame-skip', type=int, default=4)
-    parser.add_argument('--resume-path', type=str, default=None)
-    parser.add_argument('--save_interval', type=int, default=20)
-    parser.add_argument(
-        '--watch',
-        default=False,
-        action='store_true',
-        help='watch the play of pre-trained policy only'
-    )
-    parser.add_argument(
-        '--save-lmp',
-        default=False,
-        action='store_true',
-        help='save lmp file for replay whole episode'
-    )
-    parser.add_argument('--save-buffer-name', type=str, default=None)
-    parser.add_argument(
-        '--icm-lr-scale',
-        type=float,
-        default=0.,
-        help='use intrinsic curiosity module with this lr scale'
-    )
-    parser.add_argument(
-        '--icm-reward-scale',
-        type=float,
-        default=0.01,
-        help='scaling factor for intrinsic curiosity reward'
-    )
-    parser.add_argument(
-        '--icm-forward-loss-weight',
-        type=float,
-        default=0.2,
-        help='weight for the forward model loss in ICM'
-    )
     # WandB
     parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
@@ -534,8 +421,7 @@ def single_parse_args(args=None):
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
     parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
     parser.add_argument('--ammo_used_penalty', default=0.1, type=float, help='Negative reward for using ammo')
-    parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float,
-                        help='Reward scaler for traversing the map')
+    parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float, help='Reward scaler for traversing the map')
     parser.add_argument('--add_speed', default=False, action='store_true')
 
     return parser.parse_args(args=args)

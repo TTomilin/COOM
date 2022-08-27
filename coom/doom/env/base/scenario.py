@@ -15,7 +15,6 @@ class DoomEnv(gym.Env):
         self.name = task
         self.task_id = task_id
         self.num_tasks = num_tasks
-        self.save_lmp = args.save_lmp
         self.frame_skip = args.frame_skip
         # TODO remove hard coded path
         wad_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{task}.wad"
