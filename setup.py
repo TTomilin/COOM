@@ -6,6 +6,8 @@ required = [
     "pandas",
     "matplotlib",
     "seaborn",
+    "wandb",
+    "vizdoom"
 ]
 
 setup(

@@ -148,3 +148,5 @@ mjkey.txt
 /logs
 checkpoints
 /results
+/wandb
+_vizdoom.ini
