@@ -12,7 +12,7 @@ from input_args import cl_parse_args
 
 
 def main(
-    logger: EpochLogger,\
+    logger: EpochLogger,
     args: Namespace,
     # tasks: str,
     # task_list: List[str],

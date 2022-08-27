@@ -2,13 +2,11 @@ from argparse import Namespace
 from enum import Enum
 from pathlib import Path
 
-from gym.wrappers import FrameStack, NormalizeObservation
-
 from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
 from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
 from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
 from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
-from coom.doom.env.utils.wrappers import RescaleWrapper, ResizeWrapper
+from coom.envs import get_single_env
 from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.utils import get_activation_from_str
@@ -41,8 +39,8 @@ def main(logger: EpochLogger, args: Namespace):
     one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
     one_hot_len = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
 
-    env = create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task)
-    test_envs = [create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task) for task in args.test_tasks]
+    env = get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len)
+    test_envs = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_tasks]
 
     sac = SAC(
         env,
@@ -60,15 +58,6 @@ def main(logger: EpochLogger, args: Namespace):
         target_output_std=args.target_output_std,
     )
     sac.run()
-
-
-def create_doom_env(args, one_hot_idx, one_hot_len, scenario_class, task):
-    env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    env = ResizeWrapper(env, args.frame_height, args.frame_width)
-    env = RescaleWrapper(env)
-    env = NormalizeObservation(env)
-    env = FrameStack(env, args.frame_stack)
-    return env
 
 
 if __name__ == "__main__":
