@@ -6,6 +6,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 import tensorflow as tf
+from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
 from tensorflow.python.framework import dtypes
 from tensorflow.python.ops.distributions.categorical import Categorical
 
@@ -185,7 +186,7 @@ class SAC:
         elif lr_decay == 'linear':
             lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 initial_learning_rate=lr,
-                decay_steps=steps,
+                decay_steps=steps // 10,
                 end_learning_rate=1e-5,
                 power=1.0,
                 cycle=False,
@@ -466,9 +467,10 @@ class SAC:
                     }
                 )
 
-    def _log_after_epoch(self, epoch, current_task_timestep, global_timestep, info):
+    def _log_after_epoch(self, epoch, current_task_timestep, global_timestep, info, learning_rate):
         # Log info about epoch
         self.logger.log_tabular("epoch", epoch)
+        self.logger.log_tabular("learning_rate", learning_rate)
         self.logger.log_tabular("train/return", with_min_and_max=True)
         self.logger.log_tabular("train/ep_length", average_only=True)
         self.logger.log_tabular("total_env_steps", global_timestep + 1)
@@ -618,7 +620,12 @@ class SAC:
                 self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
                 self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
 
-                self._log_after_epoch(epoch, current_task_timestep, global_timestep, info)
+                # Determine the current learning rate of the optimizer
+                lr = self.optimizer.lr
+                if issubclass(type(lr), LearningRateSchedule):
+                    lr = self.optimizer._decayed_lr('float32').numpy()
+
+                self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
 
             current_task_timestep += 1
 
