@@ -257,6 +257,7 @@ def single_parse_args(args=None):
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
+    parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
     # Scenario specific
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
