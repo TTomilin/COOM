@@ -56,7 +56,7 @@ def mlp(
         model = Activation(tf.nn.tanh)(model)
     else:
         model = Activation(activation)(model)
-    for size in hidden_sizes[1:]:  # TODO Try adding more dense layer here
+    for size in hidden_sizes[1:]:  # TODO Try adding more dense layers here
         model = Dense(size, activation=activation)(model)
     model = Model(inputs=[conv_in, task_input], outputs=model)
     return model
@@ -104,12 +104,6 @@ class MlpActor(Model):
                 Dense(action_space.n * num_heads),
             ]
         )
-        self.head_log_std = tf.keras.Sequential(
-            [
-                Input(shape=(hidden_sizes[-1],)),
-                Dense(action_space.n * num_heads),
-            ]
-        )
         self.action_space = action_space
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
@@ -130,11 +124,7 @@ class MlpActor(Model):
         if self.num_heads > 1:
             return self.core.trainable_variables
         elif self.num_heads == 1:
-            return (
-                self.core.trainable_variables
-                + self.head_mu.trainable_variables
-                + self.head_log_std.trainable_variables
-            )
+            return self.core.trainable_variables + self.head_mu.trainable_variables
 
 
 class MlpCritic(Model):

@@ -261,7 +261,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        # @tf.function
+        @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
@@ -327,7 +327,7 @@ class SAC:
             target_q2 = self.target_critic2(next_obs, one_hot)
 
             # Min Double-Q:
-            min_q = dist.probs * tf.stop_gradient(tf.minimum(q1, q2))
+            min_q = dist.probs * tf.stop_gradient(tf.minimum(q1, q2))  # TODO Recalculate q1 & q2 with stop grad?
             min_target_q = dist_next.probs * tf.minimum(target_q1, target_q2)
 
             # Entropy-regularized Bellman backup for Q functions, using Clipped Double-Q targets
