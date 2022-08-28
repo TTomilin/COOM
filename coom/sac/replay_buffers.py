@@ -8,13 +8,13 @@ import tensorflow as tf
 class ReplayBuffer:
     """A simple FIFO experience replay buffer for SAC agents."""
 
-    def __init__(self, obs_shape: Iterable[int], size: int) -> None:
+    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
-        self.one_hot_buf = np.zeros(size, dtype=np.float32)
+        self.one_hot_buf = np.zeros([size, num_tasks], dtype=np.float32)
         self.ptr, self.size, self.max_size = 0, 0, size
 
     def store(
@@ -44,13 +44,13 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_dim: int, size: int) -> None:
+    def __init__(self, obs_dim: int, size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
-        # self.one_hot_buf[self.ptr] = one_hot
+        self.one_hot_buf = np.zeros([size, num_tasks], dtype=np.float32)
         self.size, self.max_size = 0, size
 
     def store_multiple(
@@ -72,7 +72,7 @@ class EpisodicMemory:
         self.actions_buf[range_start:range_end] = actions
         self.rewards_buf[range_start:range_end] = rewards
         self.done_buf[range_start:range_end] = done
-        # self.one_hot_buf[range_start:range_end] = one_hot
+        self.one_hot_buf[range_start:range_end] = one_hot
         self.size = self.size + len(obs)
 
     def sample_batch(self, batch_size: int) -> Dict[str, tf.Tensor]:
@@ -90,8 +90,8 @@ class EpisodicMemory:
 class ReservoirReplayBuffer(ReplayBuffer):
     """Buffer for SAC agents implementing reservoir sampling."""
 
-    def __init__(self, obs_shape: Iterable[int], size: int) -> None:
-        super().__init__(obs_shape, size)
+    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+        super().__init__(obs_shape, size, num_tasks)
         self.timestep = 0
 
     def store(

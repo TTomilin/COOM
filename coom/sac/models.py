@@ -62,23 +62,22 @@ def mlp(
     return model
 
 
-def _choose_head(out: tf.Tensor, obs: tf.Tensor, num_heads: int) -> tf.Tensor:
+def _choose_head(out: tf.Tensor, num_heads: int, one_hot_task_id: tf.Tensor) -> tf.Tensor:
     """For multi-head output, choose appropriate head.
 
     We assume that task number is one-hot encoded as a part of observation.
 
     Args:
       out: multi-head output tensor from the model
-      obs: obsevation batch. We assume that last num_heads dims is one-hot encoding of task
       num_heads: number of heads
+      one_hot_task_id one-hot encoding of the task
 
     Returns:
       tf.Tensor: output for the appropriate head
     """
     batch_size = tf.shape(out)[0]
     out = tf.reshape(out, [batch_size, -1, num_heads])
-    obs = tf.reshape(obs[:, -num_heads:], [batch_size, num_heads, 1])
-    return tf.squeeze(out @ obs, axis=2)
+    return tf.squeeze(out @ tf.expand_dims(one_hot_task_id, 2), axis=2)
 
 
 class MlpActor(Model):
@@ -115,14 +114,12 @@ class MlpActor(Model):
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         obs = tf.transpose(obs, [0, 2, 3, 1])
-        initial_obs = obs
 
         logits = self.core([obs, one_hot_task_id])
         mu = self.head_mu(logits)
 
         if self.num_heads > 1:
-            # FIXME This will fail since the observation does not contain the one-hot encoded task id vector
-            mu = _choose_head(mu, initial_obs, self.num_heads)
+            mu = _choose_head(mu, self.num_heads, one_hot_task_id)
 
         return mu
 
@@ -163,15 +160,12 @@ class MlpCritic(Model):
             [Input(shape=(hidden_sizes[-1],)), Dense(num_heads * action_space.n)]
         )
 
-    # def call(self, x: tf.Tensor, a: tf.Tensor) -> tf.Tensor:
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
         obs = tf.transpose(obs, [0, 2, 3, 1])
-        initial_obs = obs
-        obs = self.head(self.core([obs, one_hot_task_id]))
+        value = self.head(self.core([obs, one_hot_task_id]))
         if self.num_heads > 1:
-            # TODO fix for multiple heads, currently output it num_heads * actions
-            obs = _choose_head(obs, initial_obs, self.num_heads)
-        return obs
+            value = _choose_head(value, self.num_heads, one_hot_task_id)
+        return value
 
     @property
     def common_variables(self) -> List[tf.Variable]:

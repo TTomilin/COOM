@@ -83,3 +83,6 @@ class DoomEnv(gym.Env):
 
     def close(self):
         self.game.close()
+
+    def get_active_env(self):
+        return self

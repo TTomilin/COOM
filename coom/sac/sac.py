@@ -3,12 +3,12 @@ import os
 import time
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+import gym
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework import dtypes
 from tensorflow.python.ops.distributions.categorical import Categorical
 
-from coom.doom.env.base.scenario import DoomEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -20,19 +20,20 @@ from coom.utils.utils import reset_optimizer, reset_weights, set_seed
 class SAC:
     def __init__(
             self,
-            env: DoomEnv,
-            test_envs: List[DoomEnv],
+            env: gym.Env,
+            test_envs: List[gym.Env],
             logger: EpochLogger,
             actor_cl: type = models.MlpActor,
             critic_cl: type = models.MlpCritic,
             policy_kwargs: Dict = None,
             seed: int = 0,
-            steps: int = 1_000_000,
+            steps: int = 1e6,
             log_every: int = 20_000,
             replay_size: int = 100000,
             gamma: float = 0.99,
             polyak: float = 0.995,
             lr: float = 1e-3,
+            lr_decay: str = None,
             alpha: Union[float, str] = "auto",
             batch_size: int = 128,
             start_steps: int = 10_000,
@@ -151,11 +152,11 @@ class SAC:
         # Create experience buffer
         if buffer_type == BufferType.FIFO:
             self.replay_buffer = ReplayBuffer(
-                obs_shape=self.obs_shape, size=replay_size
+                obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
         elif buffer_type == BufferType.RESERVOIR:
             self.replay_buffer = ReservoirReplayBuffer(
-                obs_shape=self.obs_shape, size=replay_size
+                obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
 
         # Create actor and critic networks
@@ -175,6 +176,21 @@ class SAC:
                 + self.critic1.common_variables
                 + self.critic2.common_variables
         )
+
+        if lr_decay == 'exponential':
+            lr = tf.keras.optimizers.schedules.ExponentialDecay(
+                initial_learning_rate=lr,
+                decay_steps=steps,
+                decay_rate=0.9)
+        elif lr_decay == 'linear':
+            lr = tf.keras.optimizers.schedules.PolynomialDecay(
+                initial_learning_rate=lr,
+                decay_steps=steps,
+                end_learning_rate=1e-5,
+                power=1.0,
+                cycle=False,
+                name=None
+            )
 
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 
@@ -244,7 +260,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        @tf.function
+        # @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
@@ -502,7 +518,7 @@ class SAC:
         if self.reset_buffer_on_task_change:
             assert self.buffer_type == BufferType.FIFO
             self.replay_buffer = ReplayBuffer(
-                obs_shape=self.obs_shape, act_dim=self.act_dim, size=self.replay_size
+                obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
             )
         if self.reset_critic_on_task_change:
             reset_weights(self.critic1, self.critic_cl, self.policy_kwargs)
@@ -560,6 +576,7 @@ class SAC:
 
             # Store experience to replay buffer
             self.replay_buffer.store(obs, action, reward, next_obs, done, one_hot_vec)
+            # self.replay_buffer.store(obs, action, reward, next_obs, done, self.env.task_id)
 
             # Super critical, easy to overlook step: make sure to update most recent observation!
             obs = next_obs
@@ -574,7 +591,7 @@ class SAC:
                     obs = self.env.reset()
 
             # Update handling
-            if (current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0):
+            if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
 
                 for j in range(self.update_every):
                     batch = self.replay_buffer.sample_batch(self.batch_size)
@@ -586,12 +603,8 @@ class SAC:
                     )
                     self._log_after_update(results)
 
-            # TODO create a distinction in the environment between continual and single task learning
-            # if (
-            #     self.env.name == "ContinualLearningEnv"
-            #     and current_task_timestep + 1 == self.env.steps_per_env
-            # ):
-            #     self.on_task_end(current_task_idx)
+            if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
+                self.on_task_end(current_task_idx)
 
             # End of epoch wrap-up
             if ((global_timestep + 1) % self.log_every == 0) or (global_timestep + 1 == self.steps):

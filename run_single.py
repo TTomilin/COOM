@@ -29,11 +29,9 @@ def main(logger: EpochLogger, args: Namespace):
     )
 
     args.experiment_dir = Path(__file__).parent.resolve()
-
-    # Determine scenario and algorithm classes
-    scenario_class = DoomScenario[args.scenario.upper()].value
-
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+
+    scenario_class = DoomScenario[args.scenario.upper()].value
 
     task = 'default'
     one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
@@ -53,6 +51,7 @@ def main(logger: EpochLogger, args: Namespace):
         batch_size=args.batch_size,
         policy_kwargs=policy_kwargs,
         lr=args.lr,
+        lr_decay=args.lr_decay,
         alpha=args.alpha,
         gamma=args.gamma,
         target_output_std=args.target_output_std,

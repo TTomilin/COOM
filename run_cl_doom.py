@@ -1,7 +1,7 @@
 from argparse import Namespace
 from pathlib import Path
 
-from coom.envs import get_single_env, get_cl_env_doom, get_single_env_doom
+from coom.envs import get_cl_env
 from coom.methods.vcl import VclMlpActor
 from coom.sac.models import MlpActor
 from coom.sac.utils.logx import EpochLogger
@@ -11,58 +11,32 @@ from coom.utils.utils import get_activation_from_str
 from input_args import cl_parse_args
 
 
-def main(
-    logger: EpochLogger,
-    args: Namespace,
-    # tasks: str,
-    # task_list: List[str],
-    # seed: int,
-    # steps_per_task: int,
-    # log_every: int,
-    # replay_size: int,
-    # batch_size: int,
-    # hidden_sizes: Iterable[int],
-    # buffer_type: str,
-    # reset_buffer_on_task_change: bool,
-    # reset_optimizer_on_task_change: bool,
-    # activation: Callable,
-    # use_layer_norm: bool,
-    # lr: float,
-    # gamma: float,
-    # alpha: str,
-    # target_output_std: float,
-    # cl_method: str,
-    # packnet_retrain_steps: int,
-    # regularize_critic: bool,
-    # cl_reg_coef: float,
-    # vcl_first_task_kl: bool,
-    # episodic_mem_per_task: int,
-    # episodic_batch_size: int,
-    # reset_critic_on_task_change: bool,
-    # multihead_archs: bool,
-    # hide_task_id: bool,
-    # clipnorm: float,
-    # agent_policy_exploration: bool,
-):
-    tasks = args.tasks
+def main(logger: EpochLogger, args: Namespace):
     args.experiment_dir = Path(__file__).parent.resolve()
-    train_env = get_cl_env_doom(args)
+    args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+
+    train_env = get_cl_env(args)
     # Consider normalizing test envs in the future.
-    num_tasks = len(tasks)
-    test_envs = [
-        get_single_env_doom(args, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in enumerate(tasks)
-    ]
+    num_tasks = len(args.tasks)
+    test_envs = []
     steps = args.steps_per_task * num_tasks
 
     num_heads = num_tasks if args.multihead_archs else 1
-    actor_kwargs = dict(
-        hidden_sizes=args.hidden_sizes,
-        activation=get_activation_from_str(args.activation),
-        use_layer_norm=args.use_layer_norm,
-        num_heads=num_heads,
-        hide_task_id=args.hide_task_id,
-    )
-    critic_kwargs = dict(
+    # actor_kwargs = dict(
+    #     hidden_sizes=args.hidden_sizes,
+    #     activation=get_activation_from_str(args.activation),
+    #     use_layer_norm=args.use_layer_norm,
+    #     num_heads=num_heads,
+    #     hide_task_id=args.hide_task_id,
+    # )
+    # critic_kwargs = dict(
+    #     hidden_sizes=args.hidden_sizes,
+    #     activation=get_activation_from_str(args.activation),
+    #     use_layer_norm=args.use_layer_norm,
+    #     num_heads=num_heads,
+    #     hide_task_id=args.hide_task_id,
+    # )
+    policy_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
         use_layer_norm=args.use_layer_norm,
@@ -85,8 +59,9 @@ def main(
         "replay_size": args.replay_size,
         "batch_size": args.batch_size,
         "actor_cl": actor_cl,
-        "actor_kwargs": actor_kwargs,
-        "critic_kwargs": critic_kwargs,
+        # "actor_kwargs": actor_kwargs,
+        # "critic_kwargs": critic_kwargs,
+        "policy_kwargs": policy_kwargs,
         "buffer_type": BufferType(args.buffer_type),
         "reset_buffer_on_task_change": args.reset_buffer_on_task_change,
         "reset_optimizer_on_task_change": args.reset_optimizer_on_task_change,

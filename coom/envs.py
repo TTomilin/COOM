@@ -24,15 +24,15 @@ class DoomScenario(Enum):
 
 class ContinualLearningEnv(gym.Env):
 
-    def __init__(self, envs: List[gym.Env], steps_per_env: int) -> None:
+    def __init__(self, envs: List[DoomEnv], steps_per_env: int) -> None:
         for i in range(len(envs)):
             assert envs[0].action_space == envs[i].action_space
         self.action_space = envs[0].action_space
         self.observation_space = deepcopy(envs[0].observation_space)
         self.envs = envs
-        self.num_envs = len(envs)
+        self.num_tasks = len(envs)
         self.steps_per_env = steps_per_env
-        self.steps_limit = self.num_envs * self.steps_per_env
+        self.steps_limit = self.num_tasks * self.steps_per_env
         self.cur_step = 0
         self.cur_seq_idx = 0
 
@@ -40,9 +40,16 @@ class ContinualLearningEnv(gym.Env):
         if self.cur_step >= self.steps_limit:
             raise RuntimeError("Steps limit exceeded for ContinualLearningEnv!")
 
+    def _get_active_env(self) -> DoomEnv:
+        return self.envs[self.cur_seq_idx]
+
+    @property
+    def task_id(self):
+        return self.cur_seq_idx  # TODO perhaps need `return self._get_active_env().task_id`
+
     def step(self, action: Any) -> Tuple[np.ndarray, float, bool, Dict]:
         self._check_steps_bound()
-        obs, reward, done, info = self.envs[self.cur_seq_idx].step(action)
+        obs, reward, done, info = self._get_active_env().step(action)
         info["seq_idx"] = self.cur_seq_idx
 
         self.cur_step += 1
@@ -57,11 +64,17 @@ class ContinualLearningEnv(gym.Env):
         return obs, reward, done, info
 
     def render(self, mode="human"):
-        self.envs[self.cur_seq_idx].render(mode)
+        self._get_active_env().render(mode)
 
     def reset(self) -> np.ndarray:
         self._check_steps_bound()
-        return self.envs[self.cur_seq_idx].reset()
+        return self._get_active_env().reset()
+
+    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+        return self._get_active_env().get_statistics(mode)
+
+    def clear_episode_statistics(self) -> None:
+        return self._get_active_env().clear_episode_statistics()
 
 
 def get_cl_env(args: Namespace) -> gym.Env:
