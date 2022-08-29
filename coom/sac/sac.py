@@ -28,13 +28,15 @@ class SAC:
             critic_cl: type = models.MlpCritic,
             policy_kwargs: Dict = None,
             seed: int = 0,
-            steps: int = 1e6,
+            steps: int = 1e7,
             log_every: int = 20_000,
             replay_size: int = 100000,
             gamma: float = 0.99,
             polyak: float = 0.995,
             lr: float = 1e-3,
             lr_decay: str = None,
+            lr_decay_rate: float = 0.1,
+            lr_decay_steps: int = 1e5,
             alpha: Union[float, str] = "auto",
             batch_size: int = 128,
             start_steps: int = 10_000,
@@ -181,13 +183,13 @@ class SAC:
         if lr_decay == 'exponential':
             lr = tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=lr,
-                decay_steps=steps,
-                decay_rate=0.9)
+                decay_steps=lr_decay_steps,
+                decay_rate=lr_decay_rate)
         elif lr_decay == 'linear':
             lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 initial_learning_rate=lr,
-                decay_steps=steps // 10,
-                end_learning_rate=1e-5,
+                decay_steps=lr_decay_steps,
+                end_learning_rate=lr * lr_decay_rate,
                 power=1.0,
                 cycle=False,
                 name=None

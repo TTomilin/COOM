@@ -52,6 +52,8 @@ def main(logger: EpochLogger, args: Namespace):
         policy_kwargs=policy_kwargs,
         lr=args.lr,
         lr_decay=args.lr_decay,
+        lr_decay_rate=args.lr_decay_rate,
+        lr_decay_steps=args.lr_decay_steps,
         alpha=args.alpha,
         gamma=args.gamma,
         target_output_std=args.target_output_std,
