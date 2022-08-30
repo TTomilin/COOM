@@ -39,7 +39,7 @@ class Regularization_SAC(SAC):
         return aux_loss
 
     def on_task_start(self, current_task_idx: int) -> None:
-        super(Regularization_SAC, self).on_task_start()
+        super(Regularization_SAC, self).on_task_start(current_task_idx)
         if current_task_idx > 0:
             for old_param, new_param in zip(self.old_params, self.all_common_variables):
                 old_param.assign(new_param)
