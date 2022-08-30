@@ -56,8 +56,9 @@ def float_or_str(v: Union[float, str]) -> Union[float, str]:
         return v
 
 
-def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer, learning_rate) -> None:
-    optimizer.lr = learning_rate  # TODO Verify whether this resets the learning rate?
+def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer) -> None:
+    # Set the iterations to 0 to reset the learning rate decay.
+    optimizer.iterations.assign(tf.zeros_like(optimizer.iterations))
     # Skip the first variable, its step count.
     for var in optimizer.variables()[1:]:
         var.assign(tf.zeros_like(var))

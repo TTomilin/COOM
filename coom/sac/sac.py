@@ -127,7 +127,6 @@ class SAC:
         self.gamma = gamma
         self.polyak = polyak
         self.alpha = alpha
-        self.lr = lr
         self.batch_size = batch_size
         self.start_steps = start_steps
         self.update_after = update_after
@@ -186,12 +185,12 @@ class SAC:
         if lr_decay_steps is None:
             lr_decay_steps = steps_per_env
         if lr_decay == 'exponential':
-            self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
+            lr = tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=lr,
                 decay_steps=lr_decay_steps,
                 decay_rate=lr_decay_rate)
         elif lr_decay == 'linear':
-            self.lr = tf.keras.optimizers.schedules.PolynomialDecay(
+            lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 initial_learning_rate=lr,
                 decay_steps=lr_decay_steps,
                 end_learning_rate=lr * lr_decay_rate,
@@ -200,7 +199,7 @@ class SAC:
                 name=None
             )
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr)  # TODO Deep copy learning rate?
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
 
         # For reference on automatic alpha tuning, see
         # "Automating Entropy Adjustment for Maximum Entropy" section
@@ -536,7 +535,7 @@ class SAC:
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
-            reset_optimizer(self.optimizer, self.lr)
+            reset_optimizer(self.optimizer)
 
         # Update variables list and update function in case model changed.
         # E.g: For VCL after the first task we set trainable=False for layer
