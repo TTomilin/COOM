@@ -10,7 +10,6 @@ def cl_parse_args(args=None):
 
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
-    parser.add_argument('--algorithm', type=str, default='sac', choices=['sac'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None,
                         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
@@ -207,7 +206,6 @@ def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
-    parser.add_argument('--algorithm', type=str, default='sac', choices=['sac'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])

@@ -48,8 +48,9 @@ def init_wandb(cfg):
         cfg.wandb_group = cfg.scenario
 
     if 'wandb_unique_id' not in cfg:
+        method = cfg.cl_method if 'cl_method' in cfg else 'sac'
         # if we're going to restart the experiment, this will be saved to a json file
-        cfg.wandb_unique_id = f'{cfg.algorithm}_seed_{cfg.seed}_{cfg.wandb_experiment}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        cfg.wandb_unique_id = f'{method}_seed_{cfg.seed}_{cfg.wandb_experiment}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
 
     logging.info(
         f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_entity}, '

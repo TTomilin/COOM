@@ -267,7 +267,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        # @tf.function
+        @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
