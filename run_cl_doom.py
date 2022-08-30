@@ -19,7 +19,7 @@ def main(logger: EpochLogger, args: Namespace):
     # Consider normalizing test envs in the future.
     num_tasks = len(args.tasks)
     test_envs = []
-    steps = args.steps_per_task * num_tasks
+    steps = args.steps
 
     num_heads = num_tasks if args.multihead_archs else 1
     # actor_kwargs = dict(
@@ -66,6 +66,9 @@ def main(logger: EpochLogger, args: Namespace):
         "reset_buffer_on_task_change": args.reset_buffer_on_task_change,
         "reset_optimizer_on_task_change": args.reset_optimizer_on_task_change,
         "lr": args.lr,
+        "lr_decay": args.lr_decay,
+        "lr_decay_rate": args.lr_decay_rate,
+        "lr_decay_steps": args.lr_decay_steps,
         "alpha": args.alpha,
         "reset_critic_on_task_change": args.reset_critic_on_task_change,
         "clipnorm": args.clipnorm,

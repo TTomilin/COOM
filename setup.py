@@ -3,6 +3,7 @@ from setuptools import find_packages, setup
 # Required dependencies
 required = [
     "tensorflow>=2.0",
+    "tensorflow-probability",
     "pandas",
     "matplotlib",
     "seaborn",

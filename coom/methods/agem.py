@@ -22,9 +22,9 @@ class AGEM_SAC(SAC):
         self.episodic_mem_per_task = episodic_mem_per_task
         self.episodic_batch_size = episodic_batch_size
 
-        episodic_mem_size = self.episodic_mem_per_task * self.env.num_envs
+        episodic_mem_size = self.episodic_mem_per_task * self.env.num_tasks
         self.episodic_memory = EpisodicMemory(
-            obs_dim=self.obs_dim, size=episodic_mem_size
+            obs_shape=self.obs_shape, size=episodic_mem_size, num_tasks=self.env.num_tasks
         )
 
     def adjust_gradients(
@@ -65,6 +65,7 @@ class AGEM_SAC(SAC):
         return actor_gradients, critic_gradients, alpha_gradient
 
     def on_task_start(self, current_task_idx: int) -> None:
+        super(AGEM_SAC, self).on_task_start(current_task_idx)
         if current_task_idx > 0:
             new_episodic_mem = self.replay_buffer.sample_batch(self.episodic_mem_per_task)
             self.episodic_memory.store_multiple(**new_episodic_mem)

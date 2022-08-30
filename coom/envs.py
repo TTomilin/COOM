@@ -24,20 +24,20 @@ class DoomScenario(Enum):
 
 class ContinualLearningEnv(gym.Env):
 
-    def __init__(self, envs: List[DoomEnv], steps_per_env: int) -> None:
+    def __init__(self, envs: List[DoomEnv], steps: int) -> None:
         for i in range(len(envs)):
             assert envs[0].action_space == envs[i].action_space
         self.action_space = envs[0].action_space
         self.observation_space = deepcopy(envs[0].observation_space)
         self.envs = envs
         self.num_tasks = len(envs)
-        self.steps_per_env = steps_per_env
-        self.steps_limit = self.num_tasks * self.steps_per_env
+        self.steps = steps
+        self.steps_per_env = steps // self.num_tasks
         self.cur_step = 0
         self.cur_seq_idx = 0
 
     def _check_steps_bound(self) -> None:
-        if self.cur_step >= self.steps_limit:
+        if self.cur_step >= self.steps:
             raise RuntimeError("Steps limit exceeded for ContinualLearningEnv!")
 
     def _get_active_env(self) -> DoomEnv:
@@ -87,7 +87,7 @@ def get_cl_env(args: Namespace) -> gym.Env:
     scenario_class = DoomScenario[args.scenario.upper()].value
     num_tasks = len(args.tasks)
     envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in enumerate(args.tasks)]
-    cl_env = ContinualLearningEnv(envs, args.steps_per_task)
+    cl_env = ContinualLearningEnv(envs, args.steps)
     cl_env.name = "ContinualLearningEnv"
     return cl_env
 
@@ -106,12 +106,12 @@ class MultiTaskEnv(gym.Env):
         self.num_envs = len(envs)
         self.steps_per_env = steps_per_env
         self.cycle_mode = cycle_mode
-        self.steps_limit = self.num_envs * self.steps_per_env
+        self.steps = self.num_envs * self.steps_per_env
         self.cur_step = 0
         self._cur_seq_idx = 0
 
     def _check_steps_bound(self) -> None:
-        if self.cur_step >= self.steps_limit:
+        if self.cur_step >= self.steps:
             raise RuntimeError("Steps limit exceeded for MultiTaskEnv!")
 
     def step(self, action: Any) -> Tuple[np.ndarray, float, bool, Dict]:

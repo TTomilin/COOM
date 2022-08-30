@@ -8,7 +8,7 @@ import numpy as np
 import tensorflow as tf
 from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
 from tensorflow.python.framework import dtypes
-from tensorflow.python.ops.distributions.categorical import Categorical
+from tensorflow_probability.python.distributions import Categorical
 
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
@@ -126,6 +126,7 @@ class SAC:
         self.gamma = gamma
         self.polyak = polyak
         self.alpha = alpha
+        self.lr = lr
         self.batch_size = batch_size
         self.start_steps = start_steps
         self.update_after = update_after
@@ -180,13 +181,16 @@ class SAC:
                 + self.critic2.common_variables
         )
 
+        # Learning rate schedule
+        if lr_decay_steps is None:
+            lr_decay_steps = steps // self.env.num_tasks
         if lr_decay == 'exponential':
-            lr = tf.keras.optimizers.schedules.ExponentialDecay(
+            self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=lr,
                 decay_steps=lr_decay_steps,
                 decay_rate=lr_decay_rate)
         elif lr_decay == 'linear':
-            lr = tf.keras.optimizers.schedules.PolynomialDecay(
+            self.lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 initial_learning_rate=lr,
                 decay_steps=lr_decay_steps,
                 end_learning_rate=lr * lr_decay_rate,
@@ -195,7 +199,7 @@ class SAC:
                 name=None
             )
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=self.lr)  # TODO Deep copy learning rate?
 
         # For reference on automatic alpha tuning, see
         # "Automating Entropy Adjustment for Maximum Entropy" section
@@ -235,10 +239,10 @@ class SAC:
         pass
 
     def on_task_start(self, current_task_idx: int) -> None:
-        pass
+        print(f'Task {current_task_idx} started')
 
     def on_task_end(self, current_task_idx: int) -> None:
-        pass
+        print(f'Task {current_task_idx} finished')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
@@ -263,7 +267,7 @@ class SAC:
         return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
-        @tf.function
+        # @tf.function
         def learn_on_batch(
                 seq_idx: tf.Tensor,
                 batch: Dict[str, tf.Tensor],
@@ -329,8 +333,8 @@ class SAC:
             target_q2 = self.target_critic2(next_obs, one_hot)
 
             # Min Double-Q:
-            min_q = dist.probs * tf.stop_gradient(tf.minimum(q1, q2))  # TODO Recalculate q1 & q2 with stop grad?
-            min_target_q = dist_next.probs * tf.minimum(target_q1, target_q2)
+            min_q = dist.probs_parameter() * tf.stop_gradient(tf.minimum(q1, q2))  # TODO Recalculate q1 & q2 with stop grad?
+            min_target_q = dist_next.probs_parameter() * tf.minimum(target_q1, target_q2)
 
             # Entropy-regularized Bellman backup for Q functions, using Clipped Double-Q targets
             if self.critic_cl is PopArtMlpCritic:
@@ -531,7 +535,7 @@ class SAC:
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
-            reset_optimizer(self.optimizer)
+            reset_optimizer(self.optimizer, self.lr)
 
         # Update variables list and update function in case model changed.
         # E.g: For VCL after the first task we set trainable=False for layer
@@ -561,9 +565,9 @@ class SAC:
                 current_task_idx = getattr(self.env, "cur_seq_idx")
                 self._handle_task_change(current_task_idx)
 
-            # Until start_steps have elapsed, randomly sample actions
-            # from a uniform distribution for better exploration. Afterwards,
-            # use the learned policy.
+            # Until start_steps have elapsed, randomly sample actions from a uniform
+            # distribution for better exploration. Afterwards, use the learned policy.
+
             if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
                 action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec)).numpy()[0]
@@ -572,6 +576,8 @@ class SAC:
 
             # Step the env
             next_obs, reward, done, info = self.env.step(action)
+            if self.env.task_id == self.num_tasks:
+                return  # We are done with the last task
             episode_return += reward
             episode_len += 1
 
@@ -580,9 +586,8 @@ class SAC:
 
             # Store experience to replay buffer
             self.replay_buffer.store(obs, action, reward, next_obs, done, one_hot_vec)
-            # self.replay_buffer.store(obs, action, reward, next_obs, done, self.env.task_id)
 
-            # Super critical, easy to overlook step: make sure to update most recent observation!
+            # Update the most recent observation
             obs = next_obs
 
             # End of trajectory handling

@@ -36,14 +36,15 @@ def cl_parse_args(args=None):
     parser.add_argument("--steps", type=sci2int, default=int(1e7), help="Number of steps the algorithm will run for")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for the optimizer")
     parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Decay the learning rate over time')
+    parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
+    parser.add_argument('--lr_decay_steps', type=int, default=1e6, help='Number of steps to decay the learning rate for')
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
     parser.add_argument("--target_output_std", type=float, default=0.089,
                         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
-    parser.add_argument("--steps_per_task", type=sci2int, default=int(1e6), help="Numer of steps per task")
     parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
                         help="Strategy of inserting examples into the buffer")
     parser.add_argument("--regularize_critic", type=str2bool, default=False,
@@ -139,9 +140,6 @@ def mt_parse_args(args=None):
     )
     parser.add_argument("--seed", type=int, help="Seed for randomness")
     parser.add_argument(
-        "--steps_per_task", type=sci2int, default=int(1e6), help="Numer of steps per task"
-    )
-    parser.add_argument(
         "--log_every",
         type=sci2int,
         default=int(2e4),
@@ -157,7 +155,6 @@ def mt_parse_args(args=None):
         "--hidden_sizes",
         type=int,
         nargs="+",
-        # default=[256, 256, 256, 256],
         default=[256, 256],
         help="Hidden sizes list for the MLP models",
     )
@@ -233,7 +230,6 @@ def single_parse_args(args=None):
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--lr", type=float, default=1e-4, help="Initial learning rate for the optimizer")
-    parser.add_argument("--lr_final", type=float, default=1e-5, help="Final learning rate for the optimizer")
     parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
     parser.add_argument('--lr_decay_steps', type=int, default=1e6, help='Number of steps to decay the learning rate for')

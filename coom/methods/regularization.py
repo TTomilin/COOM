@@ -39,10 +39,11 @@ class Regularization_SAC(SAC):
         return aux_loss
 
     def on_task_start(self, current_task_idx: int) -> None:
+        super(Regularization_SAC, self).on_task_start()
         if current_task_idx > 0:
             for old_param, new_param in zip(self.old_params, self.all_common_variables):
                 old_param.assign(new_param)
-            self._update_reg_weights(self.replay_buffer)
+            self._update_reg_weights(self.replay_buffer, batch_size=32)
 
     def _merge_weights(self, new_weights: List[tf.Variable]) -> None:
         """Merge the parameter importance weights for current task with the importance weights

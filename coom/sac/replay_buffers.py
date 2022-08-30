@@ -44,9 +44,9 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_dim: int, size: int, num_tasks: int) -> None:
-        self.obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
-        self.next_obs_buf = np.zeros([size, obs_dim], dtype=np.float32)
+    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+        self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
+        self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
         self.rewards_buf = np.zeros(size, dtype=np.float32)
         self.done_buf = np.zeros(size, dtype=np.float32)
@@ -84,6 +84,7 @@ class EpisodicMemory:
             actions=tf.convert_to_tensor(self.actions_buf[idxs]),
             rewards=tf.convert_to_tensor(self.rewards_buf[idxs]),
             done=tf.convert_to_tensor(self.done_buf[idxs]),
+            one_hot=tf.convert_to_tensor(self.one_hot_buf[idxs])
         )
 
 
