@@ -254,7 +254,7 @@ class SAC:
     @tf.function
     def get_action(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor,
                    deterministic: tf.Tensor = tf.constant(False)) -> tf.Tensor:
-        logits = self.actor(tf.expand_dims(obs, 0), one_hot_task_id)
+        logits = self.actor(tf.expand_dims(obs, 0), tf.expand_dims(one_hot_task_id, 0))
 
         dist = Categorical(logits=logits)
         if deterministic:
@@ -568,10 +568,9 @@ class SAC:
 
             # Until start_steps have elapsed, randomly sample actions from a uniform
             # distribution for better exploration. Afterwards, use the learned policy.
-
             if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
-                action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec)).numpy()[0]
+                action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
             else:
                 action = self.env.action_space.sample()
 

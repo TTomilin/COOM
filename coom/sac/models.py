@@ -42,8 +42,8 @@ def mlp(
         activation: Callable,
         use_layer_norm: bool = False
 ) -> Model:
-    task_input = Input(shape=(num_tasks,), name='task_input')
-    conv_in = Input(shape=(height, width, channels))
+    task_input = Input(shape=num_tasks, name='task_input', dtype=tf.float32)
+    conv_in = Input(shape=(height, width, channels), name='conv_head_in')
     conv_head = Conv2D(32, 8, strides=4, activation="relu")(conv_in)
     conv_head = Conv2D(64, 4, strides=2, activation="relu")(conv_head)
     conv_head = Conv2D(64, 3, strides=1, activation="relu")(conv_head)
