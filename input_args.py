@@ -32,13 +32,13 @@ def cl_parse_args(args=None):
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
 
     # Learning
-    parser.add_argument("--steps", type=sci2int, default=int(1e7), help="Number of steps the algorithm will run for")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(1e5), help="Number of steps the algorithm will run per environment")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Decay the learning rate over time')
+    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=1e6, help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=1e5, help='Number of steps to decay the learning rate for')
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
@@ -94,6 +94,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
+    parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Scenario specific
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
@@ -211,6 +212,7 @@ def single_parse_args(args=None):
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
     parser.add_argument('--watch', default=False, action='store_true', help='watch the play of pre-trained policy only')
+
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
                         default=["tsv", "tensorboard"], help="Types of logger used.")
@@ -218,13 +220,15 @@ def single_parse_args(args=None):
                         help="Group ID, for grouping logs from different experiments into common directory")
     parser.add_argument("--log_every", type=sci2int, default=int(1000),
                         help="Number of steps between subsequent evaluations and logging")
+
     # Model
     parser.add_argument("--hidden_sizes", type=int, nargs="+", default=[256, 256],
                         help="Hidden sizes list for the MLP models")
     parser.add_argument("--activation", type=str, default="lrelu", help="Activation kind for the models")
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
+
     # Learning
-    parser.add_argument("--steps", type=sci2int, default=int(1e7), help="Number of steps the algorithm will run for")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(1e5), help="Number of steps the algorithm will run for")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--lr", type=float, default=1e-4, help="Initial learning rate for the optimizer")
@@ -236,6 +240,7 @@ def single_parse_args(args=None):
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
     parser.add_argument("--target_output_std", type=float, default=0.089,
                         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
+
     # DOOM
     parser.add_argument('--render_sleep', type=float, default=0.)
     parser.add_argument('--render', default=False, action='store_true')
@@ -245,6 +250,7 @@ def single_parse_args(args=None):
     parser.add_argument('--frame-width', type=int, default=84)
     parser.add_argument('--frame-stack', type=int, default=4)
     parser.add_argument('--frame-skip', type=int, default=4)
+
     # WandB
     parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
@@ -255,6 +261,7 @@ def single_parse_args(args=None):
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
+
     # Scenario specific
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')

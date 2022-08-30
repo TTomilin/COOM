@@ -24,15 +24,15 @@ class DoomScenario(Enum):
 
 class ContinualLearningEnv(gym.Env):
 
-    def __init__(self, envs: List[DoomEnv], steps: int) -> None:
+    def __init__(self, envs: List[DoomEnv], steps_per_env: int) -> None:
         for i in range(len(envs)):
             assert envs[0].action_space == envs[i].action_space
         self.action_space = envs[0].action_space
         self.observation_space = deepcopy(envs[0].observation_space)
         self.envs = envs
         self.num_tasks = len(envs)
-        self.steps = steps
-        self.steps_per_env = steps // self.num_tasks
+        self.steps_per_env = steps_per_env
+        self.steps = steps_per_env * self.num_tasks
         self.cur_step = 0
         self.cur_seq_idx = 0
 
@@ -59,7 +59,8 @@ class ContinualLearningEnv(gym.Env):
             done = True
             info["TimeLimit.truncated"] = True
 
-            self.cur_seq_idx += 1
+            if self.cur_seq_idx < self.num_tasks - 1:
+                self.cur_seq_idx += 1
 
         return obs, reward, done, info
 
@@ -87,7 +88,7 @@ def get_cl_env(args: Namespace) -> gym.Env:
     scenario_class = DoomScenario[args.scenario.upper()].value
     num_tasks = len(args.tasks)
     envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in enumerate(args.tasks)]
-    cl_env = ContinualLearningEnv(envs, args.steps)
+    cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     cl_env.name = "ContinualLearningEnv"
     return cl_env
 

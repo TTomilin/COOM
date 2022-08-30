@@ -28,7 +28,7 @@ class SAC:
             critic_cl: type = models.MlpCritic,
             policy_kwargs: Dict = None,
             seed: int = 0,
-            steps: int = 1e7,
+            steps_per_env: int = 1e5,
             log_every: int = 20_000,
             replay_size: int = 100000,
             gamma: float = 0.99,
@@ -36,7 +36,7 @@ class SAC:
             lr: float = 1e-3,
             lr_decay: str = None,
             lr_decay_rate: float = 0.1,
-            lr_decay_steps: int = 1e5,
+            lr_decay_steps: int = None,
             alpha: Union[float, str] = "auto",
             batch_size: int = 128,
             start_steps: int = 10_000,
@@ -67,7 +67,7 @@ class SAC:
           critic_cl: Class for critic model.
           critic_kwargs: Kwargs for critic model.
           seed: Seed for randomness.
-          steps: Number of steps the algorithm will run for.
+          steps_per_env: Number of steps the algorithm will run per environment.
           log_every: Number of steps between subsequent evaluations and logging.
           replay_size: Size of the replay buffer.
           gamma: Discount factor.
@@ -120,7 +120,8 @@ class SAC:
         self.logger = logger
         self.critic_cl = critic_cl
         self.policy_kwargs = policy_kwargs
-        self.steps = steps
+        self.steps_per_env = steps_per_env
+        self.steps = steps_per_env * env.num_tasks
         self.log_every = log_every
         self.replay_size = replay_size
         self.gamma = gamma
@@ -183,7 +184,7 @@ class SAC:
 
         # Learning rate schedule
         if lr_decay_steps is None:
-            lr_decay_steps = steps // self.env.num_tasks
+            lr_decay_steps = steps_per_env
         if lr_decay == 'exponential':
             self.lr = tf.keras.optimizers.schedules.ExponentialDecay(
                 initial_learning_rate=lr,
@@ -576,8 +577,6 @@ class SAC:
 
             # Step the env
             next_obs, reward, done, info = self.env.step(action)
-            if self.env.task_id == self.num_tasks:
-                return  # We are done with the last task
             episode_return += reward
             episode_len += 1
 
