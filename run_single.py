@@ -46,6 +46,7 @@ def main(logger: EpochLogger, args: Namespace):
         logger,
         seed=args.seed,
         steps_per_env=args.steps_per_env,
+        start_steps=args.start_steps,
         log_every=args.log_every,
         replay_size=args.replay_size,
         batch_size=args.batch_size,

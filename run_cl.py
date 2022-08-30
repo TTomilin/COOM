@@ -17,8 +17,6 @@ def main(logger: EpochLogger, args: Namespace):
 
     train_env = get_cl_env(args)
     num_tasks = len(args.tasks)
-    test_envs = []
-    steps_per_env = args.steps_per_env
 
     num_heads = num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
@@ -36,10 +34,11 @@ def main(logger: EpochLogger, args: Namespace):
 
     vanilla_sac_kwargs = {
         "env": train_env,
-        "test_envs": test_envs,
+        "test_envs": [],
         "logger": logger,
         "seed": args.seed,
-        "steps_per_env": steps_per_env,
+        "steps_per_env": args.steps_per_env,
+        "start_steps": args.start_steps,
         "log_every": args.log_every,
         "replay_size": args.replay_size,
         "batch_size": args.batch_size,
