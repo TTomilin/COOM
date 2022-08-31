@@ -33,7 +33,7 @@ def cl_parse_args(args=None):
 
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e4), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
@@ -230,7 +230,7 @@ def single_parse_args(args=None):
 
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e4), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate for the optimizer")

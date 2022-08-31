@@ -39,7 +39,7 @@ class SAC:
             lr_decay_steps: int = None,
             alpha: Union[float, str] = "auto",
             batch_size: int = 128,
-            start_steps: int = 1e4,
+            start_steps: int = 1e3,
             update_after: int = 1000,
             update_every: int = 50,
             num_test_eps_stochastic: int = 10,
@@ -333,7 +333,7 @@ class SAC:
             target_q2 = self.target_critic2(next_obs, one_hot)
 
             # Min Double-Q:
-            min_q = dist.probs_parameter() * tf.stop_gradient(tf.minimum(q1, q2))  # TODO Recalculate q1 & q2 with stop grad?
+            min_q = dist.probs_parameter() * tf.stop_gradient(tf.minimum(q1, q2))
             min_target_q = dist_next.probs_parameter() * tf.minimum(target_q1, target_q2)
 
             # Entropy-regularized Bellman backup for Q functions, using Clipped Double-Q targets
@@ -494,7 +494,6 @@ class SAC:
                 self.logger.log_tabular(f"train/popart_mean/{task_idx}", average_only=True)
                 self.logger.log_tabular(f"train/popart_std/{task_idx}", average_only=True)
         self.logger.log_tabular("train/loss_reg", average_only=True)
-        self.logger.log_tabular("train/agem_violation", average_only=True)
         for stat in self.env.get_statistics('train').keys():
             self.logger.log_tabular(stat, average_only=True)
 

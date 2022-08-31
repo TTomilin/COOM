@@ -44,8 +44,12 @@ class ContinualLearningEnv(gym.Env):
         return self.envs[self.cur_seq_idx]
 
     @property
+    def task(self):
+        return self._get_active_env().name
+
+    @property
     def task_id(self):
-        return self.cur_seq_idx  # TODO perhaps need `return self._get_active_env().task_id`
+        return self.cur_seq_idx
 
     def step(self, action: Any) -> Tuple[np.ndarray, float, bool, Dict]:
         self._check_steps_bound()
@@ -78,7 +82,7 @@ class ContinualLearningEnv(gym.Env):
         return self._get_active_env().clear_episode_statistics()
 
 
-def get_cl_env(args: Namespace) -> gym.Env:
+def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     """Returns a continual learning environment.
     Args:
       args: list of the input arguments

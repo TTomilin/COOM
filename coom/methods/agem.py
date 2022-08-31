@@ -92,3 +92,7 @@ class AGEM_SAC(SAC):
                 )
             ]
         return projected_grads
+
+    def _log_after_epoch(self, epoch, current_task_timestep, global_timestep, info, learning_rate):
+        self.logger.log_tabular("train/agem_violation", average_only=True)
+        super()._log_after_epoch(epoch, current_task_timestep, global_timestep, info, learning_rate)

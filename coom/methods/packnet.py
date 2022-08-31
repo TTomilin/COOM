@@ -80,13 +80,13 @@ class PackNet_SAC(SAC):
             prune_perc = num_tasks_left / (num_tasks_left + 1)
             self._prune(prune_perc, current_task_idx)
 
-            reset_optimizer(self.optimizer, self.lr)
+            reset_optimizer(self.optimizer)
 
             for _ in range(self.retrain_steps):
                 batch = self.replay_buffer.sample_batch(self.batch_size)
                 self.learn_on_batch(tf.convert_to_tensor(current_task_idx), batch)
 
-            reset_optimizer(self.optimizer, self.lr)
+            reset_optimizer(self.optimizer)
 
     @tf.function
     def _adjust_gradients_list(
