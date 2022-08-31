@@ -48,7 +48,6 @@ def mlp(
     conv_head = Conv2D(64, 4, strides=2, activation="relu")(conv_head)
     conv_head = Conv2D(64, 3, strides=1, activation="relu")(conv_head)
     conv_head = Flatten()(conv_head)
-    # TODO Try adding a dense layer here
     model = Concatenate()([conv_head, task_input])
     model = Dense(hidden_sizes[0])(model)
     if use_layer_norm:
@@ -56,7 +55,7 @@ def mlp(
         model = Activation(tf.nn.tanh)(model)
     else:
         model = Activation(activation)(model)
-    for size in hidden_sizes[1:]:  # TODO Try adding more dense layers here
+    for size in hidden_sizes[1:]:
         model = Dense(size, activation=activation)(model)
     model = Model(inputs=[conv_in, task_input], outputs=model)
     return model

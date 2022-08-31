@@ -32,14 +32,14 @@ def cl_parse_args(args=None):
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
 
     # Learning
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(1e5), help="Number of steps the algorithm will run per environment")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
     parser.add_argument("--start_steps", type=sci2int, default=int(1e4), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for the optimizer")
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
     parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=1e5, help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=5e4, help='Number of steps to decay the learning rate for')
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
@@ -229,14 +229,14 @@ def single_parse_args(args=None):
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
 
     # Learning
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(1e5), help="Number of steps the algorithm will run for")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
     parser.add_argument("--start_steps", type=sci2int, default=int(1e4), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Initial learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Decay the learning rate over time')
+    parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate for the optimizer")
+    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=1e6, help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=5e4, help='Number of steps to decay the learning rate for')
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
