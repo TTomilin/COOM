@@ -87,7 +87,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--frame-skip', type=int, default=4)
 
     # WandB
-    parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
+    parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
     parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
     parser.add_argument('--wandb_group', default=None, type=str, help='WandB "Group". Name of the env by default.')
@@ -254,7 +254,7 @@ def single_parse_args(args=None):
     parser.add_argument('--frame-skip', type=int, default=4)
 
     # WandB
-    parser.add_argument('--with_wandb', default=True, type=bool, help='Enables Weights and Biases')
+    parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
     parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
     parser.add_argument('--wandb_group', default=None, type=str, help='WandB "Group". Name of the env by default.')

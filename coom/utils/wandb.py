@@ -48,7 +48,7 @@ def init_wandb(cfg):
         cfg.wandb_group = cfg.scenario
 
     if 'wandb_unique_id' not in cfg:
-        method = cfg.cl_method if 'cl_method' in cfg else 'sac'
+        method = 'sac' if 'cl_method' not in cfg else cfg.cl_method if cfg.cl_method else 'cl'
         # if we're going to restart the experiment, this will be saved to a json file
         cfg.wandb_unique_id = f'{method}_seed_{cfg.seed}_{cfg.wandb_experiment}_{datetime.now().strftime("%Y%m%d_%H%M%S")}'
 
