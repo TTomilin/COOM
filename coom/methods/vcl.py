@@ -3,7 +3,8 @@ from typing import Callable, Iterable, List, Tuple
 import gym
 import tensorflow as tf
 from keras.layers import LayerNormalization
-from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras import Input, Model, Sequential
+from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.initializers.initializers_v2 import GlorotUniform
 from tensorflow.python.keras.layers import Conv2D, Flatten, Concatenate, Activation, Layer
 
@@ -221,9 +222,9 @@ class VclMlpActor(Model):
         self.core = variational_mlp(*state_space.shape, num_tasks, hidden_sizes, activation,
                                     use_layer_norm=use_layer_norm)
 
-        self.head_mu = tf.keras.Sequential(
+        self.head_mu = Sequential(
             [
-                tf.keras.Input(shape=(hidden_sizes[-1],)),
+                InputLayer(input_shape=(hidden_sizes[-1],)),
                 BayesianDense(
                     hidden_sizes[-1], action_space.n * num_heads, num_heads=num_heads
                 ),

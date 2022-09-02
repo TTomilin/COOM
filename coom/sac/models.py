@@ -3,7 +3,8 @@ from typing import Callable, Iterable, List, Tuple
 import gym
 import tensorflow as tf
 from keras.layers import LayerNormalization
-from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras import Input, Model, Sequential
+from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.layers import Conv2D, Flatten, Dense, Activation, Concatenate
 
 
@@ -71,9 +72,9 @@ class MlpActor(Model):
         self.hide_task_id = hide_task_id
 
         self.core = mlp(*state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm=use_layer_norm)
-        self.head_mu = tf.keras.Sequential(
+        self.head_mu = Sequential(
             [
-                Input(shape=(hidden_sizes[-1],)),
+                InputLayer(input_shape=(hidden_sizes[-1],)),
                 Dense(action_space.n * num_heads),
             ]
         )
@@ -119,8 +120,8 @@ class MlpCritic(Model):
         )
 
         self.core = mlp(*state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm=use_layer_norm)
-        self.head = tf.keras.Sequential(
-            [Input(shape=(hidden_sizes[-1],)), Dense(num_heads * action_space.n)]
+        self.head = Sequential(
+            [InputLayer(input_shape=(hidden_sizes[-1],)), Dense(num_heads * action_space.n)]
         )
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
