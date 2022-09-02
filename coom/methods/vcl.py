@@ -2,27 +2,24 @@ from typing import Callable, Iterable, List, Tuple
 
 import gym
 import tensorflow as tf
-import tensorflow.keras as tfk
-from tensorflow.keras import Input, Model
+from keras.layers import LayerNormalization
+from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras.initializers.initializers_v2 import GlorotUniform
+from tensorflow.python.keras.layers import Conv2D, Flatten, Concatenate, Activation, Layer
 
-from coom.sac.models import _choose_head, apply_squashing_func, gaussian_likelihood
+from coom.sac.models import _choose_head
 from coom.sac.sac import SAC
-
-EPS = 1e-8
-
-LOG_STD_MAX = 2
-LOG_STD_MIN = -20
 
 
 class VCL_SAC(SAC):
     def __init__(
-        self,
-        cl_reg_coef: float = 0.0,
-        regularize_critic: bool = False,
-        first_task_kl: bool = True,
-        **vanilla_sac_kwargs
+            self,
+            cl_reg_coef: float = 0.0,
+            regularize_critic: bool = False,
+            first_task_kl: bool = True,
+            **vanilla_sac_kwargs
     ) -> None:
-        """Variational Continual Learning method. See https://arxiv.org/abs/1710.10628 .
+        """Variational Continual Learning method. See https://arxiv.org/abs/1710.10628.
 
         Args:
           cl_reg_coef: Regularization strength for continual learning methods.
@@ -38,9 +35,7 @@ class VCL_SAC(SAC):
         self.cl_reg_coef = cl_reg_coef
         self.regularize_critic = regularize_critic
         self.first_task_kl = first_task_kl
-        self.reg_layers = (
-            self.actor.core.layers + self.actor.head_mu.layers + self.actor.head_log_std.layers
-        )
+        self.reg_layers = (self.actor.core.layers + self.actor.head_mu.layers)
 
     def get_auxiliary_loss(self, seq_idx: tf.Tensor) -> tf.Tensor:
         aux_loss = self._regularize(seq_idx, regularize_last_layer=self.first_task_kl)
@@ -61,12 +56,12 @@ class VCL_SAC(SAC):
         for layer in self.reg_layers:
             if isinstance(layer, BayesianDense):
                 self._update_layer_prior(layer)
-            if isinstance(layer, tf.keras.layers.LayerNormalization):
+            if isinstance(layer, LayerNormalization):
                 layer.trainable = False
 
     @staticmethod
-    def _update_layer_prior(layer: tfk.layers.Layer) -> None:
-        """Update the prior distribution of parameters in the passed layer."""
+    def _update_layer_prior(layer: Layer) -> None:
+        """Update the prior distribution of parameters in the traversed layer."""
 
         if isinstance(layer, BayesianDense) and layer.num_heads == 1:
             layer.prior_w_mean.assign(layer.posterior_w_mean)
@@ -76,8 +71,8 @@ class VCL_SAC(SAC):
             layer.prior_b_logvar.assign(layer.posterior_b_logvar)
 
     def _regularize(self, seq_idx: int, regularize_last_layer: bool) -> tf.Tensor:
-        """Calculate the KL loss regularizing the distribution of the parameters for current task
-        to stay close to the distribution of parameters for the previous tasks."""
+        """Calculate the KL loss regularizing the distribution of the parameters for the current
+        task to stay close to the distribution of parameters for the previous tasks."""
 
         kl_loss = 0.0
         for layer in self.reg_layers:
@@ -116,22 +111,22 @@ class VCL_SAC(SAC):
         return kl_loss
 
 
-class BayesianDense(tfk.layers.Layer):
+class BayesianDense(Layer):
     """Bayesian network implementation of dense (linear) layers. We encode each parameter in the
     layer as a normal distribution."""
 
     def __init__(
-        self,
-        input_dim: int,
-        output_dim: int,
-        activation: Callable = None,
-        enable_kl: bool = True,
-        num_heads: int = 1,
+            self,
+            input_dim: int,
+            output_dim: int,
+            activation: Callable = None,
+            enable_kl: bool = True,
+            num_heads: int = 1,
     ) -> None:
         super().__init__()
 
         logvar_init = tf.constant_initializer(-6.0)
-        w_init = tfk.initializers.GlorotUniform()
+        w_init = GlorotUniform()
         b_init = tf.zeros_initializer()
 
         self.input_dim = input_dim
@@ -178,61 +173,59 @@ class BayesianDense(tfk.layers.Layer):
 
 
 def variational_mlp(
-    input_dim: int,
-    hidden_sizes: Iterable[int],
-    activation: Callable,
-    use_layer_norm: bool = False,
-) -> tfk.Model:
-    model = tf.keras.Sequential()
-    model.add(Input(shape=(input_dim,)))
-    model.add(BayesianDense(input_dim, hidden_sizes[0]))
+        channels: int,
+        height: int,
+        width: int,
+        num_tasks: int,
+        hidden_sizes: Tuple[int],
+        activation: Callable,
+        use_layer_norm: bool = False,
+) -> Model:
+    task_input = Input(shape=num_tasks, name='task_input', dtype=tf.float32)
+    conv_in = Input(shape=(height, width, channels), name='conv_head_in')
+    conv_head = Conv2D(32, 8, strides=4, activation="relu")(conv_in)
+    conv_head = Conv2D(64, 4, strides=2, activation="relu")(conv_head)
+    conv_head = Conv2D(64, 3, strides=1, activation="relu")(conv_head)
+    conv_head = Flatten()(conv_head)
+    model = Concatenate()([conv_head, task_input])
+    model = BayesianDense(model.shape[-1], hidden_sizes[0])(model)
     if use_layer_norm:
-        model.add(tf.keras.layers.LayerNormalization())
-        model.add(tf.keras.layers.Activation(tf.nn.tanh))
+        model = LayerNormalization()(model)
+        model = Activation(tf.nn.tanh)(model)
     else:
-        model.add(tf.keras.layers.Activation(activation))
+        model = Activation(activation)(model)
     for layer_idx in range(1, len(hidden_sizes)):
         prev_size, next_size = hidden_sizes[layer_idx - 1], hidden_sizes[layer_idx]
-        model.add(BayesianDense(prev_size, next_size, activation=activation))
+        model = BayesianDense(prev_size, next_size, activation=activation)(model)
+    model = Model(inputs=[conv_in, task_input], outputs=model)
     return model
 
 
 class VclMlpActor(Model):
     def __init__(
-        self,
-        input_dim: int,
-        action_space: gym.Space,
-        hidden_sizes: Iterable[int] = (256, 256),
-        activation: Callable = tf.tanh,
-        use_layer_norm: bool = False,
-        num_heads: int = 1,
-        hide_task_id: bool = False,
+            self,
+            state_space: gym.spaces.Box,
+            action_space: gym.spaces.Discrete,
+            num_tasks: int,
+            hidden_sizes: Iterable[int] = (256, 256),
+            activation: Callable = tf.tanh,
+            use_layer_norm: bool = False,
+            num_heads: int = 1,
+            hide_task_id: bool = False,
     ) -> None:
         super(VclMlpActor, self).__init__()
 
         self.num_heads = num_heads
         self.hide_task_id = hide_task_id
 
-        self.core = variational_mlp(
-            input_dim,
-            hidden_sizes,
-            activation,
-            use_layer_norm=use_layer_norm,
-        )
+        self.core = variational_mlp(*state_space.shape, num_tasks, hidden_sizes, activation,
+                                    use_layer_norm=use_layer_norm)
 
         self.head_mu = tf.keras.Sequential(
             [
-                Input(shape=(hidden_sizes[-1],)),
+                tf.keras.Input(shape=(hidden_sizes[-1],)),
                 BayesianDense(
-                    hidden_sizes[-1], action_space.shape[0] * num_heads, num_heads=num_heads
-                ),
-            ]
-        )
-        self.head_log_std = tf.keras.Sequential(
-            [
-                Input(shape=(hidden_sizes[-1],)),
-                BayesianDense(
-                    hidden_sizes[-1], action_space.shape[0] * num_heads, num_heads=num_heads
+                    hidden_sizes[-1], action_space.n * num_heads, num_heads=num_heads
                 ),
             ]
         )
@@ -240,54 +233,31 @@ class VclMlpActor(Model):
 
     @property
     def common_variables(self) -> List[tf.Variable]:
-        return (
-            self.core.trainable_variables
-            + self.head_mu.trainable_variables
-            + self.head_log_std.trainable_variables
-        )
+        return self.core.trainable_variables + self.head_mu.trainable_variables
 
-    def call(
-        self, x: tf.Tensor, samples_num: int = 1
-    ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
-        input_x = x
-        full_obs = x
-        mus, pis = [], []
+    def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, samples_num: int = 1) -> Tuple[tf.Tensor]:
+        obs = tf.transpose(obs, [0, 2, 3, 1])
+        mus = []
 
         for sample_idx in range(samples_num):
-            x = self.core(input_x)
+            x = self.core((obs, one_hot_task_id))
             mu = self.head_mu(x)
-            log_std = self.head_log_std(x)
 
             if self.num_heads > 1:
-                mu = _choose_head(mu, full_obs, self.num_heads)
-                log_std = _choose_head(log_std, full_obs, self.num_heads)
-
-            log_std = tf.clip_by_value(log_std, LOG_STD_MIN, LOG_STD_MAX)
-            std = tf.exp(log_std)
-            pi = mu + tf.random.normal(tf.shape(input=mu)) * std
-            logp_pi = gaussian_likelihood(pi, mu, log_std)
-
-            mu, pi, logp_pi = apply_squashing_func(mu, pi, logp_pi)
-
-            # Make sure actions are in correct range
-            action_scale = self.action_space.high[0]
-            mu *= action_scale
-            pi *= action_scale
+                mu = _choose_head(mu, self.num_heads, one_hot_task_id)
 
             mus += [mu]
-            pis += [pi]
 
         mu = tf.reduce_mean(tf.stack(mus), 0)
-        pi = tf.reduce_mean(tf.stack(pis), 0)
 
-        return mu, log_std, pi, logp_pi
+        return mu
 
 
 def kl_divergence(
-    posterior_mean: tf.Tensor,
-    posterior_logvar: tf.Tensor,
-    prior_mean: tf.Tensor,
-    prior_logvar: tf.Tensor,
+        posterior_mean: tf.Tensor,
+        posterior_logvar: tf.Tensor,
+        prior_mean: tf.Tensor,
+        prior_logvar: tf.Tensor,
 ) -> tf.Tensor:
     numel = tf.cast(tf.size(posterior_mean), tf.float32)
     const_term = -0.5 * numel
@@ -297,7 +267,7 @@ def kl_divergence(
     prior_var = tf.exp(prior_logvar)
 
     mu_diff_term = 0.5 * tf.reduce_sum(
-        (posterior_var + (posterior_mean - prior_mean) ** 2) / (prior_var)
+        (posterior_var + (posterior_mean - prior_mean)**2) / prior_var
     )
     kl = const_term + log_std_diff + mu_diff_term
     return kl

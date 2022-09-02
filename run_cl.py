@@ -28,10 +28,7 @@ def main(logger: EpochLogger, args: Namespace):
         hide_task_id=args.hide_task_id,
     )
 
-    if args.cl_method == "vcl":
-        actor_cl = VclMlpActor
-    else:
-        actor_cl = MlpActor
+    actor_cl = VclMlpActor if args.cl_method == "vcl" else MlpActor
 
     vanilla_sac_kwargs = {
         "env": train_env,

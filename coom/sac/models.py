@@ -1,36 +1,10 @@
 from typing import Callable, Iterable, List, Tuple
 
 import gym
-import numpy as np
 import tensorflow as tf
-from tensorflow.keras import Input, Model
-from tensorflow.keras.layers import Conv2D, Flatten, Dense, Activation, LayerNormalization, Concatenate
-
-EPS = 1e-8
-
-LOG_STD_MAX = 2
-LOG_STD_MIN = -20
-
-
-def gaussian_likelihood(x: tf.Tensor, mu: tf.Tensor, log_std: tf.Tensor) -> tf.Tensor:
-    pre_sum = -0.5 * (((x - mu) / (tf.exp(log_std) + EPS)) ** 2 + 2 * log_std + np.log(2 * np.pi))
-    return tf.reduce_sum(input_tensor=pre_sum, axis=1)
-
-
-def apply_squashing_func(
-    mu: tf.Tensor, pi: tf.Tensor, logp_pi
-) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-    # Adjustment to log prob
-    # NOTE: This formula is a little bit magic. To get an understanding of where it
-    # comes from, check out the original SAC paper (arXiv 1801.01290) and look in
-    # appendix C. This is a more numerically-stable equivalent to Eq 21.
-    # Try deriving it yourself as a (very difficult) exercise. :)
-    logp_pi -= tf.reduce_sum(input_tensor=2 * (np.log(2) - pi - tf.nn.softplus(-2 * pi)), axis=1)
-
-    # Squash those unbounded actions!
-    mu = tf.tanh(mu)
-    pi = tf.tanh(pi)
-    return mu, pi, logp_pi
+from keras.layers import LayerNormalization
+from tensorflow.python.keras import Input, Model
+from tensorflow.python.keras.layers import Conv2D, Flatten, Dense, Activation, Concatenate
 
 
 def mlp(
@@ -105,7 +79,7 @@ class MlpActor(Model):
         )
         self.action_space = action_space
 
-    def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
+    def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
         obs = tf.transpose(obs, [0, 2, 3, 1])
 
         logits = self.core([obs, one_hot_task_id])
