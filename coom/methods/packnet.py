@@ -71,12 +71,12 @@ class PackNet_SAC(SAC):
 
     def on_task_end(self, current_task_idx: int) -> None:
         super(PackNet_SAC, self).on_task_end(current_task_idx)
-        if current_task_idx < self.env.num_envs - 1:
+        if current_task_idx < self.env.num_tasks - 1:
             if current_task_idx == 0:
                 self._set_freeze_biases_and_normalization(True)
 
             # Each task gets equal share of 'kernel' weights.
-            num_tasks_left = self.env.num_envs - current_task_idx - 1
+            num_tasks_left = self.env.num_tasks - current_task_idx - 1
             prune_perc = num_tasks_left / (num_tasks_left + 1)
             self._prune(prune_perc, current_task_idx)
 
