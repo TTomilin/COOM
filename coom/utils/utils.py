@@ -7,6 +7,7 @@ from typing import Callable, Dict, Optional, Type, Union
 import gym
 import numpy as np
 import tensorflow as tf
+from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
 
 
 def set_seed(seed: int, env: Optional[gym.Env] = None) -> None:
@@ -48,7 +49,7 @@ def sci2int(v: str) -> int:
 
 
 def float_or_str(v: Union[float, str]) -> Union[float, str]:
-    # If it is possible, convert to float. Otherwise leave str as it is.
+    # If it is possible, convert to float. Otherwise, leave str as it is.
     try:
         float_v = float(v)
         return float_v
@@ -57,10 +58,10 @@ def float_or_str(v: Union[float, str]) -> Union[float, str]:
 
 
 def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer) -> None:
-    # Set the iterations to 0 to reset the learning rate decay.
-    optimizer.iterations.assign(tf.zeros_like(optimizer.iterations))
-    # Skip the first variable, its step count.
-    for var in optimizer.variables()[1:]:
+    # Decide whether learning rate decay has been applied
+    start_index = 0 if isinstance(optimizer.lr, LearningRateSchedule) else 1
+    # The first variable is the step count which resets the learning rate decay
+    for var in optimizer.variables()[start_index:]:
         var.assign(tf.zeros_like(var))
 
 
