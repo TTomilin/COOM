@@ -24,7 +24,7 @@ class DoomEnv(CommonEnv):
         self.game.load_config(args.cfg_path)
         self.game.set_doom_scenario_path(f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{task}.wad")  # TODO remove hard coded path
         self.game.set_window_visible(args.render)
-        if args.watch or args.render:  # Use a higher resolution for watching gameplay
+        if args.render:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
         if args.add_speed:  # Add SPEED action to the available in-game actions
             actions = self.game.get_available_buttons()

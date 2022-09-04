@@ -55,6 +55,8 @@ class SAC:
             clipnorm: float = None,
             target_output_std: float = None,
             agent_policy_exploration: bool = False,
+            render: bool = False,
+            render_sleep: float = 0.03,
     ):
         """A class for SAC training, for either single task, continual learning or multi-task learning.
         After the instance is created, use run() function to actually run the training.
@@ -145,6 +147,8 @@ class SAC:
         self.reset_critic_on_task_change = reset_critic_on_task_change
         self.clipnorm = clipnorm
         self.agent_policy_exploration = agent_policy_exploration
+        self.render = render
+        self.render_sleep = render_sleep
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -582,6 +586,9 @@ class SAC:
             next_obs, reward, done, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
+
+            if self.render:
+                time.sleep(self.render_sleep)
 
             # Extract task ids from the info dict
             one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)

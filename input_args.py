@@ -9,13 +9,12 @@ def cl_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None,
                         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
     parser.add_argument("--tasks", type=str, nargs="+", default=None, help="Name of the tasks you want to run")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
-    parser.add_argument('--watch', default=False, action='store_true', help='watch the play of pre-trained policy only')
 
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
@@ -82,14 +81,14 @@ def cl_parse_args(args=None):
                         help="Minibatch size to compute additional loss in 'agem' continual learning method.")
 
     # DOOM
-    parser.add_argument('--render_sleep', type=float, default=0.)
-    parser.add_argument('--render', default=False, action='store_true')
-    parser.add_argument('--variable_queue_len', type=int, default=5)
-    parser.add_argument('--normalize', type=bool, default=True)
-    parser.add_argument('--frame-height', type=int, default=84)
-    parser.add_argument('--frame-width', type=int, default=84)
-    parser.add_argument('--frame-stack', type=int, default=4)
-    parser.add_argument('--frame-skip', type=int, default=4)
+    parser.add_argument('--render_sleep', type=float, default=0.03, help='Sleep time between frames when rendering')
+    parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
+    parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
+    parser.add_argument('--normalize', type=bool, default=True, help='Normalize the game state')
+    parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
+    parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
+    parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
+    parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
@@ -212,12 +211,11 @@ def mt_parse_args(args=None):
 def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
-    parser.add_argument('--watch', default=False, action='store_true', help='watch the play of pre-trained policy only')
 
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
@@ -254,14 +252,14 @@ def single_parse_args(args=None):
                         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
 
     # DOOM
-    parser.add_argument('--render_sleep', type=float, default=0.)
-    parser.add_argument('--render', default=False, action='store_true')
-    parser.add_argument('--variable_queue_len', type=int, default=5)
-    parser.add_argument('--normalize', type=bool, default=True)
-    parser.add_argument('--frame-height', type=int, default=84)
-    parser.add_argument('--frame-width', type=int, default=84)
-    parser.add_argument('--frame-stack', type=int, default=4)
-    parser.add_argument('--frame-skip', type=int, default=4)
+    parser.add_argument('--render_sleep', type=float, default=0.03, help='Sleep time between frames when rendering')
+    parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
+    parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
+    parser.add_argument('--normalize', type=bool, default=True, help='Normalize the game state')
+    parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
+    parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
+    parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
+    parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')

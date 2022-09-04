@@ -34,7 +34,6 @@ def main(logger: EpochLogger, args: Namespace):
         test_envs,
         logger,
         scenario=args.scenario,
-        cl_method=args.cl_method,
         seed=args.seed,
         steps_per_env=args.steps_per_env,
         start_steps=args.start_steps,
@@ -50,6 +49,8 @@ def main(logger: EpochLogger, args: Namespace):
         alpha=args.alpha,
         gamma=args.gamma,
         target_output_std=args.target_output_std,
+        render=args.render,
+        render_sleep=args.render_sleep,
     )
     sac.run()
 
