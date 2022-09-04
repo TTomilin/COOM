@@ -1,3 +1,4 @@
+# TODO create cross-sequence and cross-environment tasks for Doom in a similar fashion
 TASK_SEQS = {
     "CW10": [
         "hammer-v1",

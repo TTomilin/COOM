@@ -34,6 +34,8 @@ def main(logger: EpochLogger, args: Namespace):
         "env": train_env,
         "test_envs": [],
         "logger": logger,
+        "scenario": args.scenario,
+        "cl_method": args.cl_method,
         "seed": args.seed,
         "steps_per_env": args.steps_per_env,
         "start_steps": args.start_steps,

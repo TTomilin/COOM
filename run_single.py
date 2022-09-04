@@ -1,24 +1,13 @@
 from argparse import Namespace
-from enum import Enum
 from pathlib import Path
 
-from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
-from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
-from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
-from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
 from coom.envs import get_single_env
 from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
+from coom.utils.enums import DoomScenario
 from coom.utils.utils import get_activation_from_str
 from coom.utils.wandb import init_wandb
 from input_args import single_parse_args
-
-
-class DoomScenario(Enum):
-    DEFEND_THE_CENTER = DefendTheCenterImpl
-    HEALTH_GATHERING = HealthGatheringImpl
-    SEEK_AND_SLAY = SeekAndSlayImpl
-    DODGE_PROJECTILES = DodgeProjectilesImpl
 
 
 def main(logger: EpochLogger, args: Namespace):
@@ -44,6 +33,8 @@ def main(logger: EpochLogger, args: Namespace):
         env,
         test_envs,
         logger,
+        scenario=args.scenario,
+        cl_method=args.cl_method,
         seed=args.seed,
         steps_per_env=args.steps_per_env,
         start_steps=args.start_steps,

@@ -30,29 +30,33 @@ def cl_parse_args(args=None):
                         help="Hidden sizes list for the MLP models")
     parser.add_argument("--activation", type=str, default="lrelu", help="Activation kind for the models")
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
+    parser.add_argument("--multihead_archs", type=str2bool, default=True, help="Whether use multi-head architecture")
+    parser.add_argument("--hide_task_id", type=str2bool, default=True,
+                        help="if True, one-hot encoding of the task will not be appended to observation")
 
-    # Learning
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1e3), help="Number of env interactions to collect before starting to do update the gradient")
-    parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
-    parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
+    # Learning rate
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
     parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
     parser.add_argument('--lr_decay_steps', type=int, default=5e4, help='Number of steps to decay the learning rate for')
+
+    # Replay buffer
+    parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
+    parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
+                        help="Strategy of inserting examples into the buffer")
+
+    # Training
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
+    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    parser.add_argument("--update_after", type=sci2int, default=int(1e3), help="Number of env interactions to collect before starting to do update the gradient")
+    parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
     parser.add_argument("--target_output_std", type=float, default=0.089,
                         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
-    parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
-                        help="Strategy of inserting examples into the buffer")
     parser.add_argument("--regularize_critic", type=str2bool, default=False,
                         help="If True, both actor and critic are regularized; if False, only actor is")
-    parser.add_argument("--multihead_archs", type=str2bool, default=True, help="Whether use multi-head architecture")
-    parser.add_argument("--hide_task_id", type=str2bool, default=True,
-                        help="if True, one-hot encoding of the task will not be appended to observation")
     parser.add_argument("--clipnorm", type=float, default=None, help="Value for gradient clipping")
     parser.add_argument("--agent_policy_exploration", type=str2bool, default=False,
                         help="If True, uniform exploration for start_steps steps is used only in the first task (in continual learning). Otherwise, it is used in every task")
@@ -229,16 +233,20 @@ def single_parse_args(args=None):
     parser.add_argument("--activation", type=str, default="lrelu", help="Activation kind for the models")
     parser.add_argument("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
 
+    # Learning rate
+    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
+    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'],
+                        help='Method to decay the learning rate over time')
+    parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
+    parser.add_argument('--lr_decay_steps', type=int, default=5e4,
+                        help='Number of steps to decay the learning rate for')
+
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
     parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--update_after", type=sci2int, default=int(1e3), help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Initial learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
-    parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=5e4, help='Number of steps to decay the learning rate for')
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
                         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")

@@ -1,15 +1,16 @@
 import math
 import os
 import time
+from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import gym
 import numpy as np
 import tensorflow as tf
 from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
 from tensorflow.python.framework import dtypes
 from tensorflow_probability.python.distributions import Categorical
 
+from coom.doom.env.base.common import CommonEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -21,9 +22,11 @@ from coom.utils.utils import reset_optimizer, reset_weights, set_seed
 class SAC:
     def __init__(
             self,
-            env: gym.Env,
-            test_envs: List[gym.Env],
+            env: CommonEnv,
+            test_envs: List[CommonEnv],
             logger: EpochLogger,
+            scenario: str = None,
+            cl_method: str = None,
             actor_cl: type = models.MlpActor,
             critic_cl: type = models.MlpCritic,
             policy_kwargs: Dict = None,
@@ -44,7 +47,7 @@ class SAC:
             update_every: int = 50,
             num_test_eps_stochastic: int = 10,
             num_test_eps_deterministic: int = 1,
-            save_freq_epochs: int = 100,
+            save_freq_epochs: int = 25,
             reset_buffer_on_task_change: bool = True,
             buffer_type: BufferType = BufferType.FIFO,
             reset_optimizer_on_task_change: bool = False,
@@ -118,6 +121,8 @@ class SAC:
         self.num_tasks = env.num_tasks
         self.test_envs = test_envs
         self.logger = logger
+        self.scenario = scenario
+        self.cl_method = cl_method
         self.critic_cl = critic_cl
         self.policy_kwargs = policy_kwargs
         self.steps_per_env = steps_per_env
@@ -504,13 +509,14 @@ class SAC:
         self.logger.dump_tabular()
 
     def save_model(self, current_task_idx):
+        model_dir = f'./checkpoints/{self.cl_method}/{self.scenario}/{datetime.now().strftime("%Y%m%d_%H%M%S")}'
         dir_prefixes = []
         if current_task_idx == -1:
-            dir_prefixes.append("./checkpoints")
+            dir_prefixes.append(model_dir)
         else:
-            dir_prefixes.append(f"./checkpoints/task{current_task_idx}")
+            dir_prefixes.append(f"{model_dir}/task{current_task_idx}_{self.env.task}")
             if current_task_idx == self.num_tasks - 1:
-                dir_prefixes.append("./checkpoints")
+                dir_prefixes.append(model_dir)
 
         for prefix in dir_prefixes:
             self.actor.save_weights(os.path.join(prefix, "actor"))

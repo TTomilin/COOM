@@ -1,28 +1,18 @@
 from argparse import Namespace
 from copy import deepcopy
-from enum import Enum
 from typing import Any, Dict, List, Tuple, Union, Type
 
 import gym
 import numpy as np
 from gym.wrappers import NormalizeObservation, FrameStack
 
+from coom.doom.env.base.common import CommonEnv
 from coom.doom.env.base.scenario import DoomEnv
-from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
-from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
-from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
-from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
 from coom.doom.env.utils.wrappers import ResizeWrapper, RescaleWrapper
+from coom.utils.enums import DoomScenario
 
 
-class DoomScenario(Enum):
-    DEFEND_THE_CENTER = DefendTheCenterImpl
-    HEALTH_GATHERING = HealthGatheringImpl
-    SEEK_AND_SLAY = SeekAndSlayImpl
-    DODGE_PROJECTILES = DodgeProjectilesImpl
-
-
-class ContinualLearningEnv(gym.Env):
+class ContinualLearningEnv(CommonEnv):
 
     def __init__(self, envs: List[DoomEnv], steps_per_env: int) -> None:
         for i in range(len(envs)):
@@ -30,7 +20,7 @@ class ContinualLearningEnv(gym.Env):
         self.action_space = envs[0].action_space
         self.observation_space = deepcopy(envs[0].observation_space)
         self.envs = envs
-        self.num_tasks = len(envs)
+        self.n_tasks = len(envs)
         self.steps_per_env = steps_per_env
         self.steps = steps_per_env * self.num_tasks
         self.cur_step = 0
@@ -44,12 +34,20 @@ class ContinualLearningEnv(gym.Env):
         return self.envs[self.cur_seq_idx]
 
     @property
-    def task(self):
+    def name(self) -> str:
+        return "ContinualLearningEnv"
+
+    @property
+    def task(self) -> str:
         return self._get_active_env().name
 
     @property
-    def task_id(self):
+    def task_id(self) -> int:
         return self.cur_seq_idx
+
+    @property
+    def num_tasks(self) -> int:
+        return self.n_tasks
 
     def step(self, action: Any) -> Tuple[np.ndarray, float, bool, Dict]:
         self._check_steps_bound()
@@ -93,7 +91,6 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     num_tasks = len(args.tasks)
     envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in enumerate(args.tasks)]
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
-    cl_env.name = "ContinualLearningEnv"
     return cl_env
 
 

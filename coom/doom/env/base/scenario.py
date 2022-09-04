@@ -7,15 +7,16 @@ import numpy as np
 import vizdoom as vzd
 from vizdoom import ScreenResolution, Button
 
+from coom.doom.env.base.common import CommonEnv
 
-class DoomEnv(gym.Env):
+
+class DoomEnv(CommonEnv):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks: int):
         super().__init__()
-        self.task = task
-        self.name = task
-        self.task_id = task_id
-        self.num_tasks = num_tasks
+        self.task_name = task
+        self.id = task_id
+        self.n_tasks = num_tasks
         self.frame_skip = args.frame_skip
 
         # Create the Doom game instance
@@ -46,6 +47,22 @@ class DoomEnv(gym.Env):
             self.game_variable_buffer.append(self.game.get_state().game_variables)
 
         self.spec = gym.envs.registration.EnvSpec(f"{task}-v0")
+
+    @property
+    def task(self) -> str:
+        return self.task_name
+
+    @property
+    def name(self) -> str:
+        return self.task_name
+
+    @property
+    def task_id(self):
+        return self.id
+
+    @property
+    def num_tasks(self) -> int:
+        return self.n_tasks
 
     def reset(self) -> np.ndarray:
         self.game.new_episode()
