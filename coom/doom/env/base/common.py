@@ -1,10 +1,18 @@
-from abc import ABC
 from typing import Dict
 
 import gym
 
 
-class CommonEnv(gym.Env, ABC):
+class CommonEnv(gym.Env):
+
+    def step(self, action):
+        raise NotImplementedError
+
+    def reset(self):
+        raise NotImplementedError
+
+    def render(self, mode="human"):
+        raise NotImplementedError
 
     @property
     def task(self) -> str:
