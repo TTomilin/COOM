@@ -13,6 +13,7 @@ class RaiseTheRoofImpl(RaiseTheRoof):
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
         super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.distance_buffer = []
+        self.switches_pressed = 0
         self.reward_switch_pressed = args.reward_switch_pressed
         self.traversal_reward_scaler = args.traversal_reward_scaler
         self.add_speed = args.add_speed
