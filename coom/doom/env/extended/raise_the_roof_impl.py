@@ -3,6 +3,7 @@ from typing import Dict, List
 
 import numpy as np
 from scipy import spatial
+from vizdoom import GameVariable
 
 from coom.doom.env.base.raise_the_roof import RaiseTheRoof
 
@@ -12,7 +13,7 @@ class RaiseTheRoofImpl(RaiseTheRoof):
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
         super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.distance_buffer = []
-        self.switch_reward = args.switch_reward
+        self.reward_switch_pressed = args.reward_switch_pressed
         self.traversal_reward_scaler = args.traversal_reward_scaler
         self.add_speed = args.add_speed
 
@@ -23,20 +24,18 @@ class RaiseTheRoofImpl(RaiseTheRoof):
         self.distance_buffer.append(distance)
         reward += distance * self.traversal_reward_scaler  # Increase reward linearly
 
-        current_vars = self.game_variable_buffer[-1]
-        previous_vars = self.game_variable_buffer[-2]
-
-        if current_vars[0] > previous_vars[0]:  # Obtain the switch press count
-            reward += self.switch_reward
+        switches_pressed = self.game.get_game_variable(GameVariable.USER2)
+        if switches_pressed > self.switches_pressed:
+            reward += self.reward_switch_pressed
             self.switches_pressed += 1
 
         return reward
 
     def distance_traversed(self) -> float:
-        current_coords = [self.game_variable_buffer[-1][3],
-                          self.game_variable_buffer[-1][4]]
-        past_coords = [self.game_variable_buffer[0][3],
-                       self.game_variable_buffer[0][4]]
+        current_coords = [self.game_variable_buffer[-1][0],
+                          self.game_variable_buffer[-1][1]]
+        past_coords = [self.game_variable_buffer[0][0],
+                       self.game_variable_buffer[0][1]]
         return spatial.distance.euclidean(current_coords, past_coords)
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:

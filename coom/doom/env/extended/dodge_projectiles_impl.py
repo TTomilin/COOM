@@ -7,7 +7,7 @@ from coom.doom.env.base.dodge_projectiles import DodgeProjectiles
 class DodgeProjectilesImpl(DodgeProjectiles):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        super().__init__(args, task, task_id, num_tasks)
+        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.health_loss_penalty = args.health_loss_penalty
         self.hits_taken = 0
 

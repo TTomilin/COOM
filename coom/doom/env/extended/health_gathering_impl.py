@@ -7,7 +7,7 @@ from coom.doom.env.base.health_gathering import HealthGathering
 class HealthGatheringImpl(HealthGathering):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        super().__init__(args, task, task_id, num_tasks)
+        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.health_acquired_reward = args.health_acquired_reward
         self.add_speed = args.add_speed
         self.kits_obtained = 0

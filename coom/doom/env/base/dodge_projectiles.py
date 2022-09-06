@@ -13,9 +13,9 @@ class DodgeProjectiles(DoomEnv):
     each frame that it survives.
     """
 
-    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, frame_survived_reward=0.01):
+    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
         super().__init__(args, task, task_id, num_tasks)
-        self.reward_frame_survived = frame_survived_reward
+        self.reward_frame_survived = reward_frame_survived
 
     def get_available_actions(self) -> List[List[float]]:
         actions = []

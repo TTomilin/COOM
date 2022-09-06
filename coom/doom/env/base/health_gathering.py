@@ -14,8 +14,8 @@ class HealthGathering(DoomEnv):
     and move forward. A small reward is granted for every frame the agent manages to survive.
     """
 
-    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, frame_survived_reward=0.01):
-        self.reward_frame_survived = frame_survived_reward
+    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
+        self.reward_frame_survived = reward_frame_survived
         super().__init__(args, task, task_id, num_tasks)
 
     def get_available_actions(self) -> List[List[float]]:

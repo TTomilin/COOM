@@ -9,7 +9,7 @@ def cl_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw', 'raise_the_roof'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None,
                         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
@@ -102,7 +102,8 @@ def cl_parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Scenario specific
-    parser.add_argument('--switch_pressed_reward', default=1.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
     parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
@@ -212,7 +213,7 @@ def mt_parse_args(args=None):
 def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw', 'raise_the_roof'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
@@ -274,7 +275,8 @@ def single_parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Scenario specific
-    parser.add_argument('--switch_pressed_reward', default=1.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
     parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
