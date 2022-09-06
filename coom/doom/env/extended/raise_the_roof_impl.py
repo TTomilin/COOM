@@ -1,22 +1,19 @@
 from argparse import Namespace
-from typing import Dict
+from typing import Dict, List
 
 import numpy as np
 from scipy import spatial
 
-from coom.doom.env.base.seek_and_slay import SeekAndSlay
+from coom.doom.env.base.raise_the_roof import RaiseTheRoof
 
 
-class SeekAndSlayImpl(SeekAndSlay):
+class RaiseTheRoofImpl(RaiseTheRoof):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        super().__init__(args, task, task_id, num_tasks, args.kill_reward)
+        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.distance_buffer = []
-        self.ammo_used = 0
-        self.hits_taken = 0
+        self.switch_reward = args.switch_reward
         self.traversal_reward_scaler = args.traversal_reward_scaler
-        self.health_loss_penalty = args.health_loss_penalty
-        self.ammo_used_penalty = args.ammo_used_penalty
         self.add_speed = args.add_speed
 
     def calc_reward(self) -> float:
@@ -29,10 +26,9 @@ class SeekAndSlayImpl(SeekAndSlay):
         current_vars = self.game_variable_buffer[-1]
         previous_vars = self.game_variable_buffer[-2]
 
-        if current_vars[0] < previous_vars[0]:
-            self.hits_taken += 1
-        if current_vars[2] < previous_vars[2]:
-            self.ammo_used += 1
+        if current_vars[0] > previous_vars[0]:  # Obtain the switch press count
+            reward += self.switch_reward
+            self.switches_pressed += 1
 
         return reward
 
@@ -44,32 +40,27 @@ class SeekAndSlayImpl(SeekAndSlay):
         return spatial.distance.euclidean(current_coords, past_coords)
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
-        variables = self.game_variable_buffer[-1]
-        statistics = {f'{mode}/health': variables[0],
-                      f'{mode}/kills': variables[1],
-                      f'{mode}/ammo': self.ammo_used,
-                      f'{mode}/movement': np.mean(self.distance_buffer).round(3),
-                      f'{mode}/hits_taken': self.hits_taken}
+        statistics = {f'{mode}/movement': np.mean(self.distance_buffer).round(3),
+                      f'{mode}/switches_pressed': self.switches_pressed}
         return statistics
 
     def clear_episode_statistics(self) -> None:
-        self.ammo_used = 0
-        self.hits_taken = 0
+        self.switches_pressed = 0
         self.distance_buffer.clear()
 
-    def get_available_actions(self):
+    def get_available_actions(self) -> List[List[float]]:
         actions = []
         m_forward = [[0.0], [1.0]]
         t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
-        attack = [[0.0], [1.0]]
+        use = [[0.0], [1.0]]
         speed = [[0.0], [1.0]]
 
         for t in t_left_right:
             for m in m_forward:
-                for a in attack:
-                    if self.add_speed and m == [1.0]:
+                for u in use:
+                    if self.add_speed:
                         for s in speed:
-                            actions.append(t + m + a + s)
+                            actions.append(t + m + u + s)
                     else:
-                        actions.append(t + m + a)
+                        actions.append(t + m + u)
         return actions

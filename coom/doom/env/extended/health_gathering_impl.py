@@ -9,6 +9,7 @@ class HealthGatheringImpl(HealthGathering):
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
         super().__init__(args, task, task_id, num_tasks)
         self.health_acquired_reward = args.health_acquired_reward
+        self.add_speed = args.add_speed
         self.kits_obtained = 0
 
     def calc_reward(self) -> float:

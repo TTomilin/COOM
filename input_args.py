@@ -102,6 +102,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Scenario specific
+    parser.add_argument('--switch_pressed_reward', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
     parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
@@ -273,6 +274,7 @@ def single_parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Scenario specific
+    parser.add_argument('--switch_pressed_reward', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
     parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
