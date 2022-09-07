@@ -17,6 +17,10 @@ def cl_parse_args(args=None):
     parser.add_argument("--tasks", type=str, nargs="+", default=None, help="Name of the tasks you want to run")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
 
+    # Save/Load
+    parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
+    parser.add_argument("--load_model_path", type=str, default=None, help="Path to load the model from")
+
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
                         default=["tsv", "tensorboard"], help="Types of logger used.")
@@ -227,6 +231,10 @@ def single_parse_args(args=None):
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
+
+    # Save/Load
+    parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
+    parser.add_argument("--load_model_path", type=str, default=None, help="Path to load the model from")
 
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],

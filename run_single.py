@@ -51,6 +51,9 @@ def main(logger: EpochLogger, args: Namespace):
         target_output_std=args.target_output_std,
         render=args.render,
         render_sleep=args.render_sleep,
+        save_freq_epochs=args.save_freq_epochs,
+        experiment_dir=args.experiment_dir,
+        load_model_path=args.load_model_path,
     )
     sac.run()
 

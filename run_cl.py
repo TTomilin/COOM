@@ -58,6 +58,9 @@ def main(logger: EpochLogger, args: Namespace):
         "gamma": args.gamma,
         "target_output_std": args.target_output_std,
         "agent_policy_exploration": args.agent_policy_exploration,
+        "save_freq_epochs": args.save_freq_epochs,
+        "experiment_dir": args.experiment_dir,
+        "load_model_path": args.load_model_path,
     }
 
     sac_class = get_sac_class(args.cl_method)

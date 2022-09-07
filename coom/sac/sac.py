@@ -2,6 +2,7 @@ import math
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -57,6 +58,8 @@ class SAC:
             agent_policy_exploration: bool = False,
             render: bool = False,
             render_sleep: float = 0.03,
+            experiment_dir: Path = None,
+            load_model_path: str = None,
     ):
         """A class for SAC training, for either single task, continual learning or multi-task learning.
         After the instance is created, use run() function to actually run the training.
@@ -149,6 +152,8 @@ class SAC:
         self.agent_policy_exploration = agent_policy_exploration
         self.render = render
         self.render_sleep = render_sleep
+        self.experiment_dir = experiment_dir
+        self.load_model_path = load_model_path
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -182,6 +187,10 @@ class SAC:
         self.critic2 = critic_cl(**policy_kwargs)
         self.target_critic2 = critic_cl(**policy_kwargs)
         self.target_critic2.set_weights(self.critic2.get_weights())
+
+        if load_model_path is not None:
+            # TODO load the model
+            pass
 
         self.critic_variables = self.critic1.trainable_variables + self.critic2.trainable_variables
         self.all_common_variables = (
@@ -513,7 +522,8 @@ class SAC:
         self.logger.dump_tabular()
 
     def save_model(self, current_task_idx):
-        model_dir = f'./checkpoints/{self.cl_method}/{self.scenario}/{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        method = self.cl_method if self.cl_method else "sac"
+        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.scenario}/{datetime.now().strftime("%Y%m%d_%H%M%S")}'
         dir_prefixes = []
         if current_task_idx == -1:
             dir_prefixes.append(model_dir)
