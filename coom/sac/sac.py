@@ -189,8 +189,7 @@ class SAC:
         self.target_critic2.set_weights(self.critic2.get_weights())
 
         if load_model_path is not None:
-            # TODO load the model
-            pass
+            self.load_model(load_model_path)
 
         self.critic_variables = self.critic1.trainable_variables + self.critic2.trainable_variables
         self.all_common_variables = (
@@ -538,6 +537,14 @@ class SAC:
             self.target_critic1.save_weights(os.path.join(prefix, "target_critic1"))
             self.critic2.save_weights(os.path.join(prefix, "critic2"))
             self.target_critic2.save_weights(os.path.join(prefix, "target_critic2"))
+
+    def load_model(self, model_path):
+        checkpoint_dir = f'{self.experiment_dir}/checkpoints/{model_path}'
+        self.actor.load_weights(os.path.join(checkpoint_dir, "actor"))
+        self.critic1.load_weights(os.path.join(checkpoint_dir, "critic1"))
+        self.target_critic1.load_weights(os.path.join(checkpoint_dir, "target_critic1"))
+        self.critic2.load_weights(os.path.join(checkpoint_dir, "critic2"))
+        self.target_critic2.load_weights(os.path.join(checkpoint_dir, "target_critic2"))
 
     def _handle_task_change(self, current_task_idx: int):
         self.on_task_start(current_task_idx)
