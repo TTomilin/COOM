@@ -11,19 +11,19 @@ from coom.doom.env.base.raise_the_roof import RaiseTheRoof
 class RaiseTheRoofImpl(RaiseTheRoof):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
         self.distance_buffer = []
         self.switches_pressed = 0
         self.reward_switch_pressed = args.reward_switch_pressed
-        self.traversal_reward_scaler = args.traversal_reward_scaler
+        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.add_speed = args.add_speed
+        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
 
     def calc_reward(self) -> float:
         reward = super().calc_reward()
         # Utilize a dense reward system by encouraging movement over previous iterations
         distance = self.distance_traversed()
         self.distance_buffer.append(distance)
-        reward += distance * self.traversal_reward_scaler  # Increase reward linearly
+        reward += distance * self.reward_scaler_traversal  # Increase reward linearly
 
         switches_pressed = self.game.get_game_variable(GameVariable.USER2)
         if switches_pressed > self.switches_pressed:

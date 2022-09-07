@@ -7,16 +7,16 @@ from coom.doom.env.base.dodge_projectiles import DodgeProjectiles
 class DodgeProjectilesImpl(DodgeProjectiles):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
-        self.health_loss_penalty = args.health_loss_penalty
+        self.penalty_health_loss = args.penalty_health_loss
         self.hits_taken = 0
+        super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
 
     def calc_reward(self) -> float:
         reward = super().calc_reward()
         current_vars = self.game_variable_buffer[-1]
         previous_vars = self.game_variable_buffer[-2]
         if current_vars[0] < previous_vars[0]:
-            reward -= self.health_loss_penalty  # Loss of health
+            reward -= self.penalty_health_loss  # Loss of health
             self.hits_taken += 1
         return reward
 

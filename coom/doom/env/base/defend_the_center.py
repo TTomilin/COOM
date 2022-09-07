@@ -14,9 +14,9 @@ class DefendTheCenter(DoomEnv):
     each enemy killed.
     """
 
-    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, kill_reward=1.0):
+    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, reward_kill=1.0):
         super().__init__(args, task, task_id, num_tasks)
-        self.kill_reward = kill_reward
+        self.reward_kill = reward_kill
 
     def get_available_actions(self) -> List[List[float]]:
         actions = []
@@ -33,6 +33,6 @@ class DefendTheCenter(DoomEnv):
         previous_vars = self.game_variable_buffer[-2]
 
         if current_vars[0] > previous_vars[0]:
-            reward += self.kill_reward  # Elimination of enemy
+            reward += self.reward_kill  # Elimination of enemy
 
         return reward

@@ -1,31 +1,24 @@
 from argparse import Namespace
 from typing import Dict
 
+from coom.doom.env.base.floor_is_lava import FloorIsLava
 from coom.doom.env.base.health_gathering import HealthGathering
 
 
-class HealthGatheringImpl(HealthGathering):
+class FloorIsLavaImpl(FloorIsLava):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        self.reward_health_acquired = args.reward_health_acquired
+        self.penalty_health_loss = args.penalty_health_loss
         self.add_speed = args.add_speed
-        self.kits_obtained = 0
         super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
 
     def calc_reward(self) -> float:
         reward = super().calc_reward()
         current_vars = self.game_variable_buffer[-1]
         previous_vars = self.game_variable_buffer[-2]
-        if current_vars[0] > previous_vars[0]:
-            reward += self.reward_health_acquired  # Picked up health kit
-            self.kits_obtained += 1
+        if current_vars[0] < previous_vars[0]:
+            reward -= self.penalty_health_loss  # Stood on lava
         return reward
-
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
-        return {f'{mode}/kits_obtained': self.kits_obtained}
-
-    def clear_episode_statistics(self) -> None:
-        self.kits_obtained = 0
 
     def get_available_actions(self):
         actions = []

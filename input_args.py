@@ -9,7 +9,8 @@ def cl_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw', 'raise_the_roof'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None,
                         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
@@ -35,9 +36,11 @@ def cl_parse_args(args=None):
 
     # Learning rate
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'], help='Method to decay the learning rate over time')
+    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'],
+                        help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=5e4, help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=5e4,
+                        help='Number of steps to decay the learning rate for')
 
     # Replay buffer
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
@@ -45,9 +48,12 @@ def cl_parse_args(args=None):
                         help="Strategy of inserting examples into the buffer")
 
     # Training
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1e3), help="Number of env interactions to collect before starting to do update the gradient")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
+                        help="Number of steps the algorithm will run per environment")
+    parser.add_argument("--start_steps", type=sci2int, default=int(1e3),
+                        help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    parser.add_argument("--update_after", type=sci2int, default=int(1e3),
+                        help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
@@ -89,6 +95,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
+    parser.add_argument('--add_speed', default=False, action='store_true')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
@@ -101,16 +108,17 @@ def cl_parse_args(args=None):
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
-    # Scenario specific
+    # Reward
     parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
-    parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
-    parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
-    parser.add_argument('--ammo_used_penalty', default=0.1, type=float, help='Negative reward for using ammo')
-    parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float,
+    parser.add_argument('--reward_kill', default=1.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_health_acquired', default=1.0, type=float, help='For picking up health kits')
+    parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
-    parser.add_argument('--add_speed', default=False, action='store_true')
+
+    # Penalty
+    parser.add_argument('--penalty_health_loss', default=0.1, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_ammo_used', default=0.1, type=float, help='Negative reward for using ammo')
 
     return parser.parse_args(args=args)
 
@@ -213,7 +221,8 @@ def mt_parse_args(args=None):
 def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles', 'chainsaw', 'raise_the_roof'])
+                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
@@ -242,9 +251,12 @@ def single_parse_args(args=None):
                         help='Number of steps to decay the learning rate for')
 
     # Learning
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4), help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e3), help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1e3), help="Number of env interactions to collect before starting to do update the gradient")
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
+                        help="Number of steps the algorithm will run per environment")
+    parser.add_argument("--start_steps", type=sci2int, default=int(1e3),
+                        help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    parser.add_argument("--update_after", type=sci2int, default=int(1e3),
+                        help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
@@ -262,6 +274,7 @@ def single_parse_args(args=None):
     parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
+    parser.add_argument('--add_speed', default=False, action='store_true', help='Grant the acceleration action')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
@@ -274,15 +287,16 @@ def single_parse_args(args=None):
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
-    # Scenario specific
+    # Rewards
     parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
-    parser.add_argument('--kill_reward', default=1.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--health_acquired_reward', default=1.0, type=float, help='For picking up health kits')
-    parser.add_argument('--health_loss_penalty', default=0.1, type=float, help='Negative reward for losing health')
-    parser.add_argument('--ammo_used_penalty', default=0.1, type=float, help='Negative reward for using ammo')
-    parser.add_argument('--traversal_reward_scaler', default=1e-3, type=float,
+    parser.add_argument('--reward_kill', default=1.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_health_acquired', default=1.0, type=float, help='For picking up health kits')
+    parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
-    parser.add_argument('--add_speed', default=False, action='store_true')
+
+    # Penalties
+    parser.add_argument('--penalty_health_loss', default=0.1, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_ammo_used', default=0.1, type=float, help='Negative reward for using ammo')
 
     return parser.parse_args(args=args)
