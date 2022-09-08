@@ -18,6 +18,7 @@ def main(logger: EpochLogger, args: Namespace):
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+    init_wandb(args)
     train_env = get_cl_env(args)
     num_tasks = len(args.tasks)
 
@@ -100,6 +101,5 @@ def main(logger: EpochLogger, args: Namespace):
 
 if __name__ == "__main__":
     args = cl_parse_args()
-    init_wandb(args)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     main(logger, args)
