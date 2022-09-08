@@ -45,11 +45,10 @@ def cl_parse_args(args=None):
 
     # Learning rate
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'],
+    parser.add_argument('--lr_decay', type=str, default='linear', choices=[None, 'linear', 'exponential'],
                         help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=5e4,
-                        help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=1.5e5, help='Number of steps to decay the learning rate')
 
     # Replay buffer
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
@@ -262,11 +261,10 @@ def single_parse_args(args=None):
 
     # Learning rate
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")
-    parser.add_argument('--lr_decay', type=str, default=None, choices=['linear', 'exponential'],
+    parser.add_argument('--lr_decay', type=str, default='linear', choices=[None, 'linear', 'exponential'],
                         help='Method to decay the learning rate over time')
     parser.add_argument('--lr_decay_rate', type=float, default=0.1, help='Rate to decay the learning')
-    parser.add_argument('--lr_decay_steps', type=int, default=5e4,
-                        help='Number of steps to decay the learning rate for')
+    parser.add_argument('--lr_decay_steps', type=int, default=1.5e5, help='Number of steps to decay the learning rate')
 
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
