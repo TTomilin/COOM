@@ -1,10 +1,10 @@
 from argparse import Namespace
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union, Type
+from typing import Any, Dict, List, Tuple, Union, Type, Callable
 
 import gym
 import numpy as np
-from gym.wrappers import NormalizeObservation, FrameStack
+from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo, GrayScaleObservation
 
 from coom.doom.env.base.common import CommonEnv
 from coom.doom.env.base.scenario import DoomEnv
@@ -66,7 +66,7 @@ class ContinualLearningEnv(CommonEnv):
 
         return obs, reward, done, info
 
-    def render(self, mode="human"):
+    def render(self, mode="rgb_array"):
         self._get_active_env().render(mode)
 
     def reset(self) -> np.ndarray:
@@ -89,7 +89,8 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     """
     scenario_class = DoomScenario[args.scenario.upper()].value
     num_tasks = len(args.tasks)
-    envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in enumerate(args.tasks)]
+    envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in
+            enumerate(args.tasks)]
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     return cl_env
 
@@ -97,7 +98,7 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
 class MultiTaskEnv(gym.Env):
 
     def __init__(
-        self, envs: List[gym.Env], steps_per_env: int, cycle_mode: str = "episode"
+            self, envs: List[gym.Env], steps_per_env: int, cycle_mode: str = "episode"
     ) -> None:
         assert cycle_mode == "episode"
         for i in range(len(envs)):
@@ -138,7 +139,7 @@ class MultiTaskEnv(gym.Env):
 
 
 def get_mt_env(
-    tasks: List[Union[int, str]], steps_per_task: int, randomization: str = "random_init_all"
+        tasks: List[Union[int, str]], steps_per_task: int, randomization: str = "random_init_all"
 ):
     """Returns multi-task learning environment.
 
@@ -155,19 +156,20 @@ def get_mt_env(
     # num_tasks = len(task_names)
     envs = []
     # for i, task_name in enumerate(task_names):
-        # env = MT50.train_classes[task_name]()
-        # env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
-        # env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
-        # env.name = task_name
-        # env = TimeLimit(env, META_WORLD_TIME_HORIZON)
-        # env = SuccessCounter(env)
-        # envs.append(env)
+    # env = MT50.train_classes[task_name]()
+    # env = RandomizationWrapper(env, get_subtasks(task_name), randomization)
+    # env = OneHotAdder(env, one_hot_idx=i, one_hot_len=num_tasks)
+    # env.name = task_name
+    # env = TimeLimit(env, META_WORLD_TIME_HORIZON)
+    # env = SuccessCounter(env)
+    # envs.append(env)
     mt_env = MultiTaskEnv(envs, steps_per_task)
     mt_env.name = "MultiTaskEnv"
     return mt_env
 
 
-def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, one_hot_idx: int, one_hot_len: int):
+def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, one_hot_idx: int,
+                   one_hot_len: int) -> DoomEnv:
     """Returns a single task environment.
 
     Args:
@@ -176,13 +178,20 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
       :param task: task name
       :param one_hot_idx: one-hot identifier (indicates order among different tasks that we consider)
       :param one_hot_len: length of the one-hot encoding, number of tasks that we consider
+      :param step_trigger: function that takes the current step and returns True if the episode should be recorded
 
     Returns:
       :return DoomEnv: single-task Doom environment
     """
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
+    env = GrayScaleObservation(env)
     env = ResizeWrapper(env, args.frame_height, args.frame_width)
     env = RescaleWrapper(env)
-    env = NormalizeObservation(env)
+    if args.normalize:
+        env = NormalizeObservation(env)
     env = FrameStack(env, args.frame_stack)
+    if args.record:
+        method = args.cl_method if 'cl_method' in args else 'sac'
+        env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",
+                          step_trigger=env.video_schedule, name_prefix=f'{args.scenario}_{task}')
     return env

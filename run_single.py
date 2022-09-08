@@ -1,4 +1,5 @@
 from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
 
 from coom.envs import get_single_env
@@ -19,6 +20,7 @@ def main(logger: EpochLogger, args: Namespace):
 
     args.experiment_dir = Path(__file__).parent.resolve()
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     scenario_class = DoomScenario[args.scenario.upper()].value
 
@@ -53,7 +55,8 @@ def main(logger: EpochLogger, args: Namespace):
         render_sleep=args.render_sleep,
         save_freq_epochs=args.save_freq_epochs,
         experiment_dir=args.experiment_dir,
-        load_model_path=args.load_model_path,
+        model_path=args.model_path,
+        timestamp=args.timestamp,
     )
     sac.run()
 

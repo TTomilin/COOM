@@ -18,6 +18,8 @@ class DoomEnv(CommonEnv):
         self.id = task_id
         self.n_tasks = num_tasks
         self.frame_skip = args.frame_skip
+        self.metadata['render.modes'] = 'rgb_array'
+        self.record_every = args.record_every
 
         # Create the Doom game instance
         self.game = vzd.DoomGame()
@@ -33,7 +35,7 @@ class DoomEnv(CommonEnv):
         self.game.init()
 
         # Define the observation space
-        self.game_res = (self.game.get_screen_height(), self.game.get_screen_width())
+        self.game_res = (self.game.get_screen_height(), self.game.get_screen_width(), 3)
         self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.game_res, dtype=np.uint8)
 
         # Define the action space
@@ -67,7 +69,10 @@ class DoomEnv(CommonEnv):
     def reset(self) -> np.ndarray:
         self.game.new_episode()
         self.clear_episode_statistics()
-        return self.game.get_state().screen_buffer
+        observation = self.game.get_state().screen_buffer
+        observation = np.transpose(observation, [1, 2, 0])
+        return observation
+
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
         action = self.available_actions[action]
@@ -79,7 +84,7 @@ class DoomEnv(CommonEnv):
         done = self.game.is_player_dead() or self.game.is_episode_finished() or not state
         info = self.get_statistics()
 
-        observation = state.screen_buffer if state else np.zeros(self.game_res)
+        observation = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.float32(np.zeros(self.game_res))
         if not done:
             self.game_variable_buffer.append(state.game_variables)
         return observation, reward, done, info
@@ -93,8 +98,12 @@ class DoomEnv(CommonEnv):
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         return {}
 
-    def render(self, mode="human"):
-        pass
+    def render(self, mode="rgb_array"):
+        state = self.game.get_state()
+        return np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.uint8(np.zeros(self.game_res))
+
+    def video_schedule(self, episode_id):
+        return not episode_id % self.record_every
 
     def clear_episode_statistics(self) -> None:
         pass

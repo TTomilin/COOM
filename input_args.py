@@ -19,7 +19,12 @@ def cl_parse_args(args=None):
 
     # Save/Load
     parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
-    parser.add_argument("--load_model_path", type=str, default=None, help="Path to load the model from")
+    parser.add_argument("--model_path", type=str, default=None, help="Path to load the model from")
+
+    # Recording
+    parser.add_argument("--record", type=bool, default=True, help="Whether to record gameplay videos")
+    parser.add_argument("--record_every", type=int, default=5000, help="Record gameplay video every n steps")
+    parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
@@ -54,9 +59,9 @@ def cl_parse_args(args=None):
     # Training
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e3),
+    parser.add_argument("--start_steps", type=sci2int, default=int(1000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1e3),
+    parser.add_argument("--update_after", type=sci2int, default=int(1000),
                         help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
@@ -234,7 +239,12 @@ def single_parse_args(args=None):
 
     # Save/Load
     parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
-    parser.add_argument("--load_model_path", type=str, default=None, help="Path to load the model from")
+    parser.add_argument("--model_path", type=str, default=None, help="Path to load the model from")
+
+    # Recording
+    parser.add_argument("--record", type=bool, default=True, help="Whether to record gameplay videos")
+    parser.add_argument("--record_every", type=int, default=5000, help="Record gameplay video every n steps")
+    parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
     parser.add_argument("--logger_output", type=str, nargs="+", choices=["neptune", "tensorboard", "tsv"],
@@ -261,9 +271,9 @@ def single_parse_args(args=None):
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1e3),
+    parser.add_argument("--start_steps", type=sci2int, default=int(1000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1e3),
+    parser.add_argument("--update_after", type=sci2int, default=int(1000),
                         help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")

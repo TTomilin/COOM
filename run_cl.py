@@ -1,4 +1,5 @@
 from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
 
 from coom.envs import get_cl_env
@@ -15,6 +16,7 @@ from input_args import cl_parse_args
 def main(logger: EpochLogger, args: Namespace):
     args.experiment_dir = Path(__file__).parent.resolve()
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
+    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     train_env = get_cl_env(args)
     num_tasks = len(args.tasks)
@@ -60,7 +62,8 @@ def main(logger: EpochLogger, args: Namespace):
         "agent_policy_exploration": args.agent_policy_exploration,
         "save_freq_epochs": args.save_freq_epochs,
         "experiment_dir": args.experiment_dir,
-        "load_model_path": args.load_model_path,
+        "model_path": args.model_path,
+        "timestamp": args.timestamp,
     }
 
     sac_class = get_sac_class(args.cl_method)

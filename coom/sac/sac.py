@@ -59,7 +59,8 @@ class SAC:
             render: bool = False,
             render_sleep: float = 0.03,
             experiment_dir: Path = None,
-            load_model_path: str = None,
+            model_path: str = None,
+            timestamp: str = None,
     ):
         """A class for SAC training, for either single task, continual learning or multi-task learning.
         After the instance is created, use run() function to actually run the training.
@@ -153,7 +154,8 @@ class SAC:
         self.render = render
         self.render_sleep = render_sleep
         self.experiment_dir = experiment_dir
-        self.load_model_path = load_model_path
+        self.model_path = model_path
+        self.timestamp = timestamp
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -188,8 +190,8 @@ class SAC:
         self.target_critic2 = critic_cl(**policy_kwargs)
         self.target_critic2.set_weights(self.critic2.get_weights())
 
-        if load_model_path is not None:
-            self.load_model(load_model_path)
+        if model_path is not None:
+            self.load_model(model_path)
 
         self.critic_variables = self.critic1.trainable_variables + self.critic2.trainable_variables
         self.all_common_variables = (
@@ -522,12 +524,12 @@ class SAC:
 
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
-        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.scenario}/{datetime.now().strftime("%Y%m%d_%H%M%S")}'
+        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.scenario}_{self.env.task}'
         dir_prefixes = []
         if current_task_idx == -1:
             dir_prefixes.append(model_dir)
         else:
-            dir_prefixes.append(f"{model_dir}/task{current_task_idx}_{self.env.task}")
+            dir_prefixes.append(f"{model_dir}_task{current_task_idx}")
             if current_task_idx == self.num_tasks - 1:
                 dir_prefixes.append(model_dir)
 
