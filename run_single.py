@@ -11,7 +11,7 @@ from coom.utils.wandb import init_wandb
 from input_args import single_parse_args
 
 
-def main(logger: EpochLogger, args: Namespace):
+def main(args: Namespace):
     policy_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
@@ -22,13 +22,17 @@ def main(logger: EpochLogger, args: Namespace):
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+    # Logging
     init_wandb(args)
-    scenario_class = DoomScenario[args.scenario.upper()].value
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
+    # Task
     task = 'default'
     one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
     one_hot_len = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
 
+    # Environment
+    scenario_class = DoomScenario[args.scenario.upper()].value
     env = get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len)
     test_envs = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_tasks]
 
@@ -63,6 +67,4 @@ def main(logger: EpochLogger, args: Namespace):
 
 
 if __name__ == "__main__":
-    args = single_parse_args()
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
-    main(logger, args)
+    main(single_parse_args())
