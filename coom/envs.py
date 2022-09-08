@@ -8,7 +8,7 @@ from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo, GrayScal
 
 from coom.doom.env.base.common import CommonEnv
 from coom.doom.env.base.scenario import DoomEnv
-from coom.doom.env.utils.wrappers import ResizeWrapper, RescaleWrapper
+from coom.doom.env.utils.wrappers import ResizeWrapper, RescaleWrapper, RGBStack
 from coom.utils.enums import DoomScenario
 
 
@@ -178,18 +178,18 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
       :param task: task name
       :param one_hot_idx: one-hot identifier (indicates order among different tasks that we consider)
       :param one_hot_len: length of the one-hot encoding, number of tasks that we consider
-      :param step_trigger: function that takes the current step and returns True if the episode should be recorded
 
     Returns:
       :return DoomEnv: single-task Doom environment
     """
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    env = GrayScaleObservation(env)
+    # env = GrayScaleObservation(env)
     env = ResizeWrapper(env, args.frame_height, args.frame_width)
     env = RescaleWrapper(env)
     if args.normalize:
         env = NormalizeObservation(env)
     env = FrameStack(env, args.frame_stack)
+    env = RGBStack(env)
     if args.record:
         method = args.cl_method if 'cl_method' in args else 'sac'
         env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",

@@ -9,9 +9,9 @@ from tensorflow.python.keras.layers import Conv2D, Flatten, Dense, Activation, C
 
 
 def mlp(
-        channels: int,
         height: int,
         width: int,
+        channels: int,
         num_tasks: int,
         hidden_sizes: Tuple[int],
         activation: Callable,
@@ -81,8 +81,6 @@ class MlpActor(Model):
         self.action_space = action_space
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
-        obs = tf.transpose(obs, [0, 2, 3, 1])
-
         logits = self.core([obs, one_hot_task_id])
         mu = self.head_mu(logits)
 
@@ -125,7 +123,6 @@ class MlpCritic(Model):
         )
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
-        obs = tf.transpose(obs, [0, 2, 3, 1])
         value = self.head(self.core([obs, one_hot_task_id]))
         if self.num_heads > 1:
             value = _choose_head(value, self.num_heads, one_hot_task_id)
