@@ -237,9 +237,7 @@ class VclMlpActor(Model):
         return self.core.trainable_variables + self.head_mu.trainable_variables
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, samples_num: int = 1) -> Tuple[tf.Tensor]:
-        obs = tf.transpose(obs, [0, 2, 3, 1])
         mus = []
-
         for sample_idx in range(samples_num):
             x = self.core((obs, one_hot_task_id))
             mu = self.head_mu(x)

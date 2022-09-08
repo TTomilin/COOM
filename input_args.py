@@ -22,7 +22,7 @@ def cl_parse_args(args=None):
     parser.add_argument("--model_path", type=str, default=None, help="Path to load the model from")
 
     # Recording
-    parser.add_argument("--record", type=bool, default=True, help="Whether to record gameplay videos")
+    parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
     parser.add_argument("--record_every", type=int, default=5000, help="Record gameplay video every n steps")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
@@ -98,7 +98,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--render_sleep', type=float, default=0.03, help='Sleep time between frames when rendering')
     parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
     parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
-    parser.add_argument('--normalize', type=bool, default=True, help='Normalize the game state')
+    parser.add_argument('--normalize', type=str2bool, default=True, help='Normalize the game state')
     parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
     parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
@@ -241,7 +241,7 @@ def single_parse_args(args=None):
     parser.add_argument("--model_path", type=str, default=None, help="Path to load the model from")
 
     # Recording
-    parser.add_argument("--record", type=bool, default=True, help="Whether to record gameplay videos")
+    parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
     parser.add_argument("--record_every", type=int, default=5000, help="Record gameplay video every n steps")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
@@ -285,7 +285,7 @@ def single_parse_args(args=None):
     parser.add_argument('--render_sleep', type=float, default=0.03, help='Sleep time between frames when rendering')
     parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
     parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
-    parser.add_argument('--normalize', type=bool, default=True, help='Normalize the game state')
+    parser.add_argument('--normalize', type=str2bool, default=True, help='Normalize the game state')
     parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
     parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')

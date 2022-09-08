@@ -13,10 +13,14 @@ from coom.utils.wandb import init_wandb
 from input_args import cl_parse_args
 
 
-def main(logger: EpochLogger, args: Namespace):
+def main(args: Namespace):
     args.experiment_dir = Path(__file__).parent.resolve()
     args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Logging
+    init_wandb(args)
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     train_env = get_cl_env(args)
     num_tasks = len(args.tasks)
@@ -99,7 +103,4 @@ def main(logger: EpochLogger, args: Namespace):
 
 
 if __name__ == "__main__":
-    args = cl_parse_args()
-    init_wandb(args)
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
-    main(logger, args)
+    main(cl_parse_args())
