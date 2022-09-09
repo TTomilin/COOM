@@ -99,10 +99,10 @@ def cl_parse_args(args=None):
     parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
     parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
     parser.add_argument('--normalize', type=str2bool, default=True, help='Normalize the game state')
-    parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
-    parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
-    parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
-    parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
+    parser.add_argument('--frame_height', type=int, default=84, help='Height of the frame')
+    parser.add_argument('--frame_width', type=int, default=84, help='Width of the frame')
+    parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
+    parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
     parser.add_argument('--add_speed', default=False, action='store_true')
 
     # WandB
@@ -286,10 +286,10 @@ def single_parse_args(args=None):
     parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
     parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
     parser.add_argument('--normalize', type=str2bool, default=True, help='Normalize the game state')
-    parser.add_argument('--frame-height', type=int, default=84, help='Height of the frame')
-    parser.add_argument('--frame-width', type=int, default=84, help='Width of the frame')
-    parser.add_argument('--frame-stack', type=int, default=4, help='Number of frames to stack')
-    parser.add_argument('--frame-skip', type=int, default=4, help='Number of frames to skip')
+    parser.add_argument('--frame_height', type=int, default=84, help='Height of the frame')
+    parser.add_argument('--frame_width', type=int, default=84, help='Width of the frame')
+    parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
+    parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
     parser.add_argument('--add_speed', default=False, action='store_true', help='Grant the acceleration action')
 
     # WandB

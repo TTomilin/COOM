@@ -183,7 +183,6 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
       :return DoomEnv: single-task Doom environment
     """
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    # env = GrayScaleObservation(env)
     env = ResizeWrapper(env, args.frame_height, args.frame_width)
     env = RescaleWrapper(env)
     if args.normalize:
