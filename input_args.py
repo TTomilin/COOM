@@ -58,7 +58,7 @@ def cl_parse_args(args=None):
     # Training
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1000),
+    parser.add_argument("--start_steps", type=sci2int, default=int(5000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--update_after", type=sci2int, default=int(1000),
                         help="Number of env interactions to collect before starting to do update the gradient")
@@ -269,7 +269,7 @@ def single_parse_args(args=None):
     # Learning
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(1000),
+    parser.add_argument("--start_steps", type=sci2int, default=int(5000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--update_after", type=sci2int, default=int(1000),
                         help="Number of env interactions to collect before starting to do update the gradient")
