@@ -30,3 +30,22 @@ class ChainsawImpl(SeekAndSlayImpl):
     def clear_episode_statistics(self) -> None:
         self.hits_taken = 0
         self.distance_buffer.clear()
+
+    def get_available_actions(self):
+        actions = []
+        m_forward_backward = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+        t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+        attack = [[0.0], [1.0]]
+        use = [[0.0], [1.0]]
+        speed = [[0.0], [1.0]]
+
+        for t in t_left_right:
+            for m in m_forward_backward:
+                for a in attack:
+                    for u in use:
+                        if self.add_speed and m == [1.0]:
+                            for s in speed:
+                                actions.append(t + m + a + u + s)
+                        else:
+                            actions.append(t + m + a + u)
+        return actions
