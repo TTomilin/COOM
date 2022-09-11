@@ -22,13 +22,13 @@ class FloorIsLavaImpl(FloorIsLava):
 
     def get_available_actions(self):
         actions = []
-        m_forward_backward = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
+        m_forward = [[0.0], [1.0]]
         t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
         execute = [[0.0], [1.0]]
         speed = [[0.0], [1.0]]
 
         for t in t_left_right:
-            for m in m_forward_backward:
+            for m in m_forward:
                 for e in execute:
                     if self.add_speed and m == [1.0]:
                         for s in speed:
