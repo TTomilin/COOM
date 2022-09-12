@@ -10,7 +10,7 @@ def cl_parse_args(args=None):
 
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
-                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek'])
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None,
                         help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
@@ -120,7 +120,8 @@ def cl_parse_args(args=None):
     parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
     parser.add_argument('--reward_kill', default=1.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--reward_health_acquired', default=1.0, type=float, help='For picking up health kits')
+    parser.add_argument('--reward_item_acquired', default=1.0, type=float, help='For picking up weapons/health kits')
+    parser.add_argument('--reward_delivery', default=1.0, type=float, help='For delivering an item')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
 
@@ -230,7 +231,7 @@ def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
-                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek'])
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
@@ -307,7 +308,8 @@ def single_parse_args(args=None):
     parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
     parser.add_argument('--reward_kill', default=1.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--reward_health_acquired', default=1.0, type=float, help='For picking up health kits')
+    parser.add_argument('--reward_item_acquired', default=1.0, type=float, help='For picking up weapons/health kits')
+    parser.add_argument('--reward_delivery', default=1.0, type=float, help='For delivering an item')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
 

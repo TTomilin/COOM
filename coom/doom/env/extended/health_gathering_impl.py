@@ -7,7 +7,7 @@ from coom.doom.env.base.health_gathering import HealthGathering
 class HealthGatheringImpl(HealthGathering):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
-        self.reward_health_acquired = args.reward_health_acquired
+        self.reward_item_acquired = args.reward_item_acquired
         self.add_speed = args.add_speed
         self.kits_obtained = 0
         super().__init__(args, task, task_id, num_tasks, args.reward_frame_survived)
@@ -17,7 +17,7 @@ class HealthGatheringImpl(HealthGathering):
         current_vars = self.game_variable_buffer[-1]
         previous_vars = self.game_variable_buffer[-2]
         if current_vars[0] > previous_vars[0]:
-            reward += self.reward_health_acquired  # Picked up health kit
+            reward += self.reward_item_acquired  # Picked up health kit
             self.kits_obtained += 1
         return reward
 

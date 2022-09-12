@@ -14,7 +14,7 @@ class HideAndSeekImpl(HideAndSeek):
         self.kits_obtained = 0
         self.hits_taken = 0
         self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_health_acquired = args.reward_health_acquired
+        self.reward_item_acquired = args.reward_item_acquired
         self.penalty_health_loss = args.penalty_health_loss
         self.add_speed = args.add_speed
         super().__init__(args, task, task_id, num_tasks)
@@ -33,7 +33,7 @@ class HideAndSeekImpl(HideAndSeek):
             reward -= self.penalty_health_loss  # Damage inflicted by enemies
             self.hits_taken += 1
         elif current_vars[0] > previous_vars[0]:
-            reward += self.reward_health_acquired  # Picked up a health kit
+            reward += self.reward_item_acquired  # Picked up a health kit
             self.kits_obtained += 1
 
         return reward

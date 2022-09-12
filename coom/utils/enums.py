@@ -1,5 +1,6 @@
 from enum import Enum
 
+from coom.doom.env.extended.arms_dealer_impl import ArmsDealerImpl
 from coom.doom.env.extended.chainsaw_impl import ChainsawImpl
 from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
 from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
@@ -24,3 +25,4 @@ class DoomScenario(Enum):
     RAISE_THE_ROOF = RaiseTheRoofImpl
     FLOOR_IS_LAVA = FloorIsLavaImpl
     HIDE_AND_SEEK = HideAndSeekImpl
+    ARMS_DEALER = ArmsDealerImpl

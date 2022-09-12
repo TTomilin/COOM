@@ -73,7 +73,6 @@ class DoomEnv(CommonEnv):
         observation = np.transpose(observation, [1, 2, 0])
         return observation
 
-
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
         action = self.available_actions[action]
         self.game.set_action(action)
