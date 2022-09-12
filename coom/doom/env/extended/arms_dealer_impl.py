@@ -11,6 +11,7 @@ class ArmsDealerImpl(ArmsDealer):
 
     def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1):
         self.distance_buffer = []
+        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_item_acquired = args.reward_item_acquired
         self.add_speed = args.add_speed
         self.weapons_acquired = 0
