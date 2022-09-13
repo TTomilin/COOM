@@ -8,7 +8,9 @@ from coom.doom.env.base.scenario import DoomEnv
 
 class ArmsDealer(DoomEnv):
 
-    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks=1, reward_delivery=1.0):
+    def __init__(self, args: Namespace, task: str, task_id: int, num_tasks: int = 1, reward_delivery: float = 1.0,
+                 penalty_frame_passed: float = 0.01):
+        self.penalty_frame_passed = penalty_frame_passed
         self.reward_delivery = reward_delivery
         self.arms_dealt = 0
         super().__init__(args, task, task_id, num_tasks)
@@ -23,7 +25,7 @@ class ArmsDealer(DoomEnv):
         return actions
 
     def calc_reward(self) -> float:
-        reward = 0.0
+        reward = -self.penalty_frame_passed
         arms_dealt = self.game.get_game_variable(GameVariable.USER1)
         if arms_dealt > self.arms_dealt:
             reward = self.reward_delivery

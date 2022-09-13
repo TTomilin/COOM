@@ -1,6 +1,7 @@
 from argparse import Namespace
 from typing import Dict
 
+import numpy as np
 from scipy import spatial
 from vizdoom import GameVariable
 
@@ -13,6 +14,7 @@ class ArmsDealerImpl(ArmsDealer):
         self.distance_buffer = []
         self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_item_acquired = args.reward_item_acquired
+        self.penalty_frame_passed = args.penalty_frame_passed
         self.add_speed = args.add_speed
         self.weapons_acquired = 0
         super().__init__(args, task, task_id, num_tasks, args.reward_delivery)
@@ -38,7 +40,11 @@ class ArmsDealerImpl(ArmsDealer):
         return spatial.distance.euclidean(current_coords, past_coords)
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
-        return {f'{mode}/arms_dealt': self.arms_dealt}
+        return {
+            f'{mode}/arms_dealt': self.arms_dealt,
+            f'{mode}/weapons_acquired': self.weapons_acquired,
+            f'{mode}/movement': np.mean(self.distance_buffer).round(3)
+        }
 
     def clear_episode_statistics(self) -> None:
         self.weapons_acquired = 0
