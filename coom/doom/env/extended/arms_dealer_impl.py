@@ -25,7 +25,7 @@ class ArmsDealerImpl(ArmsDealer):
         self.distance_buffer.append(distance)
         reward += distance * self.reward_scaler_traversal  # Increase reward linearly for movement
 
-        weapons_acquired = self.game.get_game_variable(GameVariable.USER2)
+        weapons_acquired = self.game.get_game_variable(GameVariable.USER1)
         if weapons_acquired > self.weapons_acquired:
             reward = self.reward_item_acquired
             self.weapons_acquired = weapons_acquired

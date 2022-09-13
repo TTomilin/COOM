@@ -26,7 +26,7 @@ class ArmsDealer(DoomEnv):
 
     def calc_reward(self) -> float:
         reward = -self.penalty_frame_passed
-        arms_dealt = self.game.get_game_variable(GameVariable.USER1)
+        arms_dealt = self.game.get_game_variable(GameVariable.USER2)
         if arms_dealt > self.arms_dealt:
             reward = self.reward_delivery
             self.arms_dealt = arms_dealt
