@@ -14,10 +14,9 @@ class ArmsDealerImpl(ArmsDealer):
         self.distance_buffer = []
         self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_item_acquired = args.reward_item_acquired
-        self.penalty_frame_passed = args.penalty_frame_passed
         self.add_speed = args.add_speed
         self.weapons_acquired = 0
-        super().__init__(args, task, task_id, num_tasks, args.reward_delivery)
+        super().__init__(args, task, task_id, num_tasks, args.reward_delivery, args.penalty_frame_passed)
 
     def calc_reward(self) -> float:
         reward = super().calc_reward()
@@ -30,6 +29,7 @@ class ArmsDealerImpl(ArmsDealer):
         if weapons_acquired > self.weapons_acquired:
             reward = self.reward_item_acquired
             self.weapons_acquired = weapons_acquired
+
         return reward
 
     def distance_traversed(self) -> float:
