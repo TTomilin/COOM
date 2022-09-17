@@ -199,7 +199,7 @@ class Logger:
         print("-" * n_slashes)
         step = self.log_current_row.get("total_env_steps")
         for key in self.log_headers:
-            val = self.log_current_row.get(key, "")
+            val = self.log_current_row.get(key, 0.0)
             valstr = "%8.3g" % val if hasattr(val, "__float__") else val
             print(fmt % (key, valstr))
             vals.append(val)
