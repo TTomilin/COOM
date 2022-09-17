@@ -1,3 +1,4 @@
+import itertools
 from argparse import Namespace
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union, Type
@@ -87,8 +88,9 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     Returns:
       gym.Env: continual learning environment
     """
-    envs = [get_single_env(args, DoomScenario[scenario.upper()].value, task, one_hot_idx=i, one_hot_len=args.num_tasks)
-            for i, task in enumerate(args.envs) for scenario in args.scenarios]  # TODO check whether index is correct
+    envs = [get_single_env(args, DoomScenario[scenario_task[0].upper()].value, scenario_task[1], one_hot_idx=i,
+                           one_hot_len=args.num_tasks) for i, scenario_task in
+            enumerate(itertools.product(args.scenarios, args.envs))]
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     return cl_env
 
