@@ -125,13 +125,9 @@ class Logger:
         make sure to call ``dump_tabular`` to write them out to file and
         stdout (otherwise they will not get saved anywhere).
         """
-        if self.first_row:
+        # Allow new statistics to be introduced when switching to a task from a different scenario
+        if key not in self.log_headers:
             self.log_headers.append(key)
-        else:
-            assert key in self.log_headers, (
-                "Trying to introduce a new key %s that you didn't include in the first iteration"
-                % key
-            )
         assert key not in self.log_current_row, (
             "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
         )

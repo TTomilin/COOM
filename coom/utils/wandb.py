@@ -1,6 +1,5 @@
 import logging
 import time
-from datetime import datetime
 
 import wandb
 
@@ -8,8 +7,7 @@ import wandb
 def retry(times, exceptions):
     """
     Retry Decorator https://stackoverflow.com/a/64030200/1645784
-    Retries the wrapped function/method `times` times if the exceptions listed
-    in ``exceptions`` are thrown
+    Retries the wrapped function/method `times` times if the exceptions listed in ``exceptions`` are thrown
     :param times: The number of times to repeat the wrapped function/method
     :type times: Int
     :param exceptions: Lists of exceptions that trigger a retry attempt
@@ -36,27 +34,26 @@ def retry(times, exceptions):
 
 def init_wandb(cfg):
     """
-    Must call initialization of Wandb before summary writer is initialized, otherwise
-    sync_tensorboard does not work.
+    Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
 
     if not cfg.with_wandb:
         logging.info('Weights and Biases integration disabled')
         return
 
-    if cfg.scenario:
-        cfg.wandb_group = cfg.scenario
+    if cfg.wandb_group is None:
+        cfg.wandb_group = cfg.scenario if 'scenario' in cfg else 'Cross-Scenario'
 
     if 'wandb_unique_id' not in cfg:
         method = 'sac' if 'cl_method' not in cfg else cfg.cl_method if cfg.cl_method else 'cl'
         # if we're going to restart the experiment, this will be saved to a json file
-        cfg.wandb_unique_id = f'{method}_seed_{cfg.seed}_{cfg.scenario}_{cfg.wandb_experiment}_{cfg.timestamp}'
+        cfg.wandb_unique_id = f'{method}_seed_{cfg.seed}_{cfg.wandb_group}_{cfg.wandb_experiment}_{cfg.timestamp}'
 
     logging.info(
         f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_entity}, '
         f'group: {cfg.wandb_group}, unique_id: {cfg.wandb_unique_id}')
 
-    # this can fail occasionally, so we try a couple more times
+    # Try multiple times, as this occasionally fails
     @retry(3, exceptions=(Exception,))
     def init_wandb_func():
         wandb.init(
