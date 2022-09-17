@@ -40,7 +40,7 @@ def main(args: Namespace):
         env,
         test_envs,
         logger,
-        scenario=args.scenario,
+        scenarios=[args.scenario],
         seed=args.seed,
         steps_per_env=args.steps_per_env,
         start_steps=args.start_steps,
