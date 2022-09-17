@@ -1,14 +1,14 @@
 from argparse import Namespace
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union, Type, Callable
+from typing import Any, Dict, List, Tuple, Union, Type
 
 import gym
 import numpy as np
-from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo, GrayScaleObservation
+from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
 
-from coom.doom.env.base.common import CommonEnv
-from coom.doom.env.base.scenario import DoomEnv
-from coom.doom.env.utils.wrappers import ResizeWrapper, RescaleWrapper, RGBStack
+from coom.env.base.common import CommonEnv
+from coom.env.base.scenario import DoomEnv
+from coom.env.utils.wrappers import ResizeWrapper, RescaleWrapper, RGBStack
 from coom.utils.enums import DoomScenario
 
 
@@ -87,10 +87,8 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     Returns:
       gym.Env: continual learning environment
     """
-    scenario_class = DoomScenario[args.scenario.upper()].value
-    num_tasks = len(args.tasks)
-    envs = [get_single_env(args, scenario_class, task, one_hot_idx=i, one_hot_len=num_tasks) for i, task in
-            enumerate(args.tasks)]
+    envs = [get_single_env(args, DoomScenario[scenario.upper()].value, task, one_hot_idx=i, one_hot_len=args.num_tasks)
+            for i, task in enumerate(args.envs) for scenario in args.scenarios]  # TODO check whether index is correct
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     return cl_env
 
@@ -183,6 +181,8 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
       :return DoomEnv: single-task Doom environment
     """
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
+    for wrapper in env.reward_wrappers():
+        env = wrapper.wrapper_class(env, *wrapper.args)  # Apply the scenario specific reward wrappers
     env = ResizeWrapper(env, args.frame_height, args.frame_width)
     env = RescaleWrapper(env)
     if args.normalize:
@@ -192,5 +192,5 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
     if args.record:
         method = args.cl_method if 'cl_method' in args else 'sac'
         env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",
-                          step_trigger=env.video_schedule, name_prefix=f'{args.scenario}_{task}')
+                          step_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env

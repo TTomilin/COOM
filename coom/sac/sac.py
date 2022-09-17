@@ -1,7 +1,6 @@
 import math
 import os
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
@@ -11,7 +10,7 @@ from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedu
 from tensorflow.python.framework import dtypes
 from tensorflow_probability.python.distributions import Categorical
 
-from coom.doom.env.base.common import CommonEnv
+from coom.env.base.common import CommonEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -26,7 +25,7 @@ class SAC:
             env: CommonEnv,
             test_envs: List[CommonEnv],
             logger: EpochLogger,
-            scenario: str = None,
+            scenarios: List[str],
             cl_method: str = None,
             actor_cl: type = models.MlpActor,
             critic_cl: type = models.MlpCritic,
@@ -127,7 +126,7 @@ class SAC:
         self.num_tasks = env.num_tasks
         self.test_envs = test_envs
         self.logger = logger
-        self.scenario = scenario
+        self.scenarios = scenarios
         self.cl_method = cl_method
         self.critic_cl = critic_cl
         self.policy_kwargs = policy_kwargs
@@ -524,7 +523,7 @@ class SAC:
 
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
-        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.scenario}_{self.env.task}'
+        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.env.task}'
         dir_prefixes = []
         if current_task_idx == -1:
             dir_prefixes.append(model_dir)

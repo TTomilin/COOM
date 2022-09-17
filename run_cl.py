@@ -15,17 +15,16 @@ from input_args import cl_parse_args
 
 def main(args: Namespace):
     args.experiment_dir = Path(__file__).parent.resolve()
-    args.cfg_path = f"{args.experiment_dir}/coom/doom/maps/{args.scenario}/{args.scenario}.cfg"
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    args.num_tasks = len(args.scenarios) * len(args.envs)
 
     # Logging
     init_wandb(args)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     train_env = get_cl_env(args)
-    num_tasks = len(args.tasks)
 
-    num_heads = num_tasks if args.multihead_archs else 1
+    num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
@@ -40,7 +39,7 @@ def main(args: Namespace):
         "env": train_env,
         "test_envs": [],
         "logger": logger,
-        "scenario": args.scenario,
+        "scenarios": args.scenarios,
         "cl_method": args.cl_method,
         "seed": args.seed,
         "steps_per_env": args.steps_per_env,

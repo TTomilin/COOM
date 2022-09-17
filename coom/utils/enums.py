@@ -1,14 +1,14 @@
 from enum import Enum
 
-from coom.doom.env.extended.arms_dealer_impl import ArmsDealerImpl
-from coom.doom.env.extended.chainsaw_impl import ChainsawImpl
-from coom.doom.env.extended.defend_the_center_impl import DefendTheCenterImpl
-from coom.doom.env.extended.dodge_projectiles_impl import DodgeProjectilesImpl
-from coom.doom.env.extended.floor_is_lava_impl import FloorIsLavaImpl
-from coom.doom.env.extended.health_gathering_impl import HealthGatheringImpl
-from coom.doom.env.extended.hide_and_seek_impl import HideAndSeekImpl
-from coom.doom.env.extended.raise_the_roof_impl import RaiseTheRoofImpl
-from coom.doom.env.extended.seek_and_slay_impl import SeekAndSlayImpl
+from coom.env.base.arms_dealer import ArmsDealer
+from coom.env.base.defend_the_center import DefendTheCenter
+from coom.env.base.seek_and_slay import SeekAndSlay
+from coom.env.base.chainsaw import Chainsaw
+from coom.env.base.dodge_projectiles import DodgeProjectiles
+from coom.env.base.floor_is_lava import FloorIsLava
+from coom.env.base.health_gathering import HealthGathering
+from coom.env.base.hide_and_seek import HideAndSeek
+from coom.env.base.raise_the_roof import RaiseTheRoof
 
 
 class BufferType(Enum):
@@ -17,12 +17,12 @@ class BufferType(Enum):
 
 
 class DoomScenario(Enum):
-    DEFEND_THE_CENTER = DefendTheCenterImpl
-    HEALTH_GATHERING = HealthGatheringImpl
-    SEEK_AND_SLAY = SeekAndSlayImpl
-    DODGE_PROJECTILES = DodgeProjectilesImpl
-    CHAINSAW = ChainsawImpl
-    RAISE_THE_ROOF = RaiseTheRoofImpl
-    FLOOR_IS_LAVA = FloorIsLavaImpl
-    HIDE_AND_SEEK = HideAndSeekImpl
-    ARMS_DEALER = ArmsDealerImpl
+    DEFEND_THE_CENTER = DefendTheCenter
+    HEALTH_GATHERING = HealthGathering
+    SEEK_AND_SLAY = SeekAndSlay
+    DODGE_PROJECTILES = DodgeProjectiles
+    CHAINSAW = Chainsaw
+    RAISE_THE_ROOF = RaiseTheRoof
+    FLOOR_IS_LAVA = FloorIsLava
+    HIDE_AND_SEEK = HideAndSeek
+    ARMS_DEALER = ArmsDealer

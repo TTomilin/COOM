@@ -8,13 +8,14 @@ from coom.utils.utils import float_or_str, sci2int, str2bool
 def cl_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
-    parser.add_argument('--scenario', type=str, default=None,
+    parser.add_argument('--scenarios', type=str, nargs="+", default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
                                  'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
-                        default=None,
-                        help="If None, finetuning method will be used. If one of 'l2', 'ewc', 'mas', 'vcl', 'packnet', 'agem', respective method will be used.")
-    parser.add_argument("--tasks", type=str, nargs="+", default=None, help="Name of the tasks you want to run")
+                        default=None, help="If None, the fine-tuning method will be used")
+    parser.add_argument("--envs", type=str, nargs="+", default=['default'], help="Name of the environments in the scenario(s) to run")
+    parser.add_argument("--sequence", type=str, default=None, choices=['cross-environment', 'cross-scenario'],
+                        help="Type of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
 
     # Save/Load
@@ -103,7 +104,7 @@ def cl_parse_args(args=None):
     parser.add_argument('--frame_width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
-    parser.add_argument('--add_speed', default=False, action='store_true')
+    parser.add_argument('--acceleration', default=False, action='store_true', help='Grant the acceleration action')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
@@ -292,7 +293,7 @@ def single_parse_args(args=None):
     parser.add_argument('--frame_width', type=int, default=84, help='Width of the frame')
     parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
-    parser.add_argument('--add_speed', default=False, action='store_true', help='Grant the acceleration action')
+    parser.add_argument('--acceleration', default=False, action='store_true', help='Grant the acceleration action')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
