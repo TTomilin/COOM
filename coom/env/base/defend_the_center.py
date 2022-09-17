@@ -17,9 +17,9 @@ class DefendTheCenter(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_kill=1.0):
         super().__init__(args, env, task_id, num_tasks)
-        self.reward_kill = reward_kill
         self.penalty_health_loss = args.penalty_health_loss
         self.penalty_ammo_used = args.penalty_ammo_used
+        self.reward_kill = reward_kill
 
     def get_available_actions(self) -> List[List[float]]:
         actions = []
@@ -30,6 +30,9 @@ class DefendTheCenter(DoomEnv):
                 actions.append(t + a)
         return actions
 
+    def get_success(self) -> float:
+        return self.game_variable_buffer[-1][0]  # Kills
+
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 0),
@@ -37,6 +40,10 @@ class DefendTheCenter(DoomEnv):
             WrapperHolder(GameVariableRewardWrapper, self.penalty_ammo_used, 2, True, True),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 26.0  # Number of bullets in the clip, 1 kill per bullet
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/kills': variables[0], f'{mode}/ammo': variables[2]}

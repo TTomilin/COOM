@@ -83,6 +83,10 @@ class DoomEnv(CommonEnv):
     def user_vars(self) -> List[GameVariable]:
         return []
 
+    @property
+    def performance_upper_bound(self) -> float:
+        raise NotImplementedError
+
     def reset(self) -> np.ndarray:
         self.game.new_episode()
         self.clear_episode_statistics()
@@ -124,10 +128,18 @@ class DoomEnv(CommonEnv):
         return actions
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
+        metrics = self.extra_statistics(mode)
+        metrics[f'{mode}/success'] = self.get_success() / self.performance_upper_bound
+        return metrics
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {}
 
     def store_statistics(self, game_vars: deque) -> None:
         pass
+
+    def get_success(self) -> float:
+        raise NotImplementedError
 
     def reward_wrappers(self) -> List[gym.RewardWrapper]:
         raise NotImplementedError

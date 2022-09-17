@@ -17,8 +17,9 @@ class DodgeProjectiles(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
         super().__init__(args, env, task_id, num_tasks)
-        self.reward_frame_survived = reward_frame_survived
         self.penalty_health_loss = args.penalty_health_loss
+        self.reward_frame_survived = reward_frame_survived
+        self.frames_survived = 0
         self.hits_taken = 0
 
     def get_available_actions(self) -> List[List[float]]:
@@ -31,10 +32,14 @@ class DodgeProjectiles(DoomEnv):
         return actions
 
     def store_statistics(self, game_var_buf: deque) -> None:
+        self.frames_survived += 1
         current_vars = game_var_buf[-1]
         previous_vars = game_var_buf[-2]
         if current_vars[0] < previous_vars[0]:
             self.hits_taken += 1
+
+    def get_success(self) -> float:
+        return self.frames_survived * self.frame_skip
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
@@ -42,8 +47,13 @@ class DodgeProjectiles(DoomEnv):
             WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True, True),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 2500.0  # Scenario length
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/hits_taken': self.hits_taken}
 
     def clear_episode_statistics(self) -> None:
+        self.frames_survived = 0
         self.hits_taken = 0

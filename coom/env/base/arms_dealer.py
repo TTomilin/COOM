@@ -14,12 +14,12 @@ from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, Moveme
 class ArmsDealer(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
+        super().__init__(args, env, task_id, num_tasks)
+        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.penalty_frame_passed = args.penalty_frame_passed
+        self.reward_item_acquired = args.reward_item_acquired
         self.reward_delivery = args.reward_delivery
         self.distance_buffer = []
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_item_acquired = args.reward_item_acquired
-        super().__init__(args, env, task_id, num_tasks)
 
     @property
     def user_vars(self) -> List[GameVariable]:
@@ -29,6 +29,9 @@ class ArmsDealer(DoomEnv):
         distance = distance_traversed(game_var_buf, 0, 1)
         self.distance_buffer.append(distance)
 
+    def get_success(self) -> float:
+        return self.user_variables[GameVariable.USER2]  # Arms dealt
+
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.penalty_frame_passed, True),
@@ -37,7 +40,11 @@ class ArmsDealer(DoomEnv):
             WrapperHolder(MovementRewardWrapper),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 20.0  # TODO Figure this out
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/weapons_acquired': self.user_variables[GameVariable.USER1],
                 f'{mode}/arms_dealt': self.user_variables[GameVariable.USER2],
                 f'{mode}/movement': np.mean(self.distance_buffer).round(3)}

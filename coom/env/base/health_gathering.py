@@ -1,4 +1,5 @@
 from argparse import Namespace
+from collections import deque
 from typing import List, Dict
 
 from coom.env.base.scenario import DoomEnv
@@ -16,10 +17,17 @@ class HealthGathering(DoomEnv):
     """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
-        self.reward_frame_survived = reward_frame_survived
-        self.reward_item_acquired = args.reward_item_acquired
-        self.kits_obtained = 0
         super().__init__(args, env, task_id, num_tasks)
+        self.reward_item_acquired = args.reward_item_acquired
+        self.reward_frame_survived = reward_frame_survived
+        self.frames_survived = 0
+        self.kits_obtained = 0
+
+    def store_statistics(self, game_var_buf: deque) -> None:
+        self.frames_survived += 1
+
+    def get_success(self) -> float:
+        return self.frames_survived * self.frame_skip
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
@@ -27,8 +35,13 @@ class HealthGathering(DoomEnv):
             WrapperHolder(GameVariableRewardWrapper, self.reward_item_acquired, 0),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 2500.0  # Scenario length
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/kits_obtained': self.kits_obtained}
 
     def clear_episode_statistics(self) -> None:
+        self.frames_survived = 0
         self.kits_obtained = 0

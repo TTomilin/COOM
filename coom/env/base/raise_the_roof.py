@@ -14,19 +14,25 @@ from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, Consta
 class RaiseTheRoof(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        self.distance_buffer = []
+        super().__init__(args, env, task_id, num_tasks)
+        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_frame_survived = args.reward_frame_survived
         self.reward_switch_pressed = args.reward_switch_pressed
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        super().__init__(args, env, task_id, num_tasks)
+        self.distance_buffer = []
+        self.frames_survived = 0
 
     @property
     def user_vars(self) -> List[GameVariable]:
         return [GameVariable.USER2]
 
     def store_statistics(self, game_var_buf: deque) -> None:
+        self.frames_survived += 1
+
         distance = distance_traversed(game_var_buf, 0, 1)
         self.distance_buffer.append(distance)
+
+    def get_success(self) -> float:
+        return self.frames_survived * self.frame_skip
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
@@ -35,10 +41,15 @@ class RaiseTheRoof(DoomEnv):
             WrapperHolder(MovementRewardWrapper),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 5000.0  # Scenario length
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/movement': np.mean(self.distance_buffer).round(3),
                 f'{mode}/switches_pressed': self.user_variables[GameVariable.USER2]}
 
     def clear_episode_statistics(self) -> None:
         super().clear_episode_statistics()
         self.distance_buffer.clear()
+        self.frames_survived = 0

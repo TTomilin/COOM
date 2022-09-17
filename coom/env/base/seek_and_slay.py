@@ -21,11 +21,11 @@ class SeekAndSlay(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_kill=1.0):
         super().__init__(args, env, task_id, num_tasks)
-        self.distance_buffer = []
-        self.ammo_used = 0
-        self.hits_taken = 0
-        self.reward_kill = reward_kill
         self.reward_scaler_traversal = args.reward_scaler_traversal
+        self.reward_kill = reward_kill
+        self.distance_buffer = []
+        self.hits_taken = 0
+        self.ammo_used = 0
 
     def store_statistics(self, game_var_buf: deque) -> None:
         distance = distance_traversed(game_var_buf, 3, 4)
@@ -38,13 +38,20 @@ class SeekAndSlay(DoomEnv):
         if current_vars[2] < previous_vars[2]:
             self.ammo_used += 1
 
+    def get_success(self) -> float:
+        return self.game_variable_buffer[-1][1]
+
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1),
             WrapperHolder(MovementRewardWrapper),
         ]
 
-    def get_statistics(self, mode: str = '') -> Dict[str, float]:
+    @property
+    def performance_upper_bound(self) -> float:
+        return 70.0
+
+    def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/health': variables[0],
                 f'{mode}/kills': variables[1],
@@ -53,6 +60,6 @@ class SeekAndSlay(DoomEnv):
                 f'{mode}/hits_taken': self.hits_taken}
 
     def clear_episode_statistics(self) -> None:
-        self.ammo_used = 0
-        self.hits_taken = 0
         self.distance_buffer.clear()
+        self.hits_taken = 0
+        self.ammo_used = 0
