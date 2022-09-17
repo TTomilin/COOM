@@ -21,12 +21,15 @@ class DoomEnv(CommonEnv):
         self.scenario = self.__module__.split('.')[-1]
         self.n_tasks = num_tasks
         self.frame_skip = args.frame_skip
+
+        # Recording
         self.metadata['render.modes'] = 'rgb_array'
         self.record_every = args.record_every
 
+        # Determine the directory of the doom scenario
         scenario_dir = f'{Path(__file__).parent.parent.resolve()}/maps/{self.scenario}'
 
-        # Create the Doom game instance
+        # Initialize the Doom game instance
         self.game = vzd.DoomGame()
         self.game.load_config(f"{scenario_dir}/conf.cfg")
         self.game.set_doom_scenario_path(f"{scenario_dir}/{env}.wad")
@@ -57,6 +60,7 @@ class DoomEnv(CommonEnv):
         for _ in range(args.variable_queue_len):
             self.game_variable_buffer.append(self.game.get_state().game_variables)
 
+        # Register the gym environment specification
         self.spec = gym.envs.registration.EnvSpec(f"{self.name}-v0")
 
     @property
