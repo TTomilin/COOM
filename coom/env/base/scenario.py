@@ -87,6 +87,10 @@ class DoomEnv(CommonEnv):
     def performance_upper_bound(self) -> float:
         raise NotImplementedError
 
+    @property
+    def performance_lower_bound(self) -> float:
+        raise NotImplementedError
+
     def reset(self) -> np.ndarray:
         self.game.new_episode()
         self.clear_episode_statistics()
@@ -129,7 +133,7 @@ class DoomEnv(CommonEnv):
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         metrics = self.extra_statistics(mode)
-        metrics[f'{mode}/success'] = self.get_success() / self.performance_upper_bound
+        metrics[f'{mode}/success'] = (self.get_success() - self.performance_lower_bound) / self.performance_upper_bound
         return metrics
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:

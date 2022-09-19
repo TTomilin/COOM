@@ -51,6 +51,10 @@ class DodgeProjectiles(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 2500.0  # Scenario length
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 300.0  # Frames until the projectiles slaughter the player  # TODO Verify this value
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/hits_taken': self.hits_taken}
 

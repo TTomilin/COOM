@@ -45,6 +45,10 @@ class RaiseTheRoof(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 5000.0  # Scenario length
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 650.0  # Frames until getting crushed
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/movement': np.mean(self.distance_buffer).round(3),
                 f'{mode}/switches_pressed': self.user_variables[GameVariable.USER2]}

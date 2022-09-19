@@ -51,6 +51,10 @@ class SeekAndSlay(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 70.0
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 0.0  # No kills
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/health': variables[0],

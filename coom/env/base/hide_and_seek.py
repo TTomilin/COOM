@@ -51,6 +51,10 @@ class HideAndSeek(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 2500.0  # Scenario length
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 500.0  # Frames until getting slaughtered by the monsters  # TODO Verify this value
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/health': variables[0],

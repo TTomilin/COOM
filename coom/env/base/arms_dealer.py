@@ -44,6 +44,10 @@ class ArmsDealer(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 20.0  # TODO Figure this out
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 0.0  # No arms dealt
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/weapons_acquired': self.user_variables[GameVariable.USER1],
                 f'{mode}/arms_dealt': self.user_variables[GameVariable.USER2],

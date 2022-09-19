@@ -44,6 +44,10 @@ class DefendTheCenter(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 26.0  # Number of bullets in the clip, 1 kill per bullet
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 0.0  # No kills
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/kills': variables[0], f'{mode}/ammo': variables[2]}

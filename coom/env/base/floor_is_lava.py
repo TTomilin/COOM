@@ -30,5 +30,9 @@ class FloorIsLava(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 2500.0  # Scenario length
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 750.0  # Frames until the lava scorches the player
+
     def clear_episode_statistics(self) -> None:
         self.frames_survived = 0

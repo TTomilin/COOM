@@ -44,6 +44,10 @@ class HealthGathering(DoomEnv):
     def performance_upper_bound(self) -> float:
         return 2500.0  # Scenario length
 
+    @property
+    def performance_lower_bound(self) -> float:
+        return 800.0  # Frames until the acid eats the player
+
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/kits_obtained': self.kits_obtained}
 
