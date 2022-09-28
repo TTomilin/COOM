@@ -9,7 +9,7 @@ import numpy as np
 import vizdoom as vzd
 from vizdoom import ScreenResolution, Button, GameVariable
 
-from coom.env.base.common import CommonEnv
+from coom.env.scenario.common import CommonEnv
 
 
 class DoomEnv(CommonEnv):

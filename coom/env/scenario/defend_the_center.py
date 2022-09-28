@@ -1,7 +1,7 @@
 from argparse import Namespace
 from typing import List, Dict
 
-from coom.env.base.scenario import DoomEnv
+from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.wrappers import GameVariableRewardWrapper, WrapperHolder
 
 

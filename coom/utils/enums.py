@@ -1,14 +1,14 @@
 from enum import Enum
 
-from coom.env.base.arms_dealer import ArmsDealer
-from coom.env.base.defend_the_center import DefendTheCenter
-from coom.env.base.seek_and_slay import SeekAndSlay
-from coom.env.base.chainsaw import Chainsaw
-from coom.env.base.dodge_projectiles import DodgeProjectiles
-from coom.env.base.floor_is_lava import FloorIsLava
-from coom.env.base.health_gathering import HealthGathering
-from coom.env.base.hide_and_seek import HideAndSeek
-from coom.env.base.raise_the_roof import RaiseTheRoof
+from coom.env.scenario.arms_dealer import ArmsDealer
+from coom.env.scenario.defend_the_center import DefendTheCenter
+from coom.env.scenario.seek_and_slay import SeekAndSlay
+from coom.env.scenario.chainsaw import Chainsaw
+from coom.env.scenario.dodge_projectiles import DodgeProjectiles
+from coom.env.scenario.floor_is_lava import FloorIsLava
+from coom.env.scenario.health_gathering import HealthGathering
+from coom.env.scenario.hide_and_seek import HideAndSeek
+from coom.env.scenario.raise_the_roof import RaiseTheRoof
 
 
 class BufferType(Enum):

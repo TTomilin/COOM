@@ -7,8 +7,8 @@ import gym
 import numpy as np
 from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
 
-from coom.env.base.common import CommonEnv
-from coom.env.base.scenario import DoomEnv
+from coom.env.scenario.common import CommonEnv
+from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.wrappers import ResizeWrapper, RescaleWrapper, RGBStack
 from coom.utils.enums import DoomScenario
 

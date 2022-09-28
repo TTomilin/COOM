@@ -10,7 +10,7 @@ from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedu
 from tensorflow.python.framework import dtypes
 from tensorflow_probability.python.distributions import Categorical
 
-from coom.env.base.common import CommonEnv
+from coom.env.scenario.common import CommonEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
@@ -449,7 +449,8 @@ class SAC:
                 obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
                 while not done:
                     obs, reward, done, _ = test_env.step(
-                        self.get_action_test(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                        self.get_action_test(tf.convert_to_tensor(obs),
+                                             tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
                                              tf.constant(deterministic))
                     )
                     episode_return += reward
@@ -596,7 +597,8 @@ class SAC:
             # distribution for better exploration. Afterwards, use the learned policy.
             if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
-                action = self.get_action(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
+                action = self.get_action(tf.convert_to_tensor(obs),
+                                         tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
             else:
                 action = self.env.action_space.sample()
 

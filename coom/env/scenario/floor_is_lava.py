@@ -2,7 +2,7 @@ from argparse import Namespace
 from collections import deque
 from typing import List
 
-from coom.env.base.scenario import DoomEnv
+from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, GameVariableRewardWrapper
 
 

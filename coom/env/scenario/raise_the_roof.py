@@ -5,7 +5,7 @@ from typing import List, Dict
 import numpy as np
 from vizdoom import GameVariable
 
-from coom.env.base.scenario import DoomEnv
+from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
 from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, ConstantRewardWrapper, \
     UserVariableRewardWrapper
