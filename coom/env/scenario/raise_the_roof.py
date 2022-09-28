@@ -43,7 +43,7 @@ class RaiseTheRoof(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 5000.0  # Scenario length
+        return 2500.0  # Scenario length
 
     @property
     def performance_lower_bound(self) -> float:
