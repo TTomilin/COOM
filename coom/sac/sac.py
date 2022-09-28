@@ -449,19 +449,19 @@ class SAC:
                 obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
                 while not done:
                     obs, reward, done, _ = test_env.step(
-                        self.get_action_test(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec),
+                        self.get_action_test(tf.convert_to_tensor(obs), tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
                                              tf.constant(deterministic))
                     )
                     episode_return += reward
                     episode_len += 1
                 self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-                self.logger.store(self.env.get_statistics(key_prefix))
+                self.logger.store(test_env.get_statistics(key_prefix))
 
             self.on_test_end(seq_idx)
 
             self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
             self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-            for stat in self.env.get_statistics(key_prefix).keys():
+            for stat in test_env.get_statistics(key_prefix).keys():
                 self.logger.log_tabular(stat, average_only=True)
 
     def _log_after_update(self, results):

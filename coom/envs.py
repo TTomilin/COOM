@@ -88,9 +88,7 @@ def get_cl_env(args: Namespace) -> ContinualLearningEnv:
     Returns:
       gym.Env: continual learning environment
     """
-    envs = [get_single_env(args, DoomScenario[scenario_task[0].upper()].value, scenario_task[1], one_hot_idx=i,
-                           one_hot_len=args.num_tasks) for i, scenario_task in
-            enumerate(itertools.product(args.scenarios, args.envs))]
+    envs = get_single_envs(args)
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     return cl_env
 
@@ -166,6 +164,13 @@ def get_mt_env(
     mt_env = MultiTaskEnv(envs, steps_per_task)
     mt_env.name = "MultiTaskEnv"
     return mt_env
+
+
+def get_single_envs(args):
+    envs = [get_single_env(args, DoomScenario[scenario_task[0].upper()].value, scenario_task[1], one_hot_idx=i,
+                           one_hot_len=args.num_tasks) for i, scenario_task in
+            enumerate(itertools.product(args.scenarios, args.envs))]
+    return envs
 
 
 def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, one_hot_idx: int,
