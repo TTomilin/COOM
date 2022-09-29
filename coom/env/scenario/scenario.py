@@ -106,7 +106,7 @@ class DoomEnv(CommonEnv):
         state = self.game.get_state()
         reward = 0.0
         done = self.game.is_player_dead() or self.game.is_episode_finished() or not state
-        info = self.get_statistics()
+        info = {}
 
         observation = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.float32(np.zeros(self.game_res))
         if not done:
@@ -133,7 +133,8 @@ class DoomEnv(CommonEnv):
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         metrics = self.extra_statistics(mode)
-        metrics[f'{mode}/success'] = (self.get_success() - self.performance_lower_bound) / self.performance_upper_bound
+        ratio = (self.get_success() - self.performance_lower_bound) / self.performance_upper_bound
+        metrics[f'{mode}/success'] = np.clip(ratio, 0.0, 1.0)
         return metrics
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
