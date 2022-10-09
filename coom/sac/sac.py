@@ -3,7 +3,7 @@ import math
 import os
 import time
 from pathlib import Path
-from threading import Thread
+from threading import Thread, RLock
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -25,7 +25,8 @@ class SAC:
     def __init__(
             self,
             env: CommonEnv,
-            test_envs: List[CommonEnv],
+            test_envs_stoch: List[CommonEnv],
+            test_envs_det: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
             cl_method: str = None,
@@ -126,7 +127,8 @@ class SAC:
 
         self.env = env
         self.num_tasks = env.num_tasks
-        self.test_envs = test_envs
+        self.test_envs_stoch = test_envs_stoch
+        self.test_envs_det = test_envs_det
         self.logger = logger
         self.scenarios = scenarios
         self.cl_method = cl_method
@@ -157,6 +159,10 @@ class SAC:
         self.experiment_dir = experiment_dir
         self.model_path = model_path
         self.timestamp = timestamp
+
+        self.test_threads_deterministic = []
+        self.test_threads_stochastic = []
+        self.lock = RLock()
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -284,7 +290,8 @@ class SAC:
     def get_action_test(
             self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
     ) -> tf.Tensor:
-        return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
+        with self.lock:
+            return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
         @tf.function
@@ -461,7 +468,8 @@ class SAC:
 
         print("Finished: ", key_prefix)
 
-        self.on_test_end(seq_idx)
+        with self.lock:
+            self.on_test_end(seq_idx)
 
         self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
         self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
@@ -658,25 +666,33 @@ class SAC:
 
             # End of epoch wrap-up
             if ((global_timestep + 1) % self.log_every == 0) or (global_timestep + 1 == self.steps):
-                test_start_time = time.time()
                 epoch = (global_timestep + 1 + self.log_every - 1) // self.log_every
 
                 # Save model
                 if (epoch % self.save_freq_epochs == 0) or (global_timestep + 1 == self.steps):
                     self.save_model(current_task_idx)
 
+                # Test the model on each task in a separate thread
+                test_start_time = time.time()
+                for thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                    if thread.is_alive():
+                        print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
+                        thread.join()
+
+                print("Creating new threads after: ", time.time() - test_start_time)
+
                 # Test the performance of stochastic and deterministic version of the agent.
-                test_threads_stochastic = [
+                self.test_threads_stochastic = [
                     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
                                                     self.num_test_eps_stochastic)) for seq_idx, test_env in
-                    enumerate(self.test_envs)]
+                    enumerate(self.test_envs_stoch)]
 
-                test_threads_deterministic = [
+                self.test_threads_deterministic = [
                     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
                                                     self.num_test_eps_deterministic)) for seq_idx, test_env in
-                    enumerate(self.test_envs)]
+                    enumerate(self.test_envs_det)]
 
-                for test_thread in test_threads_stochastic + test_threads_deterministic:
+                for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
                     test_thread.start()
 
                 # Determine the current learning rate of the optimizer
@@ -686,8 +702,7 @@ class SAC:
 
                 self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
 
-                test_end_time = time.time()
-                print("Time for test: ", test_end_time - test_start_time)
+                print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
             current_task_timestep += 1
 
