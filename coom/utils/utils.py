@@ -7,7 +7,7 @@ from typing import Callable, Dict, Optional, Type, Union
 import gym
 import numpy as np
 import tensorflow as tf
-from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
+from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 
 
 def set_seed(seed: int, env: Optional[gym.Env] = None) -> None:

@@ -8,8 +8,8 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import tensorflow as tf
-from keras.optimizers.schedules.learning_rate_schedule import LearningRateSchedule
 from tensorflow.python.framework import dtypes
+from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 from tensorflow_probability.python.distributions import Categorical
 
 from coom.env.scenario.common import CommonEnv
