@@ -454,9 +454,10 @@ class SAC:
         self.on_test_start(seq_idx)
 
         for j in range(num_episodes):
-            obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
+            obs, _ = test_env.reset()
+            done, episode_return, episode_len = False, 0, 0
             while not done:
-                obs, reward, done, _ = test_env.step(
+                obs, reward, done, _, _ = test_env.step(
                     self.get_action_test(tf.convert_to_tensor(obs),
                                          tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
                                          tf.constant(deterministic))
@@ -590,7 +591,8 @@ class SAC:
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
-        obs, episode_return, episode_len = self.env.reset(), 0, 0
+        obs, info = self.env.reset()
+        episode_return, episode_len = 0, 0
 
         # Main loop: collect experience in env and update/log each epoch
         current_task_timestep = 0
@@ -616,7 +618,7 @@ class SAC:
                 action = self.env.action_space.sample()
 
             # Step the env
-            next_obs, reward, done, info = self.env.step(action)
+            next_obs, reward, done, _, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
 
@@ -641,7 +643,7 @@ class SAC:
                 self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
                 if global_timestep < self.steps - 1:
-                    obs = self.env.reset()
+                    obs, info = self.env.reset()
 
             # Update handling
             if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:

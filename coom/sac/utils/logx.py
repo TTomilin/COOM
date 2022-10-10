@@ -132,6 +132,7 @@ class Logger:
         with self.lock:
             if key not in self.log_headers:
                 self.log_headers.append(key)
+            # TODO dump the tabular data of this thread if it already exists
             assert key not in self.log_current_row, (
                 "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
             )

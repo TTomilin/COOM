@@ -8,7 +8,8 @@ required = [
     "matplotlib",
     "seaborn",
     "wandb",
-    "vizdoom"
+    "vizdoom",
+    "gym"
 ]
 
 setup(

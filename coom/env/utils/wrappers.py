@@ -85,12 +85,13 @@ class RescaleWrapper(gym.Wrapper):
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
 
-    def reset(self) -> np.ndarray:
-        return self.env.reset() / 255. * 2 - 1
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+        state, info = self.env.reset()
+        return state / 255. * 2 - 1, info
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        state, reward, done, info = self.env.step(action)
-        return state / 255. * 2 - 1, reward, done, info
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        state, reward, done, truncated, info = self.env.step(action)
+        return state / 255. * 2 - 1, reward, done, truncated, info
 
 
 class NormalizeWrapper(gym.Wrapper):
@@ -100,15 +101,19 @@ class NormalizeWrapper(gym.Wrapper):
         gym.Wrapper.__init__(self, env)
         self.eps = eps
 
-    def reset(self) -> np.ndarray:
-        return self.env.reset() / 255. * 2 - 1
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        state, reward, done, info = self.env.step(action)
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+        state, info = self.env.reset()
         mean = self.states.mean()
         std = self.states.std() + self.eps
         state = (state - mean) / std
-        return state, reward, done, info
+        return state / 255. * 2 - 1, info
+
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        state, reward, done, truncated, info = self.env.step(action)
+        mean = self.states.mean()
+        std = self.states.std() + self.eps
+        state = (state - mean) / std
+        return state, reward, done, truncated, info
 
 
 class ResizeWrapper(gym.Wrapper):
@@ -121,13 +126,13 @@ class ResizeWrapper(gym.Wrapper):
         obs_shape = self.shape + self.observation_space.shape[2:]
         self.observation_space = Box(low=0, high=255, shape=obs_shape, dtype=np.uint8)
 
-    def reset(self) -> np.ndarray:
-        state = self.env.reset()
-        return cv2.resize(state, self.shape)
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+        state, info = self.env.reset()
+        return cv2.resize(state, self.shape), info
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        state, reward, done, info = self.env.step(action)
-        return cv2.resize(state, self.shape), reward, done, info
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        state, reward, done, truncated, info = self.env.step(action)
+        return cv2.resize(state, self.shape), reward, done, truncated, info
 
 
 class RGBStack(gym.Wrapper):
@@ -140,15 +145,15 @@ class RGBStack(gym.Wrapper):
             low=0, high=255, shape=(obs_shape[1], obs_shape[2], obs_shape[0] * obs_shape[3]), dtype=np.uint8
         )
 
-    def reset(self) -> np.ndarray:
-        observation = self.env.reset()
-        observation = combine_frames(observation)
-        return observation
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+        state, info = self.env.reset()
+        state = combine_frames(state)
+        return state, info
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
-        observation, reward, done, info = self.env.step(action)
-        observation = combine_frames(observation)
-        return observation, reward, done, info
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        state, reward, done, truncated, info = self.env.step(action)
+        state = combine_frames(state)
+        return state, reward, done, truncated, info
 
 
 def combine_frames(obs):
