@@ -1,7 +1,9 @@
+import functools
 import math
 import os
 import time
 from pathlib import Path
+from threading import Thread, RLock
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -23,7 +25,8 @@ class SAC:
     def __init__(
             self,
             env: CommonEnv,
-            test_envs: List[CommonEnv],
+            test_envs_stoch: List[CommonEnv],
+            test_envs_det: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
             cl_method: str = None,
@@ -45,7 +48,7 @@ class SAC:
             start_steps: int = 1e3,
             update_after: int = 1000,
             update_every: int = 50,
-            num_test_eps_stochastic: int = 10,
+            num_test_eps_stochastic: int = 3,
             num_test_eps_deterministic: int = 1,
             save_freq_epochs: int = 25,
             reset_buffer_on_task_change: bool = True,
@@ -124,7 +127,8 @@ class SAC:
 
         self.env = env
         self.num_tasks = env.num_tasks
-        self.test_envs = test_envs
+        self.test_envs_stoch = test_envs_stoch
+        self.test_envs_det = test_envs_det
         self.logger = logger
         self.scenarios = scenarios
         self.cl_method = cl_method
@@ -155,6 +159,10 @@ class SAC:
         self.experiment_dir = experiment_dir
         self.model_path = model_path
         self.timestamp = timestamp
+
+        self.test_threads_deterministic = []
+        self.test_threads_stochastic = []
+        self.lock = RLock()
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -282,7 +290,8 @@ class SAC:
     def get_action_test(
             self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
     ) -> tf.Tensor:
-        return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
+        with self.lock:
+            return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
         @tf.function
@@ -437,33 +446,36 @@ class SAC:
         ):
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
-    def test_agent(self, deterministic, num_episodes) -> None:
+    def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
         mode = "deterministic" if deterministic else "stochastic"
-        for seq_idx, test_env in enumerate(self.test_envs):
-            key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+        key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
+        one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
-            self.on_test_start(seq_idx)
+        self.on_test_start(seq_idx)
 
-            for j in range(num_episodes):
-                obs, done, episode_return, episode_len = test_env.reset(), False, 0, 0
-                while not done:
-                    obs, reward, done, _ = test_env.step(
-                        self.get_action_test(tf.convert_to_tensor(obs),
-                                             tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-                                             tf.constant(deterministic))
-                    )
-                    episode_return += reward
-                    episode_len += 1
-                self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-                self.logger.store(test_env.get_statistics(key_prefix))
+        for j in range(num_episodes):
+            obs, _ = test_env.reset()
+            done, episode_return, episode_len = False, 0, 0
+            while not done:
+                obs, reward, done, _, _ = test_env.step(
+                    self.get_action_test(tf.convert_to_tensor(obs),
+                                         tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                                         tf.constant(deterministic))
+                )
+                episode_return += reward
+                episode_len += 1
+            self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+            self.logger.store(test_env.get_statistics(key_prefix))
 
+        print("Finished: ", key_prefix)
+
+        with self.lock:
             self.on_test_end(seq_idx)
 
-            self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
-            self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-            for stat in test_env.get_statistics(key_prefix).keys():
-                self.logger.log_tabular(stat, average_only=True)
+        self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
+        self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
+        for stat in test_env.get_statistics(key_prefix).keys():
+            self.logger.log_tabular(stat, average_only=True)
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -579,7 +591,8 @@ class SAC:
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
-        obs, episode_return, episode_len = self.env.reset(), 0, 0
+        obs, info = self.env.reset()
+        episode_return, episode_len = 0, 0
 
         # Main loop: collect experience in env and update/log each epoch
         current_task_timestep = 0
@@ -593,6 +606,8 @@ class SAC:
                 current_task_idx = getattr(self.env, "cur_seq_idx")
                 self._handle_task_change(current_task_idx)
 
+            env_step_start = time.time()
+
             # Until start_steps have elapsed, randomly sample actions from a uniform
             # distribution for better exploration. Afterwards, use the learned policy.
             if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
@@ -603,7 +618,7 @@ class SAC:
                 action = self.env.action_space.sample()
 
             # Step the env
-            next_obs, reward, done, info = self.env.step(action)
+            next_obs, reward, done, _, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
 
@@ -619,6 +634,8 @@ class SAC:
             # Update the most recent observation
             obs = next_obs
 
+            # print("Time for env step: ", time.time() - env_step_start)
+
             # End of trajectory handling
             if done:
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len})
@@ -626,10 +643,12 @@ class SAC:
                 self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
                 if global_timestep < self.steps - 1:
-                    obs = self.env.reset()
+                    obs, info = self.env.reset()
 
             # Update handling
             if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
+
+                time_update_start = time.time()
 
                 for j in range(self.update_every):
                     batch = self.replay_buffer.sample_batch(self.batch_size)
@@ -640,6 +659,9 @@ class SAC:
                         tf.convert_to_tensor(current_task_idx), batch, episodic_batch
                     )
                     self._log_after_update(results)
+
+                time_update_end = time.time()
+                print("Time for update: ", time_update_end - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 self.on_task_end(current_task_idx)
@@ -652,9 +674,28 @@ class SAC:
                 if (epoch % self.save_freq_epochs == 0) or (global_timestep + 1 == self.steps):
                     self.save_model(current_task_idx)
 
+                # Test the model on each task in a separate thread
+                test_start_time = time.time()
+                for thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                    if thread.is_alive():
+                        print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
+                        thread.join()
+
+                print("Creating new threads after: ", time.time() - test_start_time)
+
                 # Test the performance of stochastic and deterministic version of the agent.
-                self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
-                self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
+                self.test_threads_stochastic = [
+                    Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
+                                                    self.num_test_eps_stochastic)) for seq_idx, test_env in
+                    enumerate(self.test_envs_stoch)]
+
+                self.test_threads_deterministic = [
+                    Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
+                                                    self.num_test_eps_deterministic)) for seq_idx, test_env in
+                    enumerate(self.test_envs_det)]
+
+                for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                    test_thread.start()
 
                 # Determine the current learning rate of the optimizer
                 lr = self.optimizer.lr
@@ -662,6 +703,8 @@ class SAC:
                     lr = self.optimizer._decayed_lr('float32').numpy()
 
                 self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
+
+                print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
             current_task_timestep += 1
 

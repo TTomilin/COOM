@@ -60,9 +60,6 @@ class DoomEnv(CommonEnv):
         for _ in range(args.variable_queue_len):
             self.game_variable_buffer.append(self.game.get_state().game_variables)
 
-        # Register the gym environment specification
-        self.spec = gym.envs.registration.EnvSpec(f"{self.name}-v0")
-
     @property
     def task(self) -> str:
         return self.env_name
@@ -91,14 +88,14 @@ class DoomEnv(CommonEnv):
     def performance_lower_bound(self) -> float:
         raise NotImplementedError
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
         self.game.new_episode()
         self.clear_episode_statistics()
-        observation = self.game.get_state().screen_buffer
-        observation = np.transpose(observation, [1, 2, 0])
-        return observation
+        state = self.game.get_state().screen_buffer
+        state = np.transpose(state, [1, 2, 0])
+        return state, {}
 
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, Dict[str, Any]]:
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         action = self.available_actions[action]
         self.game.set_action(action)
         self.game.advance_action(self.frame_skip)
@@ -106,14 +103,15 @@ class DoomEnv(CommonEnv):
         state = self.game.get_state()
         reward = 0.0
         done = self.game.is_player_dead() or self.game.is_episode_finished() or not state
-        info = {}
+        truncated = False
+        info = self.get_statistics()
 
         observation = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.float32(np.zeros(self.game_res))
         if not done:
             self.game_variable_buffer.append(state.game_variables)
 
         self.store_statistics(self.game_variable_buffer)
-        return observation, reward, done, info
+        return observation, reward, done, truncated, info
 
     def get_available_actions(self):
         actions = []

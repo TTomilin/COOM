@@ -10,6 +10,7 @@ import json
 import os
 import os.path as osp
 import time
+from threading import Lock
 
 import numpy as np
 import tensorflow as tf
@@ -76,6 +77,8 @@ class Logger:
         """
         self.logger_output = logger_output
 
+        self.lock = Lock()
+
         run_id = get_readable_timestamp() + "_" + get_random_string()
         self.output_dir = output_dir or f"./logs/{group_id}/{run_id}"
         if osp.exists(self.output_dir):
@@ -126,12 +129,14 @@ class Logger:
         stdout (otherwise they will not get saved anywhere).
         """
         # Allow new statistics to be introduced when switching to a task from a different scenario
-        if key not in self.log_headers:
-            self.log_headers.append(key)
-        assert key not in self.log_current_row, (
-            "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
-        )
-        self.log_current_row[key] = val
+        with self.lock:
+            if key not in self.log_headers:
+                self.log_headers.append(key)
+            # TODO dump the tabular data of this thread if it already exists
+            assert key not in self.log_current_row, (
+                "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
+            )
+            self.log_current_row[key] = val
 
     def save_config(self, config):
         """
@@ -262,9 +267,10 @@ class EpochLogger(Logger):
         values.
         """
         for k, v in d.items():
-            if not (k in self.epoch_dict.keys()):
-                self.epoch_dict[k] = []
-            self.epoch_dict[k].append(v)
+            with self.lock:
+                if not (k in self.epoch_dict.keys()):
+                    self.epoch_dict[k] = []
+                self.epoch_dict[k].append(v)
 
     def log_tabular(self, key, val=None, with_min_and_max=False, average_only=False):
         """

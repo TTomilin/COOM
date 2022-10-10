@@ -1,6 +1,7 @@
-from typing import Dict
+from typing import Dict, Any, Tuple
 
 import gym
+import numpy as np
 
 
 class CommonEnv(gym.Env):
@@ -8,7 +9,7 @@ class CommonEnv(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self):
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
         raise NotImplementedError
 
     def render(self, mode="human"):

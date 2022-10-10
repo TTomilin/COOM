@@ -50,9 +50,9 @@ class ContinualLearningEnv(CommonEnv):
     def num_tasks(self) -> int:
         return self.n_tasks
 
-    def step(self, action: Any) -> Tuple[np.ndarray, float, bool, Dict]:
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         self._check_steps_bound()
-        obs, reward, done, info = self._get_active_env().step(action)
+        obs, reward, done, truncated, info = self._get_active_env().step(action)
         info["seq_idx"] = self.cur_seq_idx
 
         self.cur_step += 1
@@ -65,7 +65,7 @@ class ContinualLearningEnv(CommonEnv):
             if self.cur_seq_idx < self.num_tasks - 1:
                 self.cur_seq_idx += 1
 
-        return obs, reward, done, info
+        return obs, reward, done, truncated, info
 
     def render(self, mode="rgb_array"):
         self._get_active_env().render(mode)
