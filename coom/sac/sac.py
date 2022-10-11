@@ -162,10 +162,6 @@ class SAC:
 
         self.test_threads_deterministic = []
         self.test_threads_stochastic = []
-        self.lock = RLock()
-        self.trainer = None
-        self.training_started = False
-        self.stop_training = False
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -268,13 +264,9 @@ class SAC:
         pass
 
     def on_task_start(self, current_task_idx: int) -> None:
-        self.stop_training = False
         print(f'Task {current_task_idx}-{self.env.task} started')
 
     def on_task_end(self, current_task_idx: int) -> None:
-        self.stop_training = True
-        if self.trainer:
-            self.trainer.join()
         print(f'Task {current_task_idx}-{self.env.task} finished')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
@@ -294,8 +286,7 @@ class SAC:
     def get_action_test(
             self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
     ) -> tf.Tensor:
-        with self.lock:
-            return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
+        return self.get_action(obs, one_hot_task_id, deterministic).numpy()[0]
 
     def get_learn_on_batch(self, current_task_idx: int) -> Callable:
         @tf.function
@@ -474,8 +465,7 @@ class SAC:
 
         print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
 
-        with self.lock:
-            self.on_test_end(seq_idx)
+        self.on_test_end(seq_idx)
 
         self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
         self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
@@ -594,25 +584,6 @@ class SAC:
                 + self.critic2.common_variables
         )
 
-    def run_policy_update(self, task_idx):
-        while not self.stop_training:
-            time_update_start = time.time()
-
-            batch = self.replay_buffer.sample_batch(self.batch_size)
-
-            episodic_batch = self.get_episodic_batch(task_idx)
-
-            results = self.learn_on_batch(
-                tf.convert_to_tensor(task_idx), batch, episodic_batch
-            )
-            self._log_after_update(results)
-
-            time_update_end = time.time()
-            print("Time elapsed for policy update: ", time_update_end - time_update_start)
-
-            # Wait before starting the next update
-            time.sleep(self.update_every)
-
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
@@ -669,30 +640,23 @@ class SAC:
                 if global_timestep < self.steps - 1:
                     obs, info = self.env.reset()
 
-            if current_task_timestep >= self.update_after and not self.training_started:
-                # Initiate training thread
-                print("Starting training thread")
-                self.trainer = Thread(target=functools.partial(self.run_policy_update, current_task_idx), daemon=True)
-                self.trainer.start()
-                self.training_started = True
-
             # Update handling
-            # if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
-            #
-            #     time_update_start = time.time()
-            #
-            #     for j in range(self.update_every):
-            #         batch = self.replay_buffer.sample_batch(self.batch_size)
-            #
-            #         episodic_batch = self.get_episodic_batch(current_task_idx)
-            #
-            #         results = self.learn_on_batch(
-            #             tf.convert_to_tensor(current_task_idx), batch, episodic_batch
-            #         )
-            #         self._log_after_update(results)
-            #
-            #     time_update_end = time.time()
-            #     print("Time elapsed for policy update: ", time_update_end - time_update_start)
+            if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
+
+                time_update_start = time.time()
+
+                for j in range(self.update_every):
+                    batch = self.replay_buffer.sample_batch(self.batch_size)
+
+                    episodic_batch = self.get_episodic_batch(current_task_idx)
+
+                    results = self.learn_on_batch(
+                        tf.convert_to_tensor(current_task_idx), batch, episodic_batch
+                    )
+                    self._log_after_update(results)
+
+                time_update_end = time.time()
+                print("Time elapsed for policy update: ", time_update_end - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 self.on_task_end(current_task_idx)
