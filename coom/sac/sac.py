@@ -163,6 +163,7 @@ class SAC:
         self.test_threads_deterministic = []
         self.test_threads_stochastic = []
         self.lock = RLock()
+        self.training_started = False
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -659,10 +660,11 @@ class SAC:
                 if global_timestep < self.steps - 1:
                     obs, info = self.env.reset()
 
-            if current_task_timestep >= self.update_after:
+            if current_task_timestep >= self.update_after and not self.training_started:
                 # Initiate training thread
                 print("Starting training thread")
                 Thread(target=functools.partial(self.run_update, current_task_idx), daemon=True).start()
+                self.training_started = True
 
             # Update handling
             # if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
