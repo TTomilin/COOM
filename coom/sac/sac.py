@@ -163,7 +163,9 @@ class SAC:
         self.test_threads_deterministic = []
         self.test_threads_stochastic = []
         self.lock = RLock()
+        self.trainer = None
         self.training_started = False
+        self.stop_training = False
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -266,9 +268,13 @@ class SAC:
         pass
 
     def on_task_start(self, current_task_idx: int) -> None:
+        self.stop_training = False
         print(f'Task {current_task_idx} started')
 
     def on_task_end(self, current_task_idx: int) -> None:
+        self.stop_training = True
+        if self.trainer:
+            self.trainer.join()
         print(f'Task {current_task_idx} finished')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
@@ -588,8 +594,8 @@ class SAC:
                 + self.critic2.common_variables
         )
 
-    def run_update(self, task_idx):
-        while True:
+    def run_policy_update(self, task_idx):
+        while not self.stop_training:
             time_update_start = time.time()
 
             batch = self.replay_buffer.sample_batch(self.batch_size)
@@ -663,7 +669,7 @@ class SAC:
             if current_task_timestep >= self.update_after and not self.training_started:
                 # Initiate training thread
                 print("Starting training thread")
-                Thread(target=functools.partial(self.run_update, current_task_idx), daemon=True).start()
+                self.trainer = Thread(target=functools.partial(self.run_policy_update, current_task_idx), daemon=True).start()
                 self.training_started = True
 
             # Update handling
