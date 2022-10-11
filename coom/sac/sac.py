@@ -18,7 +18,7 @@ from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.enums import BufferType
-from coom.utils.utils import reset_optimizer, reset_weights, set_seed
+from coom.utils.utils import reset_learning_rate, reset_weights, set_seed
 
 
 class SAC:
@@ -269,13 +269,13 @@ class SAC:
 
     def on_task_start(self, current_task_idx: int) -> None:
         self.stop_training = False
-        print(f'Task {current_task_idx} started')
+        print(f'Task {current_task_idx}-{self.env.task} started')
 
     def on_task_end(self, current_task_idx: int) -> None:
         self.stop_training = True
         if self.trainer:
             self.trainer.join()
-        print(f'Task {current_task_idx} finished')
+        print(f'Task {current_task_idx}-{self.env.task} finished')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
@@ -581,7 +581,7 @@ class SAC:
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
-            reset_optimizer(self.optimizer)
+            reset_learning_rate(self.optimizer)
 
         # Update variables list and update function in case model changed.
         # E.g: For VCL after the first task we set trainable=False for layer
@@ -669,7 +669,8 @@ class SAC:
             if current_task_timestep >= self.update_after and not self.training_started:
                 # Initiate training thread
                 print("Starting training thread")
-                self.trainer = Thread(target=functools.partial(self.run_policy_update, current_task_idx), daemon=True).start()
+                self.trainer = Thread(target=functools.partial(self.run_policy_update, current_task_idx), daemon=True)
+                self.trainer.start()
                 self.training_started = True
 
             # Update handling
@@ -708,7 +709,7 @@ class SAC:
                         print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
                         thread.join()
 
-                print("Creating new threads after: ", time.time() - test_start_time)
+                print("Creating new testing threads after: ", time.time() - test_start_time)
 
                 # Test the performance of stochastic and deterministic version of the agent.
                 self.test_threads_stochastic = [
