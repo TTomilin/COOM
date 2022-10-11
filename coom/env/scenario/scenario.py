@@ -34,6 +34,7 @@ class DoomEnv(CommonEnv):
         self.game.load_config(f"{scenario_dir}/conf.cfg")
         self.game.set_doom_scenario_path(f"{scenario_dir}/{env}.wad")
         self.game.set_window_visible(args.render)
+        self.render_mode = "rgb_array"
         if args.render:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
         if args.acceleration:  # Add SPEED action to the available in-game actions
