@@ -703,9 +703,11 @@ class SAC:
                 if issubclass(type(lr), LearningRateSchedule):
                     lr = self.optimizer._decayed_lr('float32').numpy()
 
-                self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
-
                 print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
+
+                log_start_time = time.time()
+                self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
+                print("Time elapsed for logging: ", time.time() - log_start_time)
 
             current_task_timestep += 1
 
