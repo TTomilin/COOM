@@ -447,6 +447,7 @@ class SAC:
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
     def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
+        start_time = time.time()
         mode = "deterministic" if deterministic else "stochastic"
         key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
         one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
@@ -467,7 +468,7 @@ class SAC:
             self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
             self.logger.store(test_env.get_statistics(key_prefix))
 
-        print("Finished: ", key_prefix)
+        print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
 
         with self.lock:
             self.on_test_end(seq_idx)
@@ -537,6 +538,7 @@ class SAC:
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
         model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.env.task}'
+        print(f"Saving models to {model_dir}")
         dir_prefixes = []
         if current_task_idx == -1:
             dir_prefixes.append(model_dir)
@@ -598,6 +600,7 @@ class SAC:
         current_task_timestep = 0
         current_task_idx = -1
         self.learn_on_batch = self.get_learn_on_batch(current_task_idx)
+        episode_start = time.time()
 
         for global_timestep in range(self.steps):
             # On task change
@@ -605,8 +608,6 @@ class SAC:
                 current_task_timestep = 0
                 current_task_idx = getattr(self.env, "cur_seq_idx")
                 self._handle_task_change(current_task_idx)
-
-            env_step_start = time.time()
 
             # Until start_steps have elapsed, randomly sample actions from a uniform
             # distribution for better exploration. Afterwards, use the learned policy.
@@ -634,10 +635,10 @@ class SAC:
             # Update the most recent observation
             obs = next_obs
 
-            # print("Time for env step: ", time.time() - env_step_start)
-
             # End of trajectory handling
             if done:
+                print("Episode duration: ", time.time() - episode_start)
+                episode_start = time.time()
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len})
                 self.logger.store(self.env.get_statistics('train'))
                 self.env.clear_episode_statistics()
@@ -661,7 +662,7 @@ class SAC:
                     self._log_after_update(results)
 
                 time_update_end = time.time()
-                print("Time for update: ", time_update_end - time_update_start)
+                print("Time elapsed for policy update: ", time_update_end - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 self.on_task_end(current_task_idx)

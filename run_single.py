@@ -34,11 +34,13 @@ def main(args: Namespace):
     # Environment
     scenario_class = DoomScenario[args.scenario.upper()].value
     env = get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len)
-    test_envs = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_tasks]
+    test_envs_stoch = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_tasks]
+    test_envs_det = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_tasks]
 
     sac = SAC(
         env,
-        test_envs,
+        test_envs_stoch,
+        test_envs_det,
         logger,
         scenarios=[args.scenario],
         seed=args.seed,
@@ -46,6 +48,7 @@ def main(args: Namespace):
         start_steps=args.start_steps,
         log_every=args.log_every,
         update_after=args.update_after,
+        update_every=args.update_every,
         replay_size=args.replay_size,
         batch_size=args.batch_size,
         policy_kwargs=policy_kwargs,

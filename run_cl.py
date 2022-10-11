@@ -49,6 +49,7 @@ def main(args: Namespace):
         "start_steps": args.start_steps,
         "log_every": args.log_every,
         "update_after": args.update_after,
+        "update_every": args.update_every,
         "replay_size": args.replay_size,
         "batch_size": args.batch_size,
         "actor_cl": actor_cl,
