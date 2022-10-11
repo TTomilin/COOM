@@ -132,10 +132,9 @@ class Logger:
         with self.lock:
             if key not in self.log_headers:
                 self.log_headers.append(key)
-            # TODO dump the tabular data of this thread if it already exists
-            assert key not in self.log_current_row, (
-                "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
-            )
+            if key in self.log_current_row:
+                val = np.mean(val, self.log_headers.append(key))
+                print(f"Warning: Overwriting {key} = {self.log_current_row[key]:.2f} with new average {val}:.2f")
             self.log_current_row[key] = val
 
     def save_config(self, config):
