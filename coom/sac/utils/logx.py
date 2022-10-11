@@ -133,7 +133,7 @@ class Logger:
             if key not in self.log_headers:
                 self.log_headers.append(key)
             if key in self.log_current_row:
-                val = np.mean(val, self.log_headers.append(key))
+                val = np.mean(val, self.log_current_row[key])
                 print(f"Warning: Overwriting {key} = {self.log_current_row[key]:.2f} with new average {val}:.2f")
             self.log_current_row[key] = val
 
