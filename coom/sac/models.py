@@ -2,7 +2,7 @@ from typing import Callable, Iterable, List, Tuple
 
 import gym
 import tensorflow as tf
-from keras.layers import LayerNormalization
+from tensorflow.keras.layers import LayerNormalization
 from tensorflow.python.keras import Input, Model, Sequential
 from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.layers import Conv2D, Flatten, Dense, Activation, Concatenate
