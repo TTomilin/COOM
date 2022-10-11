@@ -4,12 +4,17 @@ from setuptools import find_packages, setup
 required = [
     "tensorflow>=2.0",
     "tensorflow-probability",
-    "pandas",
     "matplotlib",
     "seaborn",
     "wandb",
     "vizdoom",
-    "gym"
+    "gym",
+    "numpy",
+    "moviepy",
+    "opencv-python",
+    "imageio",
+    "imageio-ffmpeg",
+    "promise",
 ]
 
 setup(
