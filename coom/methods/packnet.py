@@ -1,9 +1,10 @@
+import time
 from typing import Dict, List, Tuple
 
 import tensorflow as tf
 
 from coom.sac.sac import SAC
-from coom.utils.utils import reset_optimizer
+from coom.utils.utils import reset_learning_rate
 
 
 class PackNet_SAC(SAC):
@@ -80,13 +81,16 @@ class PackNet_SAC(SAC):
             prune_perc = num_tasks_left / (num_tasks_left + 1)
             self._prune(prune_perc, current_task_idx)
 
-            reset_optimizer(self.optimizer)
+            reset_learning_rate(self.optimizer)
+            print(f"Retraining for {self.retrain_steps} steps")
+            time_start = time.time()
 
             for _ in range(self.retrain_steps):
                 batch = self.replay_buffer.sample_batch(self.batch_size)
                 self.learn_on_batch(tf.convert_to_tensor(current_task_idx), batch)
 
-            reset_optimizer(self.optimizer)
+            print(f"Retraining completed in {time.time() - time_start:.2f} seconds")
+            reset_learning_rate(self.optimizer)
 
     @tf.function
     def _adjust_gradients_list(
