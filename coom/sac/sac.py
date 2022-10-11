@@ -610,6 +610,9 @@ class SAC:
             time_update_end = time.time()
             print("Time elapsed for policy update: ", time_update_end - time_update_start)
 
+            # Wait 1 second before starting next update
+            time.sleep(1)
+
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
