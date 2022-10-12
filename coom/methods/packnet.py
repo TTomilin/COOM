@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import tensorflow as tf
 
 from coom.sac.sac import SAC
-from coom.utils.utils import reset_learning_rate
+from coom.utils.utils import reset_optimizer
 
 
 class PackNet_SAC(SAC):
@@ -81,7 +81,7 @@ class PackNet_SAC(SAC):
             prune_perc = num_tasks_left / (num_tasks_left + 1)
             self._prune(prune_perc, current_task_idx)
 
-            reset_learning_rate(self.optimizer)
+            reset_optimizer(self.optimizer)
             print(f"Retraining for {self.retrain_steps} steps")
             time_start = time.time()
 
@@ -90,7 +90,7 @@ class PackNet_SAC(SAC):
                 self.learn_on_batch(tf.convert_to_tensor(current_task_idx), batch)
 
             print(f"Retraining completed in {time.time() - time_start:.2f} seconds")
-            reset_learning_rate(self.optimizer)
+            reset_optimizer(self.optimizer)
 
     @tf.function
     def _adjust_gradients_list(

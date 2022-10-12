@@ -18,7 +18,7 @@ from coom.sac.models import PopArtMlpCritic
 from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.enums import BufferType
-from coom.utils.utils import reset_learning_rate, reset_weights, set_seed
+from coom.utils.utils import reset_optimizer, reset_weights, set_seed
 
 
 class SAC:
@@ -571,7 +571,7 @@ class SAC:
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
-            reset_learning_rate(self.optimizer)
+            reset_optimizer(self.optimizer)
 
         # Update variables list and update function in case model changed.
         # E.g: For VCL after the first task we set trainable=False for layer
