@@ -47,7 +47,7 @@ class RaiseTheRoof(DoomEnv):
 
     @property
     def performance_lower_bound(self) -> float:
-        return 650.0  # Frames until getting crushed
+        return 640.0  # Frames until getting crushed
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/movement': np.mean(self.distance_buffer).round(3),
