@@ -105,7 +105,7 @@ class DoomEnv(CommonEnv):
         reward = 0.0
         done = self.game.is_player_dead() or self.game.is_episode_finished() or not state
         truncated = False
-        info = self.get_statistics()
+        info = {}
 
         observation = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.float32(np.zeros(self.game_res))
         if not done:
