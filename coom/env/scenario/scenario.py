@@ -1,4 +1,3 @@
-import os
 from argparse import Namespace
 from collections import deque
 from pathlib import Path
@@ -132,7 +131,8 @@ class DoomEnv(CommonEnv):
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         metrics = self.extra_statistics(mode)
-        ratio = (self.get_success() - self.performance_lower_bound) / self.performance_upper_bound
+        ratio = (self.get_success() - self.performance_lower_bound) / (
+                    self.performance_upper_bound - self.performance_lower_bound)
         metrics[f'{mode}/success'] = np.clip(ratio, 0.0, 1.0)
         return metrics
 
