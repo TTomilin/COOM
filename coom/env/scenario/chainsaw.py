@@ -39,7 +39,7 @@ class Chainsaw(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 50.0
+        return 40.0
 
     @property
     def performance_lower_bound(self) -> float:

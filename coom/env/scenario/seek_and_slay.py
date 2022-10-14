@@ -49,7 +49,7 @@ class SeekAndSlay(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 70.0
+        return 50.0
 
     @property
     def performance_lower_bound(self) -> float:
