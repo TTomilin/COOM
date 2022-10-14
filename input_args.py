@@ -77,6 +77,9 @@ def cl_parse_args(args=None):
     parser.add_argument("--agent_policy_exploration", type=str2bool, default=False,
                         help="If True, uniform exploration for start_steps steps is used only in the first task (in continual learning). Otherwise, it is used in every task")
 
+    # Testing
+    parser.add_argument("--test_deterministic", default=False, action='store_true', help="Whether to also evaluate deterministic actions at test time")
+
     # Task change
     parser.add_argument("--reset_buffer_on_task_change", type=str2bool, default=True,
                         help="If true, replay buffer is reset on each task change")

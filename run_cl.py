@@ -24,7 +24,7 @@ def main(args: Namespace):
 
     train_env = get_cl_env(args)
     test_envs_stoch = get_single_envs(args)
-    test_envs_det = get_single_envs(args)
+    test_envs_det = get_single_envs(args) if args.test_deterministic else []
 
     num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
