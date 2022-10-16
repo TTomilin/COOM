@@ -174,9 +174,9 @@ class BayesianDense(Layer):
 
 
 def variational_mlp(
-        channels: int,
         height: int,
         width: int,
+        channels: int,
         num_tasks: int,
         hidden_sizes: Tuple[int],
         activation: Callable,
