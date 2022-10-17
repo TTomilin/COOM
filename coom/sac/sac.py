@@ -1,9 +1,7 @@
-import functools
 import math
 import os
 import time
 from pathlib import Path
-from threading import Thread, RLock
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
@@ -25,8 +23,7 @@ class SAC:
     def __init__(
             self,
             env: CommonEnv,
-            test_envs_stoch: List[CommonEnv],
-            test_envs_det: List[CommonEnv],
+            test_envs: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
             cl_method: str = None,
@@ -49,7 +46,7 @@ class SAC:
             update_after: int = 1000,
             update_every: int = 50,
             num_test_eps_stochastic: int = 3,
-            num_test_eps_deterministic: int = 1,
+            num_test_eps_deterministic: int = 0,
             save_freq_epochs: int = 25,
             reset_buffer_on_task_change: bool = True,
             buffer_type: BufferType = BufferType.FIFO,
@@ -127,8 +124,7 @@ class SAC:
 
         self.env = env
         self.num_tasks = env.num_tasks
-        self.test_envs_stoch = test_envs_stoch
-        self.test_envs_det = test_envs_det
+        self.test_envs = test_envs
         self.logger = logger
         self.scenarios = scenarios
         self.cl_method = cl_method
@@ -441,36 +437,67 @@ class SAC:
         ):
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
-    def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
+    # def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
+    #     start_time = time.time()
+    #     mode = "deterministic" if deterministic else "stochastic"
+    #     key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
+    #     one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+    #
+    #     self.on_test_start(seq_idx)
+    #
+    #     for j in range(num_episodes):
+    #         obs, _ = test_env.reset()
+    #         done, episode_return, episode_len = False, 0, 0
+    #         while not done:
+    #             obs, reward, done, _, _ = test_env.step(
+    #                 self.get_action_test(tf.convert_to_tensor(obs),
+    #                                      tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+    #                                      tf.constant(deterministic))
+    #             )
+    #             episode_return += reward
+    #             episode_len += 1
+    #         self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+    #         self.logger.store(test_env.get_statistics(key_prefix))
+    #
+    #     print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
+    #
+    #     self.on_test_end(seq_idx)
+    #
+    #     self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
+    #     self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
+    #     for stat in test_env.get_statistics(key_prefix).keys():
+    #         self.logger.log_tabular(stat, average_only=True)
+
+    def test_agent(self, deterministic, num_episodes) -> None:
         start_time = time.time()
         mode = "deterministic" if deterministic else "stochastic"
-        key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-        one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+        for seq_idx, test_env in enumerate(self.test_envs):
+            key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
+            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
-        self.on_test_start(seq_idx)
+            self.on_test_start(seq_idx)
 
-        for j in range(num_episodes):
-            obs, _ = test_env.reset()
-            done, episode_return, episode_len = False, 0, 0
-            while not done:
-                obs, reward, done, _, _ = test_env.step(
-                    self.get_action_test(tf.convert_to_tensor(obs),
-                                         tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-                                         tf.constant(deterministic))
-                )
-                episode_return += reward
-                episode_len += 1
-            self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-            self.logger.store(test_env.get_statistics(key_prefix))
+            for j in range(num_episodes):
+                obs, _ = test_env.reset()
+                done, episode_return, episode_len = False, 0, 0
+                while not done:
+                    obs, reward, done, _, _ = test_env.step(
+                        self.get_action_test(tf.convert_to_tensor(obs),
+                                             tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                                             tf.constant(deterministic))
+                    )
+                    episode_return += reward
+                    episode_len += 1
+                self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+                self.logger.store(test_env.get_statistics(key_prefix))
 
-        print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
+            self.on_test_end(seq_idx)
+            print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
 
-        self.on_test_end(seq_idx)
-
-        self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
-        self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-        for stat in test_env.get_statistics(key_prefix).keys():
-            self.logger.log_tabular(stat, average_only=True)
+            self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
+            self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
+            for stat in test_env.get_statistics(key_prefix).keys():
+                self.logger.log_tabular(stat, average_only=True)
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -631,9 +658,9 @@ class SAC:
 
             # End of trajectory handling
             if done:
-                print("Episode duration: ", time.time() - episode_start)
-                episode_start = time.time()
-                self.logger.store({"train/return": episode_return, "train/ep_length": episode_len})
+                buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100
+                print(f"Episode duration: {time.time() - episode_start}. Buffer capacity: {buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
+                self.logger.store({"train/return": episode_return, "train/ep_length": episode_len, "buffer_capacity": buffer_capacity})
                 self.logger.store(self.env.get_statistics('train'))
                 self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
@@ -671,26 +698,30 @@ class SAC:
 
                 # Test the model on each task in a separate thread
                 test_start_time = time.time()
-                for thread in self.test_threads_stochastic + self.test_threads_deterministic:
-                    if thread.is_alive():
-                        print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
-                        thread.join()
+                # for thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                #     if thread.is_alive():
+                #         print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
+                #         thread.join()
 
-                print("Creating new testing threads after: ", time.time() - test_start_time)
+                # print("Creating new testing threads after: ", time.time() - test_start_time)
 
                 # Test the performance of stochastic and deterministic version of the agent.
-                self.test_threads_stochastic = [
-                    Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
-                                                    self.num_test_eps_stochastic)) for seq_idx, test_env in
-                    enumerate(self.test_envs_stoch)]
+                # self.test_threads_stochastic = [
+                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
+                #                                     self.num_test_eps_stochastic)) for seq_idx, test_env in
+                #     enumerate(self.test_envs_stoch)]
+                #
+                # self.test_threads_deterministic = [
+                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
+                #                                     self.num_test_eps_deterministic)) for seq_idx, test_env in
+                #     enumerate(self.test_envs_det)]
+                #
+                # for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                #     test_thread.start()
 
-                self.test_threads_deterministic = [
-                    Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
-                                                    self.num_test_eps_deterministic)) for seq_idx, test_env in
-                    enumerate(self.test_envs_det)]
-
-                for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
-                    test_thread.start()
+                # Test the performance of stochastic and deterministic version of the agent.
+                self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+                self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
 
                 # Determine the current learning rate of the optimizer
                 lr = self.optimizer.lr
@@ -704,6 +735,8 @@ class SAC:
                 print("Time elapsed for logging: ", time.time() - log_start_time)
 
             current_task_timestep += 1
+            if done:
+                episode_start = time.time()
 
 
 def create_one_hot_vec(num_tasks, task_id):

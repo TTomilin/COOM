@@ -23,8 +23,7 @@ def main(args: Namespace):
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     train_env = get_cl_env(args)
-    test_envs_stoch = get_single_envs(args)
-    test_envs_det = get_single_envs(args) if args.test_deterministic else []
+    test_envs = get_single_envs(args)
 
     num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
@@ -39,8 +38,7 @@ def main(args: Namespace):
 
     vanilla_sac_kwargs = {
         "env": train_env,
-        "test_envs_stoch": test_envs_stoch,
-        "test_envs_det": test_envs_det,
+        "test_envs": test_envs,
         "logger": logger,
         "scenarios": args.scenarios,
         "cl_method": args.cl_method,
