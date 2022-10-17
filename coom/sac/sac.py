@@ -42,9 +42,10 @@ class SAC:
             lr_decay_steps: int = None,
             alpha: Union[float, str] = "auto",
             batch_size: int = 128,
-            start_steps: int = 1e3,
-            update_after: int = 1000,
-            update_every: int = 50,
+            start_steps: int = 2e4,
+            update_after: int = 1e4,
+            update_every: int = 1000,
+            n_updates: int = 50,
             num_test_eps_stochastic: int = 3,
             num_test_eps_deterministic: int = 0,
             save_freq_epochs: int = 25,
@@ -93,24 +94,17 @@ class SAC:
             policy. Helps exploration.
           update_after: Number of env interactions to collect before starting to do gradient
             descent updates.  Ensures replay buffer is full enough for useful updates.
-          update_every: Number of env interactions that should elapse between gradient descent
-            updates.
-            Note: Regardless of how long you wait between updates, the ratio of env steps to
-            gradient steps is locked to 1.
-          num_test_eps_stochastic: Number of episodes to test the stochastic policy in each
-            evaluation.
-          num_test_eps_deterministic: Number of episodes to test the deterministic policy in each
-            evaluation.
+          update_every: Number of env interactions that should elapse between gradient descent updates.
+          n_updates: Number of consecutive policy gradient descent updates to perform.
+          num_test_eps_stochastic: Number of episodes to test the stochastic policy in each evaluation.
+          num_test_eps_deterministic: Number of episodes to test the deterministic policy in each evaluation.
           save_freq_epochs: How often, in epochs, to save the current policy and value function.
             (Epoch is defined as time between two subsequent evaluations, lasting log_every steps)
           reset_buffer_on_task_change: If True, replay buffer will be cleared after every task
             change (in continual learning).
-          buffer_type: Type of the replay buffer. Either 'fifo' for regular FIFO buffer
-            or 'reservoir' for reservoir sampling.
-          reset_optimizer_on_task_change: If True, optimizer will be reset after every task change
-            (in continual learning).
-          reset_critic_on_task_change: If True, critic weights are randomly re-initialized after
-            each task change.
+          buffer_type: Type of the replay buffer. Either 'fifo' for regular FIFO buffer or 'reservoir' for reservoir sampling.
+          reset_optimizer_on_task_change: If True, optimizer will be reset after every task change (in continual learning).
+          reset_critic_on_task_change: If True, critic weights are randomly re-initialized after each task change.
           clipnorm: Value for gradient clipping.
           target_output_std: If alpha is 'auto', alpha is dynamically tuned so that standard
             deviation of the action distribution on every dimension matches target_output_std.
@@ -141,6 +135,7 @@ class SAC:
         self.start_steps = start_steps
         self.update_after = update_after
         self.update_every = update_every
+        self.n_updates = n_updates
         self.num_test_eps_stochastic = num_test_eps_stochastic
         self.num_test_eps_deterministic = num_test_eps_deterministic
         self.save_freq_epochs = save_freq_epochs
@@ -659,8 +654,10 @@ class SAC:
             # End of trajectory handling
             if done:
                 buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100
-                print(f"Episode duration: {time.time() - episode_start}. Buffer capacity: {buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
-                self.logger.store({"train/return": episode_return, "train/ep_length": episode_len, "buffer_capacity": buffer_capacity})
+                print(
+                    f"Episode duration: {time.time() - episode_start}. Buffer capacity: {buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
+                self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
+                                   "buffer_capacity": buffer_capacity})
                 self.logger.store(self.env.get_statistics('train'))
                 self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
@@ -672,7 +669,7 @@ class SAC:
 
                 time_update_start = time.time()
 
-                for j in range(self.update_every):
+                for j in range(self.n_updates):
                     batch = self.replay_buffer.sample_batch(self.batch_size)
 
                     episodic_batch = self.get_episodic_batch(current_task_idx)

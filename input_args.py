@@ -59,12 +59,14 @@ def cl_parse_args(args=None):
     # Training
     parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(10000),
+    parser.add_argument("--start_steps", type=sci2int, default=int(20000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     parser.add_argument("--update_after", type=sci2int, default=int(10000),
                         help="Number of env interactions to collect before starting to do update the gradient")
-    parser.add_argument("--update_every", type=sci2int, default=int(50),
+    parser.add_argument("--update_every", type=sci2int, default=int(1000),
                         help="Number of env interactions to do between every update")
+    parser.add_argument("--n_updates", type=sci2int, default=int(50),
+                        help="Number of consecutive policy gradient descent updates to perform")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",
@@ -283,6 +285,8 @@ def single_parse_args(args=None):
                         help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--update_every", type=sci2int, default=int(50),
                         help="Number of env interactions to do between every update")
+    parser.add_argument("--n_updates", type=sci2int, default=int(50),
+                        help="Number of consecutive policy gradient descent updates to perform")
     parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
