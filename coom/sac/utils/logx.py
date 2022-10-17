@@ -196,6 +196,7 @@ class Logger:
         n_slashes = 22 + max_key_len
         print("-" * n_slashes)
         step = self.log_current_row.get("total_env_steps")
+        scalar_start = time.time()
         for key in self.log_headers:
             val = self.log_current_row.get(key, 0.0)
             valstr = "%8.3g" % val if hasattr(val, "__float__") else val
@@ -215,14 +216,20 @@ class Logger:
             if "tensorboard" in self.logger_output:
                 tf.summary.scalar(key, data=val, step=step)
 
+        print("Scalar logging time: ", time.time() - scalar_start)
+
         if "tensorboard" in self.logger_output:
+            flush_start = time.time()
             tf.summary.flush()
+            print(f"Flushed tensorboard in {time.time() - flush_start:.2f} seconds")
         print("-" * n_slashes, flush=True)
         if self.output_file is not None:
+            write_out_start = time.time()
             if self.first_row:
                 self.output_file.write("\t".join(self.log_headers) + "\n")
             self.output_file.write("\t".join(map(str, vals)) + "\n")
             self.output_file.flush()
+            print(f"Wrote to output file in {time.time() - write_out_start:.2f} seconds")
         self.log_current_row.clear()
         self.first_row = False
 
