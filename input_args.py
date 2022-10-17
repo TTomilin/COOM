@@ -279,7 +279,7 @@ def single_parse_args(args=None):
                         help="Number of steps the algorithm will run per environment")
     parser.add_argument("--start_steps", type=sci2int, default=int(10000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(1000),
+    parser.add_argument("--update_after", type=sci2int, default=int(10000),
                         help="Number of env interactions to collect before starting to do update the gradient")
     parser.add_argument("--update_every", type=sci2int, default=int(50),
                         help="Number of env interactions to do between every update")
