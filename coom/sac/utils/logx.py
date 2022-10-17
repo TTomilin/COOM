@@ -76,7 +76,6 @@ class Logger:
                 should give them all the same ``exp_name``.)
         """
         self.logger_output = logger_output
-        self.lock = Lock()
 
         run_id = get_readable_timestamp() + "_" + get_random_string()
         self.output_dir = output_dir or f"./logs/{group_id}/{run_id}"
@@ -270,11 +269,10 @@ class EpochLogger(Logger):
         Provide an arbitrary number of keyword arguments with numerical
         values.
         """
-        with self.lock:
-            for k, v in d.items():
-                if not (k in self.epoch_dict.keys()):
-                    self.epoch_dict[k] = []
-                self.epoch_dict[k].append(v)
+        for k, v in d.items():
+            if not (k in self.epoch_dict.keys()):
+                self.epoch_dict[k] = []
+            self.epoch_dict[k].append(v)
 
     def log_tabular(self, key, val=None, with_min_and_max=False, average_only=False):
         """
@@ -295,6 +293,7 @@ class EpochLogger(Logger):
             average_only (bool): If true, do not log the standard deviation
                 of the diagnostic over the epoch.
         """
+        log_start = time.time()
         if val is not None:
             super().log_tabular(key, val)
         else:
@@ -305,16 +304,15 @@ class EpochLogger(Logger):
             if with_min_and_max:
                 super().log_tabular(key + "/max", stats[3])
                 super().log_tabular(key + "/min", stats[2])
-        with self.lock:
-            self.epoch_dict[key] = []
+        self.epoch_dict[key] = []
+        print(f"Logged {key} in {time.time() - log_start:.2f} seconds")
 
     def get_stats(self, key):
         """
         Lets an algorithm ask the logger for mean/std/min/max of a diagnostic.
         """
-        with self.lock:
-            v = self.epoch_dict.get(key)
-            if not v:
-                return [np.nan, np.nan, np.nan, np.nan]
-            vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
-            return [np.mean(vals), np.std(vals), np.min(vals), np.max(vals)]
+        v = self.epoch_dict.get(key)
+        if not v:
+            return [np.nan, np.nan, np.nan, np.nan]
+        vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
+        return [np.mean(vals), np.std(vals), np.min(vals), np.max(vals)]
