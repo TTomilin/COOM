@@ -89,7 +89,11 @@ class DoomEnv(CommonEnv):
         raise NotImplementedError
 
     def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        self.game.new_episode()
+        try:
+            self.game.new_episode()
+        except vzd.ViZDoomIsNotRunningException:
+            self.game.init()
+            self.game.new_episode()
         self.clear_episode_statistics()
         state = self.game.get_state().screen_buffer
         state = np.transpose(state, [1, 2, 0])
