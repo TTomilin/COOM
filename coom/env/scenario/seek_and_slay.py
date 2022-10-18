@@ -64,6 +64,7 @@ class SeekAndSlay(DoomEnv):
                 f'{mode}/hits_taken': self.hits_taken}
 
     def clear_episode_statistics(self) -> None:
+        super().clear_episode_statistics()
         self.distance_buffer.clear()
         self.hits_taken = 0
         self.ammo_used = 0

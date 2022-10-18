@@ -166,6 +166,10 @@ class DoomEnv(CommonEnv):
 
     def clear_episode_statistics(self) -> None:
         self.user_variables.fromkeys(self.user_variables, 0.0)
+        variable_queue_len = len(self.game_variable_buffer)
+        self.game_variable_buffer.clear()
+        for _ in range(variable_queue_len):
+            self.game_variable_buffer.append(self.game.get_state().game_variables)
 
     def close(self):
         self.game.close()

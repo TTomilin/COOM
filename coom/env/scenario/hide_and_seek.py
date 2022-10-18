@@ -63,6 +63,7 @@ class HideAndSeek(DoomEnv):
                 f'{mode}/kits_obtained': self.kits_obtained}
 
     def clear_episode_statistics(self) -> None:
+        super().clear_episode_statistics()
         self.distance_buffer.clear()
         self.frames_survived = 0
         self.kits_obtained = 0

@@ -35,4 +35,5 @@ class FloorIsLava(DoomEnv):
         return 750.0  # Frames until the lava scorches the player
 
     def clear_episode_statistics(self) -> None:
+        super().clear_episode_statistics()
         self.frames_survived = 0

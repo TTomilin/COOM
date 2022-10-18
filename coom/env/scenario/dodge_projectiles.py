@@ -59,5 +59,6 @@ class DodgeProjectiles(DoomEnv):
         return {f'{mode}/hits_taken': self.hits_taken}
 
     def clear_episode_statistics(self) -> None:
+        super().clear_episode_statistics()
         self.frames_survived = 0
         self.hits_taken = 0

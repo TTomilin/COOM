@@ -52,5 +52,6 @@ class HealthGathering(DoomEnv):
         return {f'{mode}/kits_obtained': self.kits_obtained}
 
     def clear_episode_statistics(self) -> None:
+        super().clear_episode_statistics()
         self.frames_survived = 0
         self.kits_obtained = 0
