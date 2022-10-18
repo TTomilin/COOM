@@ -33,6 +33,8 @@ class DodgeProjectiles(DoomEnv):
 
     def store_statistics(self, game_var_buf: deque) -> None:
         self.frames_survived += 1
+        if len(game_var_buf) < 2:
+            return
         current_vars = game_var_buf[-1]
         previous_vars = game_var_buf[-2]
         if current_vars[0] < previous_vars[0]:

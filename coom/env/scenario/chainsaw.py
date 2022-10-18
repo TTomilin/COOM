@@ -20,6 +20,9 @@ class Chainsaw(DoomEnv):
         self.hits_taken = 0
 
     def store_statistics(self, game_var_buf: deque) -> None:
+        if len(game_var_buf) < 2:
+            return
+
         distance = distance_traversed(game_var_buf, 2, 3)
         self.distance_buffer.append(distance)
 

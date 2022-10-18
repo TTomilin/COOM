@@ -28,6 +28,9 @@ class SeekAndSlay(DoomEnv):
         self.ammo_used = 0
 
     def store_statistics(self, game_var_buf: deque) -> None:
+        if len(game_var_buf) < 2:
+            return
+
         distance = distance_traversed(game_var_buf, 3, 4)
         self.distance_buffer.append(distance)
 

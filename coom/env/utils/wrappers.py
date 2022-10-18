@@ -47,6 +47,8 @@ class GameVariableRewardWrapper(gym.RewardWrapper):
         self.penalty = penalty
 
     def reward(self, reward):
+        if len(self.game_variable_buffer) < 2:
+            return reward
         vars_cur = self.game_variable_buffer[-1]
         vars_prev = self.game_variable_buffer[-2]
 

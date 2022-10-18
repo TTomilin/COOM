@@ -26,6 +26,8 @@ class ArmsDealer(DoomEnv):
         return [GameVariable.USER1, GameVariable.USER2]
 
     def store_statistics(self, game_var_buf: deque) -> None:
+        if len(game_var_buf) < 2:
+            return
         distance = distance_traversed(game_var_buf, 0, 1)
         self.distance_buffer.append(distance)
 
