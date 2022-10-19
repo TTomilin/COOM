@@ -134,7 +134,7 @@ def cl_parse_args(args=None):
                         help='Reward scaler for traversing the map')
 
     # Penalty
-    parser.add_argument('--penalty_health_loss', default=0.1, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_health_loss', default=0.01, type=float, help='Negative reward for losing health')
     parser.add_argument('--penalty_ammo_used', default=0.1, type=float, help='Negative reward for using ammo')
     parser.add_argument('--penalty_frame_passed', default=0.01, type=float, help='Negative reward for wasting time')
 
