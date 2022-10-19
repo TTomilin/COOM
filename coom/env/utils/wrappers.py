@@ -33,6 +33,8 @@ class MovementRewardWrapper(gym.RewardWrapper):
         self.reward_scaler = env.reward_scaler_traversal
 
     def reward(self, reward):
+        if len(self.distance_buffer) < 2:
+            return
         distance = self.distance_buffer[-1]
         reward += distance * self.reward_scaler_traversal  # Increase the reward for movement linearly
         return reward
