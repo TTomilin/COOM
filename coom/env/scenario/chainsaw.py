@@ -32,7 +32,7 @@ class Chainsaw(DoomEnv):
             self.hits_taken += 1
 
     def get_success(self) -> float:
-        return self.game_variable_buffer[-1][1]  # Kills
+        return self.game_variable_buffer[-1][1] if self.game_variable_buffer else 0.0  # Kills
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
@@ -49,6 +49,8 @@ class Chainsaw(DoomEnv):
         return 0.0  # No kills
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
+        if not self.game_variable_buffer:
+            return {}
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/health': variables[0],
                 f'{mode}/kills': variables[1],

@@ -25,7 +25,6 @@ class HideAndSeek(DoomEnv):
 
     def store_statistics(self, game_var_buf: deque) -> None:
         self.frames_survived += 1
-
         if len(game_var_buf) < 2:
             return
 
@@ -59,6 +58,8 @@ class HideAndSeek(DoomEnv):
         return 500.0  # Frames until getting slaughtered by the monsters  # TODO Verify this value
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
+        if not self.game_variable_buffer:
+            return {}
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/health': variables[0],
                 f'{mode}/movement': np.mean(self.distance_buffer).round(3),

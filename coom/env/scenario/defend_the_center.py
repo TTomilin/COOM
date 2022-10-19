@@ -31,7 +31,7 @@ class DefendTheCenter(DoomEnv):
         return actions
 
     def get_success(self) -> float:
-        return self.game_variable_buffer[-1][0]  # Kills
+        return self.game_variable_buffer[-1][0] if self.game_variable_buffer else 0.0  # Kills
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
@@ -49,5 +49,7 @@ class DefendTheCenter(DoomEnv):
         return 0.0  # No kills
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
+        if not self.game_variable_buffer:
+            return {}
         variables = self.game_variable_buffer[-1]
         return {f'{mode}/kills': variables[0], f'{mode}/ammo': variables[2]}
