@@ -293,7 +293,6 @@ class EpochLogger(Logger):
             average_only (bool): If true, do not log the standard deviation
                 of the diagnostic over the epoch.
         """
-        log_start = time.time()
         if val is not None:
             super().log_tabular(key, val)
         else:
@@ -305,7 +304,6 @@ class EpochLogger(Logger):
                 super().log_tabular(key + "/max", stats[3])
                 super().log_tabular(key + "/min", stats[2])
         self.epoch_dict[key] = []
-        print(f"Logged {key} in {time.time() - log_start:.2f} seconds")
 
     def get_stats(self, key):
         """
