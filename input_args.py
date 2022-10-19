@@ -80,6 +80,7 @@ def cl_parse_args(args=None):
                         help="If True, uniform exploration for start_steps steps is used only in the first task (in continual learning). Otherwise, it is used in every task")
 
     # Testing
+    parser.add_argument("--test", type=str2bool, default=True, help="Whether to test the model")
     parser.add_argument("--test_deterministic", default=False, action='store_true', help="Whether to also evaluate deterministic actions at test time")
 
     # Task change

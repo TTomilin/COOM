@@ -26,6 +26,7 @@ class SAC:
             test_envs: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
+            test: bool = True,
             cl_method: str = None,
             actor_cl: type = models.MlpActor,
             critic_cl: type = models.MlpCritic,
@@ -71,6 +72,7 @@ class SAC:
             for example, when env is a multi-task environment, test_envs can be a list of individual
             task environments.
           logger: An object for logging the results.
+          test: Whether to perform evaluation on test_envs.
           actor_cl: Class for actor model.
           actor_kwargs: Kwargs for actor model.
           critic_cl: Class for critic model.
@@ -121,6 +123,7 @@ class SAC:
         self.test_envs = test_envs
         self.logger = logger
         self.scenarios = scenarios
+        self.test = test
         self.cl_method = cl_method
         self.critic_cl = critic_cl
         self.policy_kwargs = policy_kwargs
@@ -717,15 +720,15 @@ class SAC:
                 #     test_thread.start()
 
                 # Test the performance of stochastic and deterministic version of the agent.
-                self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
-                self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
+                if self.test:
+                    self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+                    self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
+                    print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
                 # Determine the current learning rate of the optimizer
                 lr = self.optimizer.lr
                 if issubclass(type(lr), LearningRateSchedule):
                     lr = self.optimizer._decayed_lr('float32').numpy()
-
-                print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
                 log_start_time = time.time()
                 self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)

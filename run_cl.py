@@ -39,6 +39,7 @@ def main(args: Namespace):
     vanilla_sac_kwargs = {
         "env": train_env,
         "test_envs": test_envs,
+        "test": args.test,
         "logger": logger,
         "scenarios": args.scenarios,
         "cl_method": args.cl_method,
