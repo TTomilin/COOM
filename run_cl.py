@@ -22,6 +22,9 @@ def main(args: Namespace):
     init_wandb(args)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
+    task_sequence = args.scenarios if len(args.envs) == 1 else args.envs
+    logger.log(f'Task sequence: {task_sequence}')
+
     train_env = get_cl_env(args)
     test_envs = get_single_envs(args)
 
