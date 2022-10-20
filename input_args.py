@@ -24,7 +24,7 @@ def cl_parse_args(args=None):
 
     # Recording
     parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
-    parser.add_argument("--record_every", type=int, default=5000, help="Record gameplay video every n steps")
+    parser.add_argument("--record_every", type=int, default=25000, help="Record gameplay video every n steps")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
@@ -52,18 +52,18 @@ def cl_parse_args(args=None):
     parser.add_argument('--lr_decay_steps', type=sci2int, default=int(1e5), help='Number of steps to decay the learning rate')
 
     # Replay buffer
-    parser.add_argument("--replay_size", type=sci2int, default=int(1e5), help="Size of the replay buffer")
+    parser.add_argument("--replay_size", type=sci2int, default=int(3e5), help="Size of the replay buffer")
     parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
                         help="Strategy of inserting examples into the buffer")
 
     # Training
-    parser.add_argument("--steps_per_env", type=sci2int, default=int(5e4),
+    parser.add_argument("--steps_per_env", type=sci2int, default=int(2e5),
                         help="Number of steps the algorithm will run per environment")
-    parser.add_argument("--start_steps", type=sci2int, default=int(20000),
+    parser.add_argument("--start_steps", type=sci2int, default=int(10000),
                         help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
-    parser.add_argument("--update_after", type=sci2int, default=int(10000),
+    parser.add_argument("--update_after", type=sci2int, default=int(5000),
                         help="Number of env interactions to collect before starting to do update the gradient")
-    parser.add_argument("--update_every", type=sci2int, default=int(1000),
+    parser.add_argument("--update_every", type=sci2int, default=int(500),
                         help="Number of env interactions to do between every update")
     parser.add_argument("--n_updates", type=sci2int, default=int(50),
                         help="Number of consecutive policy gradient descent updates to perform")
@@ -126,11 +126,11 @@ def cl_parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Reward
-    parser.add_argument('--reward_switch_pressed', default=1.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_switch_pressed', default=15.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
-    parser.add_argument('--reward_kill', default=1.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--reward_item_acquired', default=1.0, type=float, help='For picking up weapons/health kits')
-    parser.add_argument('--reward_delivery', default=1.0, type=float, help='For delivering an item')
+    parser.add_argument('--reward_kill', default=5.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_item_acquired', default=15.0, type=float, help='For picking up weapons/health kits')
+    parser.add_argument('--reward_delivery', default=15.0, type=float, help='For delivering an item')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
 
