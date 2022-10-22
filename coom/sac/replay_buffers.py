@@ -112,6 +112,6 @@ class ReservoirReplayBuffer(ReplayBuffer):
         self.next_obs_buf[buffer_idx] = next_obs
         self.actions_buf[buffer_idx] = action
         self.rewards_buf[buffer_idx] = reward
-        self.done_buf[buffer_idx] = done,
+        self.done_buf[buffer_idx] = done
         self.one_hot_buf[buffer_idx] = one_hot
         self.size = min(self.size + 1, self.max_size)
