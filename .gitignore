@@ -151,3 +151,4 @@ checkpoints
 /wandb
 _vizdoom.ini
 /videos
+/slade_utils
