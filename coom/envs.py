@@ -1,11 +1,10 @@
+import gym
 import itertools
+import numpy as np
 from argparse import Namespace
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union, Type
-
-import gym
-import numpy as np
 from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
+from typing import Any, Dict, List, Tuple, Union, Type
 
 from coom.env.scenario.common import CommonEnv
 from coom.env.scenario.scenario import DoomEnv
@@ -199,5 +198,5 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
     if args.record:
         method = args.cl_method if 'cl_method' in args else 'sac'
         env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",
-                          step_trigger=env.video_schedule, name_prefix=f'{env.name}')
+                          episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env

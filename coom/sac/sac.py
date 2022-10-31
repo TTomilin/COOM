@@ -1,14 +1,13 @@
 import math
+import numpy as np
 import os
+import tensorflow as tf
 import time
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
-
-import numpy as np
-import tensorflow as tf
 from tensorflow.python.framework import dtypes
 from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 from tensorflow_probability.python.distributions import Categorical
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from coom.env.scenario.common import CommonEnv
 from coom.sac import models
@@ -532,12 +531,14 @@ class SAC:
         self.logger.log_tabular("train/ep_length", average_only=True)
         self.logger.log_tabular("total_env_steps", global_timestep + 1)
         self.logger.log_tabular("current_task_steps", current_task_timestep + 1)
+        self.logger.log_tabular("buffer_capacity", average_only=True)
         # self.logger.log_tabular("train/q1_vals", with_min_and_max=True)
         # self.logger.log_tabular("train/q2_vals", with_min_and_max=True)
         # self.logger.log_tabular("train/entropy", with_min_and_max=True)
         self.logger.log_tabular("train/loss_pi", average_only=True)
         self.logger.log_tabular("train/loss_q1", average_only=True)
         self.logger.log_tabular("train/loss_q2", average_only=True)
+        self.logger.log_tabular("train/episodes", average_only=True)
         for task_idx in range(self.num_tasks):
             if self.auto_alpha:
                 self.logger.log_tabular(f"train/alpha/{task_idx}", average_only=True)
@@ -613,7 +614,7 @@ class SAC:
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
         obs, info = self.env.reset()
-        episode_return, episode_len = 0, 0
+        episodes, episode_return, episode_len = 0, 0, 0
 
         # Main loop: collect experience in env and update/log each epoch
         current_task_timestep = 0
@@ -656,11 +657,12 @@ class SAC:
 
             # End of trajectory handling
             if done:
+                episodes += 1
                 buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100
-                print(
-                    f"Episode duration: {time.time() - episode_start}. Buffer capacity: {buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
+                print(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
+                      f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
-                                   "buffer_capacity": buffer_capacity})
+                                   "train/episodes": episodes, "buffer_capacity": buffer_capacity})
                 self.logger.store(self.env.get_statistics('train'))
                 self.env.clear_episode_statistics()
                 episode_return, episode_len = 0, 0
@@ -686,6 +688,7 @@ class SAC:
                 print("Time elapsed for policy update: ", time_update_end - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
+                episodes = 0
                 self.on_task_end(current_task_idx)
 
             # End of epoch wrap-up

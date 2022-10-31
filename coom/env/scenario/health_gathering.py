@@ -25,7 +25,6 @@ class HealthGathering(DoomEnv):
 
     def store_statistics(self, game_var_buf: deque) -> None:
         self.frames_survived += 1
-
         if len(game_var_buf) < 2:
             return
 

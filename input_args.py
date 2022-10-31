@@ -10,7 +10,8 @@ def cl_parse_args(args=None):
 
     parser.add_argument('--scenarios', type=str, nargs="+", default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
-                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer'])
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer',
+                                 'parkour'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None, help="If None, the fine-tuning method will be used")
     parser.add_argument("--envs", type=str, nargs="+", default=['default'],
@@ -25,7 +26,7 @@ def cl_parse_args(args=None):
 
     # Recording
     parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
-    parser.add_argument("--record_every", type=int, default=25000, help="Record gameplay video every n steps")
+    parser.add_argument("--record_every", type=int, default=100, help="Record gameplay video every n episodes")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
@@ -134,8 +135,8 @@ def cl_parse_args(args=None):
     parser.add_argument('--reward_kill', default=5.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--reward_item_acquired', default=15.0, type=float, help='For picking up weapons/health kits')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
-    parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
-                        help='Reward scaler for traversing the map')
+    parser.add_argument('--reward_scaler_height', default=1.0, type=float, help='Reward scaler for height')
+    parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float, help='Reward scaler for traversal')
 
     # Penalty
     parser.add_argument('--penalty_health_loss', default=0.01, type=float, help='Negative reward for losing health')
@@ -244,7 +245,8 @@ def single_parse_args(args=None):
     parser = argparse.ArgumentParser(description="Run single task")
     parser.add_argument('--scenario', type=str, default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
-                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer'])
+                                 'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer',
+                                 'parkour'])
     parser.add_argument("--task", type=str, help="Name of the task")
     parser.add_argument('--tasks', type=str, nargs='*', default=['default'])
     parser.add_argument('--test_tasks', type=str, nargs='*', default=[])
@@ -256,7 +258,7 @@ def single_parse_args(args=None):
 
     # Recording
     parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
-    parser.add_argument("--record_every", type=int, default=25000, help="Record gameplay video every n steps")
+    parser.add_argument("--record_every", type=int, default=100, help="Record gameplay video every n steps")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
@@ -328,6 +330,7 @@ def single_parse_args(args=None):
     parser.add_argument('--reward_kill', default=5.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--reward_item_acquired', default=15.0, type=float, help='For picking up weapons/health kits')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
+    parser.add_argument('--reward_scaler_height', default=1.0, type=float, help='Reward scaler for height')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float,
                         help='Reward scaler for traversing the map')
 
