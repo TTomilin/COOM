@@ -26,7 +26,7 @@ def cl_parse_args(args=None):
 
     # Recording
     parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
-    parser.add_argument("--record_every", type=int, default=100, help="Record gameplay video every n episodes")
+    parser.add_argument("--record_every", type=int, default=50, help="Record gameplay video every n episodes")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
@@ -258,7 +258,7 @@ def single_parse_args(args=None):
 
     # Recording
     parser.add_argument("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
-    parser.add_argument("--record_every", type=int, default=100, help="Record gameplay video every n steps")
+    parser.add_argument("--record_every", type=int, default=50, help="Record gameplay video every n steps")
     parser.add_argument("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
     # Logging
