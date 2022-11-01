@@ -5,7 +5,7 @@ from pathlib import Path
 from coom.envs import get_single_env
 from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import DoomScenario
+from coom.utils.enums import DoomScenario, BufferType
 from coom.utils.utils import get_activation_from_str
 from coom.utils.wandb import init_wandb
 from input_args import single_parse_args
@@ -64,6 +64,7 @@ def main(args: Namespace):
         experiment_dir=args.experiment_dir,
         model_path=args.model_path,
         timestamp=args.timestamp,
+        buffer_type=BufferType(args.buffer_type),
     )
     sac.run()
 

@@ -55,7 +55,7 @@ def cl_parse_args(args=None):
                         help='Number of steps to decay the learning rate')
 
     # Replay buffer
-    parser.add_argument("--replay_size", type=sci2int, default=int(3e5), help="Size of the replay buffer")
+    parser.add_argument("--replay_size", type=sci2int, default=int(2e5), help="Size of the replay buffer")
     parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
                         help="Strategy of inserting examples into the buffer")
 
@@ -283,6 +283,11 @@ def single_parse_args(args=None):
     parser.add_argument('--lr_decay_steps', type=sci2int, default=int(1e5),
                         help='Number of steps to decay the learning rate')
 
+    # Replay buffer
+    parser.add_argument("--replay_size", type=sci2int, default=int(2e5), help="Size of the replay buffer")
+    parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
+                        help="Strategy of inserting examples into the buffer")
+
     # Training
     parser.add_argument("--steps_per_env", type=sci2int, default=int(2e5),
                         help="Number of steps the algorithm will run per environment")
@@ -294,7 +299,6 @@ def single_parse_args(args=None):
                         help="Number of env interactions to do between every update")
     parser.add_argument("--n_updates", type=sci2int, default=int(50),
                         help="Number of consecutive policy gradient descent updates to perform")
-    parser.add_argument("--replay_size", type=sci2int, default=int(2e5), help="Size of the replay buffer")
     parser.add_argument("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     parser.add_argument("--gamma", type=float, default=0.99, help="Discount factor")
     parser.add_argument("--alpha", type=float_or_str, default="auto",

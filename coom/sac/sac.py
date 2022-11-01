@@ -12,7 +12,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 from coom.env.scenario.common import CommonEnv
 from coom.sac import models
 from coom.sac.models import PopArtMlpCritic
-from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer
+from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.enums import BufferType
 from coom.utils.utils import reset_optimizer, reset_weights, set_seed
@@ -177,6 +177,12 @@ class SAC:
             self.replay_buffer = ReservoirReplayBuffer(
                 obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
+        elif buffer_type == BufferType.PRIORITIZED:
+            self.replay_buffer = PrioritizedReplayBuffer(
+                obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
+            )
+        else:
+            raise ValueError(f"Unknown buffer type: {buffer_type}")
 
         # Create actor and critic networks
         self.actor = actor_cl(**policy_kwargs)
@@ -675,13 +681,24 @@ class SAC:
                 time_update_start = time.time()
 
                 for j in range(self.n_updates):
-                    batch = self.replay_buffer.sample_batch(self.batch_size)
+
+                    if self.buffer_type == BufferType.PRIORITIZED:
+                        tree_idx, batch, IS_weights = self.replay_buffer.sample_batch(self.batch_size)
+                    else:
+                        batch = self.replay_buffer.sample_batch(self.batch_size)
 
                     episodic_batch = self.get_episodic_batch(current_task_idx)
 
                     results = self.learn_on_batch(
                         tf.convert_to_tensor(current_task_idx), batch, episodic_batch
                     )
+
+                    if self.buffer_type == BufferType.PRIORITIZED:
+                        # Update priority in the SumTree
+                        absolute_errors = results['value_loss']
+                        # absolute_errors = np.abs(np.mean(q_values_old - q_values, axis=1))
+                        self.replay_buffer.batch_update(tree_idx, absolute_errors)
+
                     self._log_after_update(results)
 
                 time_update_end = time.time()
