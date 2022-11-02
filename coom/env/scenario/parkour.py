@@ -29,7 +29,7 @@ class Parkour(DoomEnv):
         return self.current_height
 
     def reward_wrappers(self) -> List[WrapperHolder]:
-        return [WrapperHolder(LocationVariableRewardWrapper, self.reward_scaler_traversal, 0, 1, 608, 608)]
+        return [WrapperHolder(LocationVariableRewardWrapper, 0, 1, 608, 608)]
 
     @property
     def performance_upper_bound(self) -> float:

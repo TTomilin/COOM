@@ -105,9 +105,8 @@ class MovementRewardWrapper(RewardWrapper):
 
 
 class LocationVariableRewardWrapper(RewardWrapper):
-    def __init__(self, env, reward: float, x_index, y_index, x_start, y_start):
+    def __init__(self, env, x_index, y_index, x_start, y_start):
         super(LocationVariableRewardWrapper, self).__init__(env)
-        self.rew = reward
         self.x_index = x_index
         self.y_index = y_index
         self.x_start = x_start
@@ -127,7 +126,7 @@ class LocationVariableRewardWrapper(RewardWrapper):
 
         x_diff = abs(x_cur - self.x_start) - abs(x_prev - self.x_start)
         y_diff = abs(y_cur - self.y_start) - abs(y_prev - self.y_start)
-        return self.rew * (x_diff + y_diff)
+        return self.reward_scaler_traversal * (x_diff + y_diff)
 
 
 class RescaleWrapper(gym.Wrapper):
