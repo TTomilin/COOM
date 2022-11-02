@@ -9,11 +9,11 @@ from coom.env.utils.utils import distance_traversed
 from coom.env.utils.wrappers import GameVariableRewardWrapper, MovementRewardWrapper, WrapperHolder
 
 
-class SeekAndSlay(DoomEnv):
+class RunAndGun(DoomEnv):
     """
     In this scenario, the agent is randomly spawned in one of 20 possible locations within a maze-like environment, and
     equipped with a weapon and unlimited ammunition. A fixed number of enemies are spawned at random locations at the
-    beginning of an episode. Additional enemies will continually be added at random unoccupied locations after a time
+    beginning of an episode. Additional enemies will continually be added at random unoccupied locations after each time
     interval. The enemies are rendered immobile, forcing them to remain at their fixed locations. The goal of the agent
     is to locate and shoot the enemies. The agent can move forward, turn left and right, and shoot. The agent is granted
     a reward for each enemy killed.

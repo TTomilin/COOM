@@ -8,7 +8,7 @@ def parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
     parser.add_argument('--scenarios', type=str, nargs="+", default=None,
-                        choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
+                        choices=['defend_the_center', 'health_gathering', 'run_and_gun', 'dodge_projectiles',
                                  'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer',
                                  'parkour', 'pitfall'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
