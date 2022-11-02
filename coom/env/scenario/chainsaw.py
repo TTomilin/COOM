@@ -1,9 +1,8 @@
-from argparse import Namespace
 from collections import deque
-from typing import Dict, List
 
 import numpy as np
-from scipy import spatial
+from argparse import Namespace
+from typing import Dict, List
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
@@ -11,6 +10,14 @@ from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, Mo
 
 
 class Chainsaw(DoomEnv):
+    """
+    In this scenario, the agent is randomly spawned in one of 20 possible locations within a maze-like environment, and
+    equipped with a chainsaw. A fixed number of enemies are spawned at random locations at the beginning of an episode.
+    Additional enemies will continually be added at random unoccupied locations after each time interval. The enemies
+    are rendered immobile, forcing them to remain at their fixed locations. The goal of the agent is to find the
+    enemies, walk up to melee distance from them and saw them in half. The agent can move forward, turn left and right,
+    and use the chainsaw. The agent is granted a reward for moving in the environment and each enemy killed.
+    """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
