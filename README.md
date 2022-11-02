@@ -36,7 +36,7 @@ Below are given example commands that will run experiments with a very limited s
 
 ### Single task
 
-`python3 run_single.py --scenario health_gathering --test_emvs lava slime`
+`python3 run_single.py --scenario health_gathering --test_envs lava slime`
 
 ### Continual learning
 
