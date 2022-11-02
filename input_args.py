@@ -10,7 +10,7 @@ def parse_args(args=None):
     parser.add_argument('--scenarios', type=str, nargs="+", default=None,
                         choices=['defend_the_center', 'health_gathering', 'seek_and_slay', 'dodge_projectiles',
                                  'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer',
-                                 'parkour'])
+                                 'parkour', 'pitfall'])
     parser.add_argument("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"],
                         default=None, help="If None, the fine-tuning method will be used")
     parser.add_argument("--envs", type=str, nargs="+", default=['default'],
@@ -140,9 +140,10 @@ def parse_args(args=None):
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float, help='Reward scaler for traversal')
 
     # Penalty
+    parser.add_argument('--penalty_passivity', default=0.1, type=float, help='Penalty for not moving')
+    parser.add_argument('--penalty_death', default=1.0, type=float, help='Negative reward for dieing')
     parser.add_argument('--penalty_health_loss', default=0.01, type=float, help='Negative reward for losing health')
     parser.add_argument('--penalty_ammo_used', default=0.1, type=float, help='Negative reward for using ammo')
-    parser.add_argument('--penalty_frame_passed', default=0.01, type=float, help='Negative reward for wasting time')
 
     # Multi-task
     parser.add_argument("--use_popart", type=str2bool, default=True, help="Whether use PopArt normalization")
