@@ -36,15 +36,21 @@ Below are given example commands that will run experiments with a very limited s
 
 ### Single task
 
-`python3 run_single.py --scenario health_gathering --test_tasks lava slime --seed 0 --log_every 250`
+`python3 run_single.py --scenario health_gathering --test_emvs lava slime`
 
 ### Continual learning
 
-`python3 run_cl.py --seed 0 --steps_per_task 2e3 --log_every 250 --tasks CW20 --cl_method ewc --cl_reg_coef 1e4 --logger_output tsv tensorboard`
+#### Task sequence CE4 with PackNet
+`python3 run_cl.py --scenarios seek_and_slay --envs default red blue obstacles --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
 
-### Multi-task learning
+#### Task sequence CE8 with PackNet
+`python3 run_cl.py --scenarios seek_and_slay --envs default red blue obstacles mixed_enemies shadows invulnerable shadows_obstacles --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
 
-`python3 run_mt.py --seed 0 --steps_per_task 2e3 --log_every 250 --tasks CW10 --use_popart True --logger_output tsv tensorboard`
+#### Task sequence CO4 with PackNet
+`python3 run_cl.py --scenarios chainsaw raise_the_roof seek_and_slay health_gathering --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
+
+#### Task sequence CO8 with PackNet
+`python3 run_cl.py --scenarios chainsaw raise_the_roof seek_and_slay health_gathering arms_dealer floor_is_lava hide_and_seek parkour --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
 
 # Acknowledgements
 
