@@ -1,11 +1,11 @@
-from argparse import Namespace
 from collections import deque
-from pathlib import Path
-from typing import Dict, Tuple, Any, List
 
 import gym
 import numpy as np
 import vizdoom as vzd
+from argparse import Namespace
+from pathlib import Path
+from typing import Dict, Tuple, Any, List
 from vizdoom import ScreenResolution, Button, GameVariable
 
 from coom.env.scenario.common import CommonEnv
@@ -134,7 +134,7 @@ class DoomEnv(CommonEnv):
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         metrics = self.extra_statistics(mode)
         ratio = (self.get_success() - self.performance_lower_bound) / (
-                    self.performance_upper_bound - self.performance_lower_bound)
+                self.performance_upper_bound - self.performance_lower_bound)
         metrics[f'{mode}/success'] = np.clip(ratio, 0.0, 1.0)
         return metrics
 

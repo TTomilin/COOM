@@ -45,7 +45,7 @@ class HideAndSeek(DoomEnv):
         return [
             WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
             WrapperHolder(GameVariableRewardWrapper, self.reward_item_acquired, 0),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True, True),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
             WrapperHolder(MovementRewardWrapper),
         ]
 

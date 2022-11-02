@@ -36,8 +36,8 @@ class DefendTheCenter(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 0),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 1, True, True),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_ammo_used, 2, True, True),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 1, True),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_ammo_used, 2, True),
         ]
 
     @property

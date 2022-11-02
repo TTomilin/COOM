@@ -2,6 +2,7 @@ import cv2
 import gym
 import numpy as np
 import tensorflow as tf
+from gym import RewardWrapper
 from gym.spaces import Box
 from typing import Dict, Any, Tuple, Callable
 from vizdoom import GameVariable
@@ -13,22 +14,18 @@ class WrapperHolder:
         self.args = args
 
 
-class ConstantRewardWrapper(gym.RewardWrapper):
-    def __init__(self, env, reward: float, penalty: bool = False):
+class ConstantRewardWrapper(RewardWrapper):
+    def __init__(self, env, reward: float):
         super(ConstantRewardWrapper, self).__init__(env)
         self.rew = reward
-        self.penalty = penalty
 
     def reward(self, reward):
-        delta = -self.rew if self.penalty else self.rew
-        reward += delta
-        return reward
+        return reward + self.rew
 
 
-class MovementRewardWrapper(gym.RewardWrapper):
+class MovementRewardWrapper(RewardWrapper):
     def __init__(self, env):
         super(MovementRewardWrapper, self).__init__(env)
-        self.reward_scaler = env.reward_scaler_traversal
 
     def reward(self, reward):
         if len(self.distance_buffer) < 2:
@@ -38,14 +35,12 @@ class MovementRewardWrapper(gym.RewardWrapper):
         return reward
 
 
-class GameVariableRewardWrapper(gym.RewardWrapper):
-    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, penalty: bool = False,
-                 scale: bool = False):
+class GameVariableRewardWrapper(RewardWrapper):
+    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, scale: bool = False):
         super(GameVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.var_index = var_index
         self.decrease = decrease
-        self.penalty = penalty
         self.scale = scale
 
     def reward(self, reward):
@@ -60,19 +55,47 @@ class GameVariableRewardWrapper(gym.RewardWrapper):
         if self.scale:
             return self.rew * var_cur
         if not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
-            delta = -self.rew if self.penalty else self.rew
-            reward += delta
+            reward += self.rew
+        return reward
+
+
+class BooleanVariableRewardWrapper(RewardWrapper):
+    def __init__(self, env, reward: float, game_var: GameVariable):
+        super(BooleanVariableRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.game_var = game_var
+
+    def reward(self, reward):
+        game_variable = self.env.game.get_game_variable(self.game_var)
+        if game_variable:
+            reward += self.rew
+        return reward
+
+
+class GameVariableProportionalRewardWrapper(RewardWrapper):
+    def __init__(self, env, reward: float, var_index: int = 0):
+        super(GameVariableProportionalRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.var_index = var_index
+
+    def reward(self, reward):
+        if len(self.game_variable_buffer) < 2:
+            return reward
+
+        var_cur = self.game_variable_buffer[-1][self.var_index]
+        var_prev = self.game_variable_buffer[-2][self.var_index]
+
+        reward = self.rew * (var_cur - var_prev)
         return reward
 
 
 class UserVariableRewardWrapper(gym.RewardWrapper):
-    def __init__(self, env, reward: float, game_var: GameVariable, decrease: bool = False, penalty: bool = False,
+    def __init__(self, env, reward: float, game_var: GameVariable, decrease: bool = False,
                  update_callback: Callable = None):
         super(UserVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.game_var = game_var
         self.decrease = decrease
-        self.penalty = penalty
         self.update_callback = update_callback
 
     def reward(self, reward):
@@ -80,8 +103,7 @@ class UserVariableRewardWrapper(gym.RewardWrapper):
         var_prev = self.get_and_update_user_var(self.game_var)
 
         if not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
-            delta = -self.rew if self.penalty else self.rew
-            reward += delta
+            reward += self.rew
         return reward
 
 

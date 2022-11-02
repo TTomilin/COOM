@@ -44,7 +44,7 @@ class HealthGathering(DoomEnv):
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(ConstantRewardWrapper, self.penalty_health_loss, True),
+            WrapperHolder(ConstantRewardWrapper, self.penalty_health_loss),
             WrapperHolder(GameVariableRewardWrapper, self.reward_item_acquired, 0),
         ]
 

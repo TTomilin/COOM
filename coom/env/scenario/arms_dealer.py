@@ -46,7 +46,7 @@ class ArmsDealer(DoomEnv):
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(ConstantRewardWrapper, self.penalty_passivity, True),
+            WrapperHolder(ConstantRewardWrapper, self.penalty_passivity),
             WrapperHolder(UserVariableRewardWrapper, self.reward_item_acquired, GameVariable.USER1),
             WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2),
             WrapperHolder(MovementRewardWrapper),

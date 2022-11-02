@@ -46,7 +46,7 @@ class DodgeProjectiles(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True, True),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
         ]
 
     @property
