@@ -1,8 +1,10 @@
+import numpy as np
 from argparse import Namespace
 from collections import deque
 from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
+from coom.env.utils.utils import distance_traversed
 from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, GameVariableRewardWrapper
 
 
@@ -20,6 +22,7 @@ class HealthGathering(DoomEnv):
         super().__init__(args, env, task_id, num_tasks)
         self.reward_item_acquired = args.reward_item_acquired
         self.penalty_health_loss = penalty_health_loss
+        self.distance_buffer = []
         self.frames_survived = 0
         self.kits_obtained = 0
 
@@ -27,6 +30,9 @@ class HealthGathering(DoomEnv):
         self.frames_survived += 1
         if len(game_var_buf) < 2:
             return
+
+        distance = distance_traversed(game_var_buf, 1, 2)
+        self.distance_buffer.append(distance)
 
         current_vars = game_var_buf[-1]
         previous_vars = game_var_buf[-2]
@@ -51,9 +57,11 @@ class HealthGathering(DoomEnv):
         return 800.0  # Frames until the acid eats the player
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
-        return {f'{mode}/kits_obtained': self.kits_obtained}
+        return {f'{mode}/kits_obtained': self.kits_obtained,
+                f'{mode}/movement': np.mean(self.distance_buffer).round(3)}
 
     def clear_episode_statistics(self) -> None:
         super().clear_episode_statistics()
+        self.distance_buffer.clear()
         self.frames_survived = 0
         self.kits_obtained = 0
