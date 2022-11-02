@@ -196,7 +196,7 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
     env = FrameStack(env, args.frame_stack)
     env = RGBStack(env)
     if args.record:
-        method = args.cl_method if 'cl_method' in args else 'sac'
+        method = args.cl_method if args.cl_method else 'sac'
         env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",
                           episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env

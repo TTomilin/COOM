@@ -54,7 +54,7 @@ class ArmsDealer(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 15.0  # Sufficient arms dealt
+        return 10.0  # Sufficient arms dealt
 
     @property
     def performance_lower_bound(self) -> float:

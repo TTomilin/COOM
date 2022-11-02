@@ -1,3 +1,5 @@
+from argparse import Namespace
+
 import logging
 import time
 
@@ -32,53 +34,53 @@ def retry(times, exceptions):
     return decorator
 
 
-def init_wandb(cfg):
+def init_wandb(args: Namespace):
     """
     Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
 
-    if not cfg.with_wandb:
+    if not args.with_wandb:
         logging.info('Weights and Biases integration disabled')
         return
 
-    if cfg.wandb_group is None:
-        cfg.wandb_group = cfg.scenarios[0] if len(cfg.scenarios) == 1 else 'Cross-Scenario'
+    if args.wandb_group is None:
+        args.wandb_group = args.scenarios[0] if len(args.scenarios) == 1 else 'Cross-Scenario'
 
-    if 'wandb_unique_id' not in cfg:
-        method = cfg.cl_method if cfg.cl_method else 'sac'
+    if 'wandb_unique_id' not in args:
+        method = args.cl_method if args.cl_method else 'sac'
         # if we're going to restart the experiment, this will be saved to a json file
-        cfg.wandb_unique_id = f'{method}_seed_{cfg.seed}_{cfg.wandb_group}_{cfg.wandb_experiment}_{cfg.timestamp}'
+        args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
 
     logging.info(
-        f'Weights and Biases integration enabled. Project: {cfg.wandb_project}, user: {cfg.wandb_entity}, '
-        f'group: {cfg.wandb_group}, unique_id: {cfg.wandb_unique_id}')
+        f'Weights and Biases integration enabled. Project: {args.wandb_project}, user: {args.wandb_entity}, '
+        f'group: {args.wandb_group}, unique_id: {args.wandb_unique_id}')
 
     # Try multiple times, as this occasionally fails
     @retry(3, exceptions=(Exception,))
     def init_wandb_func():
         wandb.init(
-            dir=cfg.wandb_dir,
-            project=cfg.wandb_project,
-            entity=cfg.wandb_entity,
+            dir=args.wandb_dir,
+            project=args.wandb_project,
+            entity=args.wandb_entity,
             sync_tensorboard=True,
-            id=cfg.wandb_unique_id,
-            name=cfg.wandb_unique_id,
-            group=cfg.wandb_group,
-            job_type=cfg.wandb_job_type,
-            tags=cfg.wandb_tags,
+            id=args.wandb_unique_id,
+            name=args.wandb_unique_id,
+            group=args.wandb_group,
+            job_type=args.wandb_job_type,
+            tags=args.wandb_tags,
             resume=False,
             settings=wandb.Settings(start_method='fork'),
         )
 
     logging.info('Initializing WandB...')
     try:
-        if cfg.wandb_key:
-            wandb.login(key=cfg.wandb_key)
+        if args.wandb_key:
+            wandb.login(key=args.wandb_key)
         init_wandb_func()
     except Exception as exc:
         logging.error(f'Could not initialize WandB! {exc}')
 
-    wandb.config.update(cfg, allow_val_change=True)
+    wandb.config.update(args, allow_val_change=True)
 
 
 def finish_wandb(cfg):
