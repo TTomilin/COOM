@@ -1,11 +1,9 @@
-from typing import Dict, Any, Tuple, Callable
-
-import tensorflow as tf
-
 import cv2
 import gym
 import numpy as np
+import tensorflow as tf
 from gym.spaces import Box
+from typing import Dict, Any, Tuple, Callable
 from vizdoom import GameVariable
 
 
@@ -41,12 +39,14 @@ class MovementRewardWrapper(gym.RewardWrapper):
 
 
 class GameVariableRewardWrapper(gym.RewardWrapper):
-    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, penalty: bool = False):
+    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, penalty: bool = False,
+                 scale: bool = False):
         super(GameVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.var_index = var_index
         self.decrease = decrease
         self.penalty = penalty
+        self.scale = scale
 
     def reward(self, reward):
         if len(self.game_variable_buffer) < 2:
@@ -57,6 +57,8 @@ class GameVariableRewardWrapper(gym.RewardWrapper):
         var_cur = vars_cur[self.var_index]
         var_prev = vars_prev[self.var_index]
 
+        if self.scale:
+            return self.rew * var_cur
         if not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
             delta = -self.rew if self.penalty else self.rew
             reward += delta
