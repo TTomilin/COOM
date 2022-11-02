@@ -27,11 +27,9 @@ class RaiseTheRoof(DoomEnv):
 
     def store_statistics(self, game_var_buf: deque) -> None:
         self.frames_survived += 1
-        if len(game_var_buf) < 2:
-            return
-
-        distance = distance_traversed(game_var_buf, 0, 1)
-        self.distance_buffer.append(distance)
+        if len(game_var_buf) > 1:
+            distance = distance_traversed(game_var_buf, 0, 1)
+            self.distance_buffer.append(distance)
 
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip

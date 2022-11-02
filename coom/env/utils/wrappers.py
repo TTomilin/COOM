@@ -23,25 +23,12 @@ class ConstantRewardWrapper(RewardWrapper):
         return reward + self.rew
 
 
-class MovementRewardWrapper(RewardWrapper):
-    def __init__(self, env):
-        super(MovementRewardWrapper, self).__init__(env)
-
-    def reward(self, reward):
-        if len(self.distance_buffer) < 2:
-            return reward
-        distance = self.distance_buffer[-1]
-        reward += distance * self.reward_scaler_traversal  # Increase the reward for movement linearly
-        return reward
-
-
 class GameVariableRewardWrapper(RewardWrapper):
-    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, scale: bool = False):
+    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False):
         super(GameVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.var_index = var_index
         self.decrease = decrease
-        self.scale = scale
 
     def reward(self, reward):
         if len(self.game_variable_buffer) < 2:
@@ -52,8 +39,6 @@ class GameVariableRewardWrapper(RewardWrapper):
         var_cur = vars_cur[self.var_index]
         var_prev = vars_prev[self.var_index]
 
-        if self.scale:
-            return self.rew * var_cur
         if not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
             reward += self.rew
         return reward
@@ -72,9 +57,9 @@ class BooleanVariableRewardWrapper(RewardWrapper):
         return reward
 
 
-class GameVariableProportionalRewardWrapper(RewardWrapper):
+class ProportionalVariableRewardWrapper(RewardWrapper):
     def __init__(self, env, reward: float, var_index: int = 0):
-        super(GameVariableProportionalRewardWrapper, self).__init__(env)
+        super(ProportionalVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.var_index = var_index
 
@@ -89,7 +74,7 @@ class GameVariableProportionalRewardWrapper(RewardWrapper):
         return reward
 
 
-class UserVariableRewardWrapper(gym.RewardWrapper):
+class UserVariableRewardWrapper(RewardWrapper):
     def __init__(self, env, reward: float, game_var: GameVariable, decrease: bool = False,
                  update_callback: Callable = None):
         super(UserVariableRewardWrapper, self).__init__(env)
@@ -105,6 +90,44 @@ class UserVariableRewardWrapper(gym.RewardWrapper):
         if not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
             reward += self.rew
         return reward
+
+
+class MovementRewardWrapper(RewardWrapper):
+    def __init__(self, env):
+        super(MovementRewardWrapper, self).__init__(env)
+
+    def reward(self, reward):
+        if len(self.distance_buffer) < 2:
+            return reward
+        distance = self.distance_buffer[-1]
+        reward += distance * self.reward_scaler_traversal  # Increase the reward for movement linearly
+        return reward
+
+
+class LocationVariableRewardWrapper(RewardWrapper):
+    def __init__(self, env, reward: float, x_index, y_index, x_start, y_start):
+        super(LocationVariableRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.x_index = x_index
+        self.y_index = y_index
+        self.x_start = x_start
+        self.y_start = y_start
+
+    def reward(self, reward):
+        if len(self.game_variable_buffer) < 2:
+            return reward
+
+        vars_cur = self.game_variable_buffer[-1]
+        vars_prev = self.game_variable_buffer[-2]
+
+        x_cur = vars_cur[self.x_index]
+        y_cur = vars_cur[self.y_index]
+        x_prev = vars_prev[self.x_index]
+        y_prev = vars_prev[self.y_index]
+
+        x_diff = abs(x_cur - self.x_start) - abs(x_prev - self.x_start)
+        y_diff = abs(y_cur - self.y_start) - abs(y_prev - self.y_start)
+        return self.rew * (x_diff + y_diff)
 
 
 class RescaleWrapper(gym.Wrapper):

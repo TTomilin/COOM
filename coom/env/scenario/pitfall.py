@@ -5,7 +5,7 @@ from typing import Dict, List
 from vizdoom import DEAD
 
 from coom.env.scenario.scenario import DoomEnv
-from coom.env.utils.wrappers import WrapperHolder, GameVariableProportionalRewardWrapper, BooleanVariableRewardWrapper
+from coom.env.utils.wrappers import WrapperHolder, ProportionalVariableRewardWrapper, BooleanVariableRewardWrapper
 
 
 class Pitfall(DoomEnv):
@@ -29,7 +29,7 @@ class Pitfall(DoomEnv):
         return self.total_dist
 
     def reward_wrappers(self) -> List[WrapperHolder]:
-        return [WrapperHolder(GameVariableProportionalRewardWrapper, self.reward_scaler_traversal, 0),
+        return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler_traversal, 0),
                 WrapperHolder(BooleanVariableRewardWrapper, self.penalty_death, DEAD)]
 
     @property
