@@ -38,7 +38,7 @@ class Pitfall(DoomEnv):
 
     @property
     def performance_lower_bound(self) -> float:
-        return 0  # No distance traversed
+        return 20000
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/distance': self.get_success(), f'{mode}/movement': self.get_success() / self.frames}
