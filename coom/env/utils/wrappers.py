@@ -58,19 +58,24 @@ class BooleanVariableRewardWrapper(RewardWrapper):
 
 
 class ProportionalVariableRewardWrapper(RewardWrapper):
-    def __init__(self, env, reward: float, var_index: int = 0):
+    def __init__(self, env, reward: float, var_index: int = 0, keep_lb: bool = False):
         super(ProportionalVariableRewardWrapper, self).__init__(env)
         self.rew = reward
         self.var_index = var_index
+        self.keep_lb = keep_lb
+        self.lower_bound = -np.inf
 
     def reward(self, reward):
         if len(self.game_variable_buffer) < 2:
+            self.lower_bound = -np.inf
             return reward
 
         var_cur = self.game_variable_buffer[-1][self.var_index]
         var_prev = self.game_variable_buffer[-2][self.var_index]
 
-        reward = self.rew * (var_cur - var_prev)
+        if not self.keep_lb or self.keep_lb and var_cur > self.lower_bound:
+            reward = self.rew * (var_cur - var_prev)
+        self.lower_bound = max(var_cur, self.lower_bound) if self.keep_lb else 0
         return reward
 
 

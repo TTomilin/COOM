@@ -29,7 +29,7 @@ class Pitfall(DoomEnv):
         return self.total_dist
 
     def reward_wrappers(self) -> List[WrapperHolder]:
-        return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler_traversal, 0),
+        return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler_traversal, 0, True),
                 WrapperHolder(BooleanVariableRewardWrapper, self.penalty_death, DEAD)]
 
     @property
