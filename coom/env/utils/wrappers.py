@@ -124,8 +124,8 @@ class LocationVariableRewardWrapper(RewardWrapper):
         x_prev = vars_prev[self.x_index]
         y_prev = vars_prev[self.y_index]
 
-        x_diff = abs(x_cur - self.x_start) - abs(x_prev - self.x_start)
-        y_diff = abs(y_cur - self.y_start) - abs(y_prev - self.y_start)
+        x_diff = max(0, abs(x_cur - self.x_start) - abs(x_prev - self.x_start))
+        y_diff = max(0, abs(y_cur - self.y_start) - abs(y_prev - self.y_start))
         return self.reward_scaler_traversal * (x_diff + y_diff)
 
 
