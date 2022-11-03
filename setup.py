@@ -12,7 +12,6 @@ required = [
     "numpy",
     "moviepy",
     "opencv-python",
-    "imageio",
     "imageio-ffmpeg",
     "promise",
 ]
