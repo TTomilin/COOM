@@ -8,10 +8,10 @@ from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, GameVa
 
 class FloorIsLava(DoomEnv):
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
+    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
         self.penalty_health_loss = args.penalty_health_loss
-        self.reward_frame_survived = reward_frame_survived
+        self.reward_frame_survived = args.reward_frame_survived
         self.frames_survived = 0
 
     def store_statistics(self, game_var_buf: deque) -> None:
