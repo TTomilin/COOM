@@ -9,6 +9,7 @@ from typing import Dict, Tuple, Any, List
 from vizdoom import ScreenResolution, Button, GameVariable
 
 from coom.env.scenario.common import CommonEnv
+from coom.env.utils.utils import get_screen_resolution
 
 
 class DoomEnv(CommonEnv):
@@ -36,6 +37,8 @@ class DoomEnv(CommonEnv):
         self.render_mode = "rgb_array"
         if args.render:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
+        elif args.resolution:
+            self.game.set_screen_resolution(get_screen_resolution(args.resolution))
         if args.acceleration:  # Add SPEED action to the available in-game actions
             actions = self.game.get_available_buttons()
             actions.append(Button.SPEED)

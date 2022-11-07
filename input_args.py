@@ -118,6 +118,7 @@ def parse_args(args=None):
     parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
     parser.add_argument('--acceleration', default=False, action='store_true', help='Grant the acceleration action')
+    parser.add_argument('--resolution', type=int, default=None, choices=[800, 640, 320, 160], help='Screen resolution of the game')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
