@@ -98,14 +98,15 @@ class UserVariableRewardWrapper(RewardWrapper):
 
 
 class MovementRewardWrapper(RewardWrapper):
-    def __init__(self, env):
+    def __init__(self, env, reward: float):
         super(MovementRewardWrapper, self).__init__(env)
+        self.rew = reward
 
     def reward(self, reward):
         if len(self.distance_buffer) < 2:
             return reward
         distance = self.distance_buffer[-1]
-        reward += distance * self.reward_scaler_traversal  # Increase the reward for movement linearly
+        reward += distance * self.rew  # Increase the reward for movement linearly
         return reward
 
 

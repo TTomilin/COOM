@@ -44,7 +44,7 @@ class Chainsaw(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1),
-            WrapperHolder(MovementRewardWrapper),
+            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
 
     @property

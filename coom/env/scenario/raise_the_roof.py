@@ -38,7 +38,7 @@ class RaiseTheRoof(DoomEnv):
         return [
             WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
             WrapperHolder(UserVariableRewardWrapper, self.reward_switch_pressed, GameVariable.USER2),
-            WrapperHolder(MovementRewardWrapper),
+            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
 
     @property

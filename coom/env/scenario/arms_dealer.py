@@ -48,7 +48,7 @@ class ArmsDealer(DoomEnv):
             WrapperHolder(ConstantRewardWrapper, self.penalty_passivity),
             WrapperHolder(UserVariableRewardWrapper, self.reward_item_acquired, GameVariable.USER1),
             WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2),
-            WrapperHolder(MovementRewardWrapper),
+            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
 
     @property
