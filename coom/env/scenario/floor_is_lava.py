@@ -5,6 +5,7 @@ from argparse import Namespace
 from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
+from coom.env.utils.utils import distance_traversed
 from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, \
     MovementRewardWrapper
 
@@ -21,6 +22,10 @@ class FloorIsLava(DoomEnv):
 
     def store_statistics(self, game_var_buf: deque) -> None:
         self.frames_survived += 1
+        if len(game_var_buf) > 1:
+            distance = distance_traversed(game_var_buf, 1, 2)
+            self.distance_buffer.append(distance)
+
 
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip
