@@ -9,12 +9,14 @@ from vizdoom import GameVariable
 
 
 class WrapperHolder:
+
     def __init__(self, wrapper_class, *args):
         self.wrapper_class = wrapper_class
         self.args = args
 
 
 class ConstantRewardWrapper(RewardWrapper):
+
     def __init__(self, env, reward: float):
         super(ConstantRewardWrapper, self).__init__(env)
         self.rew = reward
@@ -23,7 +25,22 @@ class ConstantRewardWrapper(RewardWrapper):
         return reward + self.rew
 
 
+class BooleanVariableRewardWrapper(RewardWrapper):
+
+    def __init__(self, env, reward: float, game_var: GameVariable):
+        super(BooleanVariableRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.game_var = game_var
+
+    def reward(self, reward):
+        game_variable = self.env.game.get_game_variable(self.game_var)
+        if game_variable:
+            reward += self.rew
+        return reward
+
+
 class GameVariableRewardWrapper(RewardWrapper):
+
     def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False):
         super(GameVariableRewardWrapper, self).__init__(env)
         self.rew = reward
@@ -44,20 +61,8 @@ class GameVariableRewardWrapper(RewardWrapper):
         return reward
 
 
-class BooleanVariableRewardWrapper(RewardWrapper):
-    def __init__(self, env, reward: float, game_var: GameVariable):
-        super(BooleanVariableRewardWrapper, self).__init__(env)
-        self.rew = reward
-        self.game_var = game_var
-
-    def reward(self, reward):
-        game_variable = self.env.game.get_game_variable(self.game_var)
-        if game_variable:
-            reward += self.rew
-        return reward
-
-
 class ProportionalVariableRewardWrapper(RewardWrapper):
+
     def __init__(self, env, reward: float, var_index: int = 0, keep_lb: bool = False):
         super(ProportionalVariableRewardWrapper, self).__init__(env)
         self.rew = reward
@@ -80,6 +85,7 @@ class ProportionalVariableRewardWrapper(RewardWrapper):
 
 
 class UserVariableRewardWrapper(RewardWrapper):
+
     def __init__(self, env, reward: float, game_var: GameVariable, decrease: bool = False,
                  update_callback: Callable = None):
         super(UserVariableRewardWrapper, self).__init__(env)
@@ -111,6 +117,7 @@ class MovementRewardWrapper(RewardWrapper):
 
 
 class LocationVariableRewardWrapper(RewardWrapper):
+
     def __init__(self, env, x_index, y_index, x_start, y_start):
         super(LocationVariableRewardWrapper, self).__init__(env)
         self.x_index = x_index
@@ -133,6 +140,31 @@ class LocationVariableRewardWrapper(RewardWrapper):
         x_diff = max(0, abs(x_cur - self.x_start) - abs(x_prev - self.x_start))
         y_diff = max(0, abs(y_cur - self.y_start) - abs(y_prev - self.y_start))
         return self.reward_scaler_traversal * (x_diff + y_diff)
+
+
+class PlatformReachedRewardWrapper(RewardWrapper):
+
+    def __init__(self, env, reward: float, health_var_index: int = 0):
+        super(PlatformReachedRewardWrapper, self).__init__(env)
+        self.health_var_index = health_var_index
+        self.reached = True
+        self.rew = reward
+
+    def reward(self, reward):
+        if len(self.game_variable_buffer) < 2:
+            return reward
+        vars_cur = self.game_variable_buffer[-1]
+        vars_prev = self.game_variable_buffer[-2]
+
+        var_cur = vars_cur[self.health_var_index]
+        var_prev = vars_prev[self.health_var_index]
+
+        if var_cur == var_prev and not self.reached:
+            reward += self.rew
+            self.reached = True
+        elif var_cur != var_prev:
+            self.reached = False
+        return reward
 
 
 class RescaleWrapper(gym.Wrapper):
