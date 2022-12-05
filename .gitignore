@@ -152,3 +152,7 @@ checkpoints
 _vizdoom.ini
 /videos
 /slade_utils
+
+# OPE
+ope/result/
+ope/data/
