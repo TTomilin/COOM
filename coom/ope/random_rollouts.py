@@ -21,7 +21,7 @@ ID = "random_rollouts"
 
 def generate_action(low, high, prev_action, balance_no_actions=False, force_actions=False):
     if np.random.randint(10) % 10 and prev_action is not None:
-        return (prev_action)
+        return prev_action
 
     action_len = len(low)
     action = [0 for i in range(action_len)]
@@ -41,7 +41,7 @@ def generate_action(low, high, prev_action, balance_no_actions=False, force_acti
             continue
         break
 
-    return (np.array(action).astype(np.float32))
+    return np.array(action).astype(np.float32)
 
 
 def worker(worker_arg_tuple):
@@ -52,7 +52,7 @@ def worker(worker_arg_tuple):
     if args.game in DOOM_GAMES:
         env = ViZDoomWrapper(args.game)
     else:
-        env = gym.make(args.game)
+        env = gym.make(args.game, max_episode_steps=args.max_episode_steps)
 
     for rollout_num in rollouts_per_core:
         t = 1
@@ -63,7 +63,7 @@ def worker(worker_arg_tuple):
 
         observation = env.reset()
         dsize = (args.frame_resize, args.frame_resize)
-        frames_array.append(cv2.resize(observation, dsize))
+        frames_array.append(cv2.resize(observation[0], dsize))
 
         start_time = time.time()
         prev_action = None
@@ -75,12 +75,12 @@ def worker(worker_arg_tuple):
                                      balance_no_actions=True if args.game in DOOM_GAMES else False,
                                      force_actions=False if args.game in DOOM_GAMES else True)
             prev_action = action
-            observation, reward, done, _ = env.step(action)
+            observation, reward, done, truncated, _ = env.step(action)
             actions_array.append(action)
             frames_array.append(cv2.resize(observation, dsize))
             rewards_array.append(reward)
 
-            if done:
+            if done or truncated:
                 log(ID,
                     "\t> Rollout {}/{} finished after {} timesteps in {:.2f}s".format(rollout_num, args.num_rollouts, t,
                                                                                       (time.time() - start_time)))
@@ -112,10 +112,11 @@ def worker(worker_arg_tuple):
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="./data/wm", help='The base data/output directory')
-    parser.add_argument('--game', default='CarRacing-v0',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
+    parser.add_argument('--game', default='CarRacing-v2',
+                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v2/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--num_rollouts', '-n', default=100, type=int, help='Number of rollouts to collect')
+    parser.add_argument('--max_episode_steps', default=1000, type=int, help='Number of rollouts to collect')
     parser.add_argument('--offset', '-o', default=0, type=int,
                         help='Offset rollout count, in case running on distributed cluster')
     parser.add_argument('--frame_resize', '-r', default=64, type=int, help='h x w resize of each observation frame')
