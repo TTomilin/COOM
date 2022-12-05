@@ -1,16 +1,20 @@
-from multiprocessing import cpu_count, Pool
-
 import argparse
-import cv2
-import gym
 import gzip
-import numpy as np
 import os
 import time
+from multiprocessing import cpu_count, Pool
 
-from ope.lib.constants import DOOM_GAMES
-from ope.lib.env_wrappers import ViZDoomWrapper
-from ope.lib.utils import log, mkdir
+import cv2
+import gym
+import numpy as np
+
+from lib.constants import DOOM_GAMES
+from lib.utils import log, mkdir
+
+try:
+    from lib.env_wrappers import ViZDoomWrapper
+except Exception as e:
+    print(e)
 
 ID = "random_rollouts"
 

@@ -154,5 +154,6 @@ _vizdoom.ini
 /slade_utils
 
 # OPE
-ope/result/
-ope/data/
+/coom/ope/result/
+/coom/ope/toy/result/
+/coom/ope/data/

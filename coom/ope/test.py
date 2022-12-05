@@ -12,9 +12,12 @@ from scipy.misc import imresize
 import gym
 import imageio
 
-from ope.lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
-from ope.lib.constants import DOOM_GAMES
-from ope.lib.env_wrappers import ViZDoomWrapper
+from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
+from lib.constants import DOOM_GAMES
+try:
+    from lib.env_wrappers import ViZDoomWrapper
+except Exception as e:
+    None
 from model import MDN_RNN
 from vision import CVAE
 from MC_auxiliary import action, transform_to_weights

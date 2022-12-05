@@ -1,18 +1,19 @@
 import argparse
+import gc
+import os
+import re
+
 import chainer
 import chainer.functions as F
 import chainer.links as L
 import cupy as cp
-import gc
 import numpy as np
-import os
-import re
 from chainer import training
 from chainer.backend import CpuDevice
 from chainer.training import extensions
 
-from ope.lib.data import VisionDataset
-from ope.lib.utils import save_images_collage, mkdir, log, pre_process_image_tensor, post_process_image_tensor
+from lib.data import VisionDataset
+from lib.utils import save_images_collage, mkdir, log, pre_process_image_tensor, post_process_image_tensor
 
 ID = "vision"
 

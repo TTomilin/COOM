@@ -1,6 +1,22 @@
-import chainer.functions as F
-import cupy as cp
+
+try:
+    import cupy as cp
+    from chainer.backends import cuda
+except Exception as e:
+    None
 import numpy as np
+
+
+import chainer.functions as F
+
+
+
+try:
+    from lib.env_wrappers import ViZDoomWrapper
+except Exception as e:
+    None
+
+
 
 ID = "MC_auxiliary"
 
@@ -48,3 +64,5 @@ def action(args, W_c, b_c, z_t, h_t, c_t, gpu):
     else:
         action = np.asarray(action).astype(np.float32)
     return action
+
+
