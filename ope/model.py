@@ -1,9 +1,4 @@
 import argparse
-import math
-import os
-import re
-from itertools import count
-
 import chainer
 import chainer.distributions as D
 import chainer.functions as F
@@ -11,17 +6,21 @@ import chainer.links as L
 import cupy as cp
 import gym
 import imageio
+import math
 import numba
 import numpy as np
+import os
+import re
 import scipy.stats
 from chainer import Chain
 from chainer import optimizers
 from chainer import training
 from chainer.backends import cuda
 from chainer.training import extensions
+from itertools import count
 
-from lib.data import ModelDataset
-from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
+from ope.lib.data import ModelDataset
+from ope.lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from vision import CVAE
 
 ID = "model"
@@ -168,7 +167,7 @@ def train_lgc(args, model):
             policy_net.cleargrads()
 
             for i in range(steps):
-                z_t,h_t,c_t = state_pool[i]
+                z_t, h_t, c_t = state_pool[i]
                 action = action_pool[i]
                 reward = reward_pool[i]
 
@@ -216,7 +215,6 @@ def ope_LGC(args, model, policy_net):
         weight_prod = 1
 
         while not done:
-
             z_t = rollout_z_t[t]
 
             eval_policy_mean = policy_net(args, z_t, h_t, c_t)
@@ -238,6 +236,7 @@ def ope_LGC(args, model, policy_net):
 
     return ope
 
+
 @numba.jit(nopython=True)
 def optimized_sampling(output_dim, temperature, coef, mu, ln_var):
     mus = np.zeros(output_dim)
@@ -245,7 +244,7 @@ def optimized_sampling(output_dim, temperature, coef, mu, ln_var):
     for i in range(output_dim):
         cumulative_probability = 0.
         r = np.random.uniform(0., 1.)
-        index = len(coef)-1
+        index = len(coef) - 1
         for j, probability in enumerate(coef[i]):
             cumulative_probability = cumulative_probability + probability
             if r <= cumulative_probability:
@@ -300,7 +299,7 @@ class MDN_RNN(chainer.Chain):
         ln_var = F.reshape(ln_var, (-1, k))
 
         coef /= temperature
-        coef = F.softmax(coef,axis=1)
+        coef = F.softmax(coef, axis=1)
 
         if self._cpu:
             z_t_plus_1 = optimized_sampling(output_dim, temperature, coef.data, mu.data, ln_var.data).astype(np.float32)
@@ -352,19 +351,20 @@ class MDN_RNN(chainer.Chain):
 
             normals = F.sum(
                 coef * F.exp(-F.gaussian_nll(z_t_plus_1, mu, ln_var, reduce='no'))
-                ,axis=2)
+                , axis=2)
             densities = F.sum(normals, axis=1)
             nll = -F.log(densities)
 
             loss = F.sum(nll)
 
             if self.predict_done:
-                done_loss = F.sigmoid_cross_entropy(done.reshape(-1,1), done_label, reduce="no")
-                done_loss *= (1. + done_label.astype("float32")*9.)
+                done_loss = F.sigmoid_cross_entropy(done.reshape(-1, 1), done_label, reduce="no")
+                done_loss *= (1. + done_label.astype("float32") * 9.)
                 done_loss = F.mean(done_loss)
                 loss = loss + done_loss
 
             return loss
+
         return lf
 
     def reset_state(self):
@@ -424,10 +424,9 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         self.model = model
         # self.device = args.gpu
         # self.device = 0
-        super(TBPTTUpdater, self).__init__(train_iter, optimizer,loss_func=loss_func)
+        super(TBPTTUpdater, self).__init__(train_iter, optimizer, loss_func=loss_func)
 
     def update_core(self):
-
         train_iter = self.get_iterator('main')
         optimizer = self.get_optimizer('main')
 
@@ -444,18 +443,18 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         z_t_plus_1 = chainer.Variable(z_t_plus_1[0])
         action = chainer.Variable(action[0])
         done = chainer.Variable(done[0])
-        for i in range(math.ceil(z_t.shape[0]/self.sequence_length)):
-            start_idx = i*self.sequence_length
-            end_idx = (i+1)*self.sequence_length
+        for i in range(math.ceil(z_t.shape[0] / self.sequence_length)):
+            start_idx = i * self.sequence_length
+            end_idx = (i + 1) * self.sequence_length
             loss = self.loss_func(z_t[start_idx:end_idx].data,
                                   z_t_plus_1[start_idx:end_idx].data,
                                   action[start_idx:end_idx].data,
                                   done[start_idx:end_idx].data,
-                                  True if i==0 else False)
+                                  True if i == 0 else False)
 
             # TODO: should the adversarial ope loss be subtracted this many times during the for loop? Should not hardcode ope_scale
             ope_scale = 100
-            loss -= ope_scale*ope
+            loss -= ope_scale * ope
 
             optimizer.target.cleargrads()
             loss.backward()
@@ -505,12 +504,10 @@ def main():
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
-
     output_dir = os.path.join(args.data_dir, args.game, args.experiment_name, ID)
     mkdir(output_dir)
     random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     vision_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'vision')
-
 
     log(ID, "Starting")
 
@@ -544,11 +541,9 @@ def main():
     train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=False)
     train_iter = chainer.iterators.SerialIterator(train, batch_size=1, shuffle=False)
 
-
     env = gym.make(args.game)
     action_dim = len(env.action_space.low)
     args.action_dim = action_dim
-
 
     updater = TBPTTUpdater(train_iter, optimizer, model.get_loss_func(), args, model)
 
@@ -568,7 +563,7 @@ def main():
     img_t_plus_1 = vision.decode(sample_z_t_plus_1).data
     if args.predict_done:
         done = done.reshape(-1)
-        img_t_plus_1[np.where(done[0:sample_size] >= 0.5), :, :, :] = 0 # Make done black
+        img_t_plus_1[np.where(done[0:sample_size] >= 0.5), :, :, :] = 0  # Make done black
     save_images_collage(img_t, os.path.join(output_dir, 'train_t.png'))
     save_images_collage(img_t_plus_1, os.path.join(output_dir, 'train_t_plus_1.png'))
     image_sampler = ImageSampler(model.copy(), vision, args, output_dir, sample_z_t, sample_action)
@@ -597,9 +592,11 @@ def main():
         model.to_cpu()
     model.reset_state()
     # current_z_t = np.random.randn(64).astype(np.float32)  # Noise as starting frame
-    rollout_z_t, rollout_z_t_plus_1, rollout_action, rewards, done = train[np.random.randint(len(train))]  # Pick a random real rollout
-    current_z_t = rollout_z_t[0] # Starting frame from the real rollout
-    current_z_t += np.random.normal(0, 0.5, current_z_t.shape).astype(np.float32)  # Add some noise to the real rollout starting frame
+    rollout_z_t, rollout_z_t_plus_1, rollout_action, rewards, done = train[
+        np.random.randint(len(train))]  # Pick a random real rollout
+    current_z_t = rollout_z_t[0]  # Starting frame from the real rollout
+    current_z_t += np.random.normal(0, 0.5, current_z_t.shape).astype(
+        np.float32)  # Add some noise to the real rollout starting frame
     all_z_t = [current_z_t]
     # current_action = np.asarray([0., 1.]).astype(np.float32)
     for i in range(rollout_z_t.shape[0]):

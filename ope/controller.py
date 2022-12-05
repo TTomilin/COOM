@@ -1,36 +1,31 @@
+from multiprocessing import cpu_count, Pool
+
 import argparse
 import ast
-import math
-import os
-import re
-import socket
-import time
-import traceback
-from io import BytesIO
-from multiprocessing import cpu_count, Pool
-from multiprocessing.pool import ThreadPool
-from threading import Thread, Lock, Event
-
 import chainer
 import cupy as cp
 import cv2
 import gym
 import imageio
+import math
 import numpy as np
+import os
+import re
+import socket
+import time
+import traceback
 from chainer.backends import cuda
-
-from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
-
-try:
-    from lib.env_wrappers import ViZDoomWrapper
-except Exception as e:
-    None
-from lib.constants import DOOM_GAMES
-from model import MDN_RNN
-from vision import CVAE
-from lib.data import ModelDataset
+from io import BytesIO
+from multiprocessing.pool import ThreadPool
+from threading import Thread, Lock, Event
 
 from MC_auxiliary import transform_to_weights, action
+from lib.constants import DOOM_GAMES
+from lib.data import ModelDataset
+from model import MDN_RNN
+from ope.lib.env_wrappers import ViZDoomWrapper
+from ope.lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
+from vision import CVAE
 
 ID = "controller"
 

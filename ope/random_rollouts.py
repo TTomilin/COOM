@@ -1,20 +1,16 @@
-import argparse
-import gzip
-import os
-import time
 from multiprocessing import cpu_count, Pool
 
+import argparse
 import cv2
 import gym
+import gzip
 import numpy as np
+import os
+import time
 
-from lib.constants import DOOM_GAMES
-from lib.utils import log, mkdir
-
-try:
-    from lib.env_wrappers import ViZDoomWrapper
-except Exception as e:
-    print(e)
+from ope.lib.constants import DOOM_GAMES
+from ope.lib.env_wrappers import ViZDoomWrapper
+from ope.lib.utils import log, mkdir
 
 ID = "random_rollouts"
 
