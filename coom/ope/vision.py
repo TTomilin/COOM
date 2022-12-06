@@ -128,7 +128,7 @@ class Sampler(chainer.training.Extension):
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="./data/wm", help='The base data/output directory')
-    parser.add_argument('--game', default='CarRacing-v0',
+    parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=10, type=int,
