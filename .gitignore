@@ -157,3 +157,5 @@ _vizdoom.ini
 /coom/ope/result/
 /coom/ope/toy/result/
 /coom/ope/data/
+/coom/ope/logs/
+/coom/ope/wandb/

@@ -1,19 +1,20 @@
-from pathlib import Path
-
 import argparse
-import gc
-import os
-import re
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
 import cupy as cp
+import gc
 import numpy as np
+import os
+import re
+import tensorflow as tf
 from chainer import training
 from chainer.backend import CpuDevice
-from chainer.training import extensions
+from chainer.training import extensions, extension
+from datetime import datetime
+from pathlib import Path
 
+from coom.utils.wandb import init_wandb
 from lib.data import VisionDataset
 from lib.utils import save_images_collage, mkdir, log, pre_process_image_tensor, post_process_image_tensor
 
@@ -127,6 +128,25 @@ class Sampler(chainer.training.Extension):
             self.model.to_gpu()
 
 
+class SummaryReport(extension.Extension):
+
+    def __init__(self, keys, interval=100):
+        self._keys = keys
+        self._interval = interval
+        self._metrics = {}
+        for key in keys:
+            self._metrics[key] = []
+
+    def __call__(self, trainer):
+        for key in self._keys:
+            self._metrics[key].append(trainer.observation[key].item())
+        step = trainer.updater.iteration
+        if step % self._interval == 0:
+            for key in self._keys:
+                tf.summary.scalar(key, data=np.mean(self._metrics[key]), step=step)
+                self._metrics[key] = []
+            tf.summary.flush()
+
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
@@ -141,13 +161,23 @@ def main():
     parser.add_argument('--resume_from', '-r', default='', help='Resume the optimization from a specific snapshot')
     parser.add_argument('--test', action='store_true', help='Generate samples only')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--epoch', '-e', default=1, type=int, help='number of epochs to learn')
+    parser.add_argument('--epoch', '-e', default=100, type=int, help='number of epochs to learn')
     parser.add_argument('--snapshot_interval', '-s', default=100, type=int,
                         help='100 = snapshot every 100itr*batch_size imgs processed')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--batch_size', '-b', type=int, default=100, help='learning minibatch size')
     parser.add_argument('--no_progress_bar', '-p', action='store_true', help='Display progress bar during training')
     parser.add_argument('--kl_tolerance', type=float, default=0.5, help='')
+
+    # WandB
+    parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
+    parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
+    parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
+    parser.add_argument('--wandb_group', default='vision', type=str, help='WandB "Group"')
+    parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
+    parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
+    parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
+    parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
 
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
@@ -156,6 +186,13 @@ def main():
     output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     mkdir(output_dir)
+
+    # WandB
+    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
+    init_wandb(args)
+    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    tb_writer.set_as_default()
 
     max_iter = 0
     auto_resume_file = None
@@ -190,6 +227,7 @@ def main():
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=output_dir)
     trainer.extend(extensions.snapshot(), trigger=(args.snapshot_interval, 'iteration'))
     trainer.extend(extensions.LogReport(trigger=(100 if args.gpu >= 0 else 10, 'iteration')))
+    trainer.extend(SummaryReport(['main/loss', 'main/kl_loss', 'main/rec_loss']))
     trainer.extend(
         extensions.PrintReport(['epoch', 'iteration', 'main/loss', 'main/kl_loss', 'main/rec_loss', 'elapsed_time']))
     if not args.no_progress_bar:
