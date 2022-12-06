@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import argparse
 import gc
 import os
@@ -127,7 +129,7 @@ class Sampler(chainer.training.Extension):
 
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
-    parser.add_argument('--data_dir', '-d', default="./data/wm", help='The base data/output directory')
+    parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
@@ -150,8 +152,9 @@ def main():
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
-    output_dir = os.path.join(args.data_dir, args.game, args.experiment_name, ID)
-    random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    ope_dir = Path(__file__).parent.resolve()
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     mkdir(output_dir)
 
     max_iter = 0

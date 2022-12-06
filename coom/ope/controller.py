@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import argparse
 import ast
 import math
@@ -340,7 +342,7 @@ class DispatcherServer(object):
 
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
-    parser.add_argument('--data_dir', '-d', default="./data/wm", help='The base data/output directory')
+    parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v0',
                         help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
@@ -391,11 +393,12 @@ def main():
         curriculum_start = int(args.curriculum.split(',')[0])
         curriculum_step = int(args.curriculum.split(',')[1])
 
-    output_dir = os.path.join(args.data_dir, args.game, args.experiment_name, ID)
+    ope_dir = Path(__file__).parent.resolve()
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
     mkdir(output_dir)
-    model_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'model')
-    vision_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'vision')
-    random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)

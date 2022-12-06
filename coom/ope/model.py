@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import argparse
 import math
 import os
@@ -468,7 +470,7 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
 
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
-    parser.add_argument('--data_dir', '-d', default="./data/wm", help='The base data/output directory')
+    parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v0',
                         help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
@@ -505,11 +507,11 @@ def main():
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
-
-    output_dir = os.path.join(args.data_dir, args.game, args.experiment_name, ID)
+    ope_dir = Path(__file__).parent.resolve()
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
     mkdir(output_dir)
-    random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
-    vision_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'vision')
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
 
 
     log(ID, "Starting")
