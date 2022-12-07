@@ -14,10 +14,10 @@ from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
-from coom.ope.lib.wandb import SummaryReport
 from coom.utils.wandb import init_wandb
 from lib.data import VisionDataset
 from lib.utils import save_images_collage, mkdir, log, pre_process_image_tensor, post_process_image_tensor
+from lib.wandb import SummaryReport
 
 ID = "vision"
 

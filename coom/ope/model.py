@@ -23,10 +23,10 @@ from itertools import count
 from pathlib import Path
 from tqdm import tqdm
 
-from coom.ope.lib.wandb import SummaryReport
 from coom.utils.wandb import init_wandb
 from lib.data import ModelDataset
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
+from lib.wandb import SummaryReport
 from vision import CVAE
 
 ID = "model"
