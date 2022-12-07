@@ -10,10 +10,11 @@ import re
 import tensorflow as tf
 from chainer import training
 from chainer.backend import CpuDevice
-from chainer.training import extensions, extension
+from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
+from coom.ope.lib.wandb import SummaryReport
 from coom.utils.wandb import init_wandb
 from lib.data import VisionDataset
 from lib.utils import save_images_collage, mkdir, log, pre_process_image_tensor, post_process_image_tensor
@@ -128,30 +129,11 @@ class Sampler(chainer.training.Extension):
             self.model.to_gpu()
 
 
-class SummaryReport(extension.Extension):
-
-    def __init__(self, keys, interval=100):
-        self._keys = keys
-        self._interval = interval
-        self._metrics = {}
-        for key in keys:
-            self._metrics[key] = []
-
-    def __call__(self, trainer):
-        for key in self._keys:
-            self._metrics[key].append(trainer.observation[key].item())
-        step = trainer.updater.iteration
-        if step % self._interval == 0:
-            for key in self._keys:
-                tf.summary.scalar(key, data=np.mean(self._metrics[key]), step=step)
-                self._metrics[key] = []
-            tf.summary.flush()
-
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
+                        help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=10, type=int,
                         help='Load game frames in batches so as not to run out of memory')

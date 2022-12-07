@@ -1,11 +1,4 @@
-from pathlib import Path
-
 import argparse
-import math
-import os
-import re
-from itertools import count
-
 import chainer
 import chainer.distributions as D
 import chainer.functions as F
@@ -13,15 +6,25 @@ import chainer.links as L
 import cupy as cp
 import gym
 import imageio
+import math
 import numba
 import numpy as np
+import os
+import re
 import scipy.stats
+import tensorflow as tf
 from chainer import Chain
 from chainer import optimizers
 from chainer import training
 from chainer.backends import cuda
 from chainer.training import extensions
+from datetime import datetime
+from itertools import count
+from pathlib import Path
+from tqdm import tqdm
 
+from coom.ope.lib.wandb import SummaryReport
+from coom.utils.wandb import init_wandb
 from lib.data import ModelDataset
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from vision import CVAE
@@ -37,7 +40,11 @@ class PolicyNet(Chain):
             self.args = args
             self.W_c = L.Linear(None, args.action_dim)
 
-    def forward(self, args, z_t, h_t, c_t):
+    def forward(self, args, z_t, h_t, c_t, use_cpu=False):
+        if args.gpu >= 0:
+            self.W_c.to_gpu(args.gpu)
+        if use_cpu:
+            self.W_c.to_cpu()
         if args.weights_type == 1:
             input = F.concat((z_t, h_t), axis=0).data
             input = F.reshape(input, (1, input.shape[0]))
@@ -63,7 +70,7 @@ class PolicyNet(Chain):
                 start += action_range
             mid = action_dim // 2  # reserve action[mid] for no action
             action = action[0:mid] + action[mid + 1:action_dim]
-        if args.gpu >= 0:
+        if args.gpu >= 0 and not use_cpu:
             action = cp.asarray(action).astype(cp.float32)
         else:
             action = np.asarray(action).astype(np.float32)
@@ -124,11 +131,21 @@ def train_lgc(args, model):
             mean_a_t = policy_net(args, z_t, h_t, c_t)
             action_policy_std = 0.1
             cov = action_policy_std * np.identity(args.action_dim)
-            stochastic_policy = D.MultivariateNormal(loc=mean_a_t.astype(np.float32), scale_tril=cov.astype(np.float32))
+            if args.gpu >= 0:
+                cov = cp.asarray(cov).astype(cp.float32)
+                model.to_gpu(args.gpu)
+            else:
+                mean_a_t = mean_a_t.astype(np.float32)
+                cov = cov.astype(np.float32)
+            stochastic_policy = D.MultivariateNormal(loc=mean_a_t, scale_tril=cov)
             a_t = stochastic_policy.sample()
 
-            z_t, done = model(z_t, a_t, temperature=args.temperature)
-            done = done.data[0]
+            if args.predict_done:
+                z_t, done = model(z_t, a_t, temperature=args.temperature)
+                done = done.data[0]
+            else:
+                z_t = model(z_t, a_t, temperature=args.temperature)
+                done = 0.0
             reward = 1.0
             if done >= args.done_threshold or t >= args.max_episode_length:
                 done = True
@@ -170,15 +187,19 @@ def train_lgc(args, model):
             policy_net.cleargrads()
 
             for i in range(steps):
-                z_t,h_t,c_t = state_pool[i]
+                z_t, h_t, c_t = state_pool[i]
                 action = action_pool[i]
                 reward = reward_pool[i]
 
                 mean_a_t = policy_net(args, z_t, h_t, c_t)
                 action_policy_std = 0.1
                 cov = action_policy_std * np.identity(args.action_dim)
-                stochastic_policy = D.MultivariateNormal(loc=mean_a_t.astype(np.float32),
-                                                         scale_tril=cov.astype(np.float32))
+                if args.gpu >= 0:
+                    cov = cp.asarray(cov).astype(cp.float32)
+                else:
+                    mean_a_t = mean_a_t.astype(np.float32)
+                    cov = cov.astype(np.float32)
+                stochastic_policy = D.MultivariateNormal(loc=mean_a_t, scale_tril=cov)
                 loss = -stochastic_policy.log_prob(action) * reward  # Negtive score function x reward
                 loss.backward()
 
@@ -208,7 +229,9 @@ def ope_LGC(args, model, policy_net):
 
     ope = 0
 
-    for i in range(len(train)):
+    pbar = tqdm(range(len(train)))
+    for i in pbar:
+        pbar.set_description(f"Processing batch {i}")
         h_t = np.zeros(args.hidden_dim).astype(np.float32)
         c_t = np.zeros(args.hidden_dim).astype(np.float32)
         t = 0
@@ -218,10 +241,9 @@ def ope_LGC(args, model, policy_net):
         weight_prod = 1
 
         while not done:
-
             z_t = rollout_z_t[t]
 
-            eval_policy_mean = policy_net(args, z_t, h_t, c_t)
+            eval_policy_mean = policy_net(args, z_t, h_t, c_t, use_cpu=True)
             eval_policy_mean = np.transpose(eval_policy_mean).reshape(args.action_dim)
 
             # TODO: yikes this shouldn't be hardcoded...
@@ -231,6 +253,7 @@ def ope_LGC(args, model, policy_net):
                                                                action_policy_std * np.identity(args.action_dim))
             ope += weight_prod * rollout_reward[t]
 
+            model.to_cpu()
             model(z_t, rollout_action[t], temperature=args.temperature)
             h_t = model.get_h().data[0]
             c_t = model.get_c().data[0]
@@ -240,6 +263,7 @@ def ope_LGC(args, model, policy_net):
 
     return ope
 
+
 @numba.jit(nopython=True)
 def optimized_sampling(output_dim, temperature, coef, mu, ln_var):
     mus = np.zeros(output_dim)
@@ -247,7 +271,7 @@ def optimized_sampling(output_dim, temperature, coef, mu, ln_var):
     for i in range(output_dim):
         cumulative_probability = 0.
         r = np.random.uniform(0., 1.)
-        index = len(coef)-1
+        index = len(coef) - 1
         for j, probability in enumerate(coef[i]):
             cumulative_probability = cumulative_probability + probability
             if r <= cumulative_probability:
@@ -266,11 +290,11 @@ def optimized_sampling(output_dim, temperature, coef, mu, ln_var):
 
 
 class MDN_RNN(chainer.Chain):
-    def __init__(self, hidden_dim=256, output_dim=32, k=5, predict_done=False):
+    def __init__(self, hidden_dim=256, output_dim=32, k=5, predict_done=False, use_gpu=False):
         self.output_dim = output_dim
         self.hidden_dim = hidden_dim
         self.k = k
-        self._cpu = True
+        self._gpu = use_gpu
         self.predict_done = predict_done
         init_dict = {
             "rnn_layer": L.LSTM(None, hidden_dim),
@@ -302,16 +326,16 @@ class MDN_RNN(chainer.Chain):
         ln_var = F.reshape(ln_var, (-1, k))
 
         coef /= temperature
-        coef = F.softmax(coef,axis=1)
+        coef = F.softmax(coef, axis=1)
 
-        if self._cpu:
-            z_t_plus_1 = optimized_sampling(output_dim, temperature, coef.data, mu.data, ln_var.data).astype(np.float32)
-        else:
+        if self._gpu:
             coef = cp.asnumpy(coef.data)
             mu = cp.asnumpy(mu.data)
             ln_var = cp.asnumpy(ln_var.data)
             z_t_plus_1 = optimized_sampling(output_dim, temperature, coef, mu, ln_var).astype(np.float32)
             z_t_plus_1 = chainer.Variable(cp.asarray(z_t_plus_1))
+        else:
+            z_t_plus_1 = optimized_sampling(output_dim, temperature, coef.data, mu.data, ln_var.data).astype(np.float32)
 
         if self.predict_done:
             return z_t_plus_1, F.sigmoid(done)
@@ -354,19 +378,20 @@ class MDN_RNN(chainer.Chain):
 
             normals = F.sum(
                 coef * F.exp(-F.gaussian_nll(z_t_plus_1, mu, ln_var, reduce='no'))
-                ,axis=2)
+                , axis=2)
             densities = F.sum(normals, axis=1)
             nll = -F.log(densities)
 
             loss = F.sum(nll)
 
             if self.predict_done:
-                done_loss = F.sigmoid_cross_entropy(done.reshape(-1,1), done_label, reduce="no")
-                done_loss *= (1. + done_label.astype("float32")*9.)
+                done_loss = F.sigmoid_cross_entropy(done.reshape(-1, 1), done_label, reduce="no")
+                done_loss *= (1. + done_label.astype("float32") * 9.)
                 done_loss = F.mean(done_loss)
                 loss = loss + done_loss
 
             return loss
+
         return lf
 
     def reset_state(self):
@@ -424,12 +449,9 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         self.sequence_length = args.sequence_length
         self.args = args
         self.model = model
-        # self.device = args.gpu
-        # self.device = 0
-        super(TBPTTUpdater, self).__init__(train_iter, optimizer,loss_func=loss_func)
+        super(TBPTTUpdater, self).__init__(train_iter, optimizer, loss_func=loss_func)
 
     def update_core(self):
-
         train_iter = self.get_iterator('main')
         optimizer = self.get_optimizer('main')
 
@@ -446,18 +468,18 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         z_t_plus_1 = chainer.Variable(z_t_plus_1[0])
         action = chainer.Variable(action[0])
         done = chainer.Variable(done[0])
-        for i in range(math.ceil(z_t.shape[0]/self.sequence_length)):
-            start_idx = i*self.sequence_length
-            end_idx = (i+1)*self.sequence_length
+        for i in range(math.ceil(z_t.shape[0] / self.sequence_length)):
+            start_idx = i * self.sequence_length
+            end_idx = (i + 1) * self.sequence_length
             loss = self.loss_func(z_t[start_idx:end_idx].data,
                                   z_t_plus_1[start_idx:end_idx].data,
                                   action[start_idx:end_idx].data,
                                   done[start_idx:end_idx].data,
-                                  True if i==0 else False)
+                                  True if i == 0 else False)
 
             # TODO: should the adversarial ope loss be subtracted this many times during the for loop? Should not hardcode ope_scale
             ope_scale = 100
-            loss -= ope_scale*ope
+            loss -= ope_scale * ope
 
             optimizer.target.cleargrads()
             loss.backward()
@@ -471,8 +493,8 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
-    parser.add_argument('--game', default='CarRacing-v0',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
+    parser.add_argument('--game', default='CarRacing-v2',
+                        help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=100, type=int,
                         help='Load rollouts in batches so as not to run out of memory')
@@ -504,6 +526,16 @@ def main():
     parser.add_argument('--initial_z_size', default=10000, type=int,
                         help="How many real initial frames to load for dream training")
 
+    # WandB
+    parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
+    parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
+    parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
+    parser.add_argument('--wandb_group', default='model', type=str, help='WandB "Group"')
+    parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
+    parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
+    parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
+    parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
+
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
@@ -513,6 +545,12 @@ def main():
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
 
+    # WandB
+    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
+    init_wandb(args)
+    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    tb_writer.set_as_default()
 
     log(ID, "Starting")
 
@@ -527,7 +565,9 @@ def main():
     if max_iter > 0:
         auto_resume_file = os.path.join(output_dir, "snapshot_iter_{}".format(max_iter))
 
-    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
+    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done, args.gpu >= 0)
+    if args.gpu >= 0:
+        model.to_gpu(args.gpu)
     vision = CVAE(args.z_dim)
     chainer.serializers.load_npz(os.path.join(vision_dir, "vision.model"), vision)
 
@@ -543,14 +583,12 @@ def main():
         optimizer.add_hook(chainer.optimizer_hooks.GradientClipping(args.gradient_clip))
 
     log(ID, "Loading training data")
-    train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=False)
+    train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=True)
     train_iter = chainer.iterators.SerialIterator(train, batch_size=1, shuffle=False)
-
 
     env = gym.make(args.game)
     action_dim = len(env.action_space.low)
     args.action_dim = action_dim
-
 
     updater = TBPTTUpdater(train_iter, optimizer, model.get_loss_func(), args, model)
 
@@ -558,6 +596,7 @@ def main():
     trainer.extend(extensions.snapshot(), trigger=(args.snapshot_interval, 'iteration'))
     trainer.extend(extensions.LogReport(trigger=(10 if args.gpu >= 0 else 1, 'iteration')))
     trainer.extend(extensions.PrintReport(['epoch', 'iteration', 'loss', 'elapsed_time']))
+    trainer.extend(SummaryReport(['loss'], interval=1))
     if not args.no_progress_bar:
         trainer.extend(extensions.ProgressBar(update_interval=10 if args.gpu >= 0 else 1))
 
@@ -570,7 +609,7 @@ def main():
     img_t_plus_1 = vision.decode(sample_z_t_plus_1).data
     if args.predict_done:
         done = done.reshape(-1)
-        img_t_plus_1[np.where(done[0:sample_size] >= 0.5), :, :, :] = 0 # Make done black
+        img_t_plus_1[np.where(done[0:sample_size] >= 0.5), :, :, :] = 0  # Make done black
     save_images_collage(img_t, os.path.join(output_dir, 'train_t.png'))
     save_images_collage(img_t_plus_1, os.path.join(output_dir, 'train_t_plus_1.png'))
     image_sampler = ImageSampler(model.copy(), vision, args, output_dir, sample_z_t, sample_action)
@@ -599,9 +638,11 @@ def main():
         model.to_cpu()
     model.reset_state()
     # current_z_t = np.random.randn(64).astype(np.float32)  # Noise as starting frame
-    rollout_z_t, rollout_z_t_plus_1, rollout_action, rewards, done = train[np.random.randint(len(train))]  # Pick a random real rollout
-    current_z_t = rollout_z_t[0] # Starting frame from the real rollout
-    current_z_t += np.random.normal(0, 0.5, current_z_t.shape).astype(np.float32)  # Add some noise to the real rollout starting frame
+    rollout_z_t, rollout_z_t_plus_1, rollout_action, rewards, done = train[
+        np.random.randint(len(train))]  # Pick a random real rollout
+    current_z_t = rollout_z_t[0]  # Starting frame from the real rollout
+    current_z_t += np.random.normal(0, 0.5, current_z_t.shape).astype(
+        np.float32)  # Add some noise to the real rollout starting frame
     all_z_t = [current_z_t]
     # current_action = np.asarray([0., 1.]).astype(np.float32)
     for i in range(rollout_z_t.shape[0]):

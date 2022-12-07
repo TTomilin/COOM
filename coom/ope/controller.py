@@ -343,8 +343,8 @@ class DispatcherServer(object):
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
-    parser.add_argument('--game', default='CarRacing-v0',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
+    parser.add_argument('--game', default='CarRacing-v2',
+                        help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--model', '-m', default='', help='Initialize the model from given file')
     parser.add_argument('--no_resume', action='store_true', help='Don''t auto resume from the latest snapshot')
@@ -400,7 +400,7 @@ def main():
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
 
-    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
+    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done, args.gpus >= 0)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)
     vision = CVAE(args.z_dim)
     chainer.serializers.load_npz(os.path.join(vision_dir, "vision.model"), vision)

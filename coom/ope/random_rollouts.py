@@ -115,7 +115,7 @@ def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v2/
+                        help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--num_rollouts', '-n', default=100, type=int, help='Number of rollouts to collect')
     parser.add_argument('--max_episode_steps', default=1000, type=int, help='Number of rollouts to collect')
