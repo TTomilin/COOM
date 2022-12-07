@@ -88,7 +88,8 @@ def train_lgc(args, model):
     """
     episode_durations = []
 
-    random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    ope_dir = Path(__file__).parent.resolve()
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     initial_z_t = ModelDataset(dir=random_rollouts_dir,
                                load_batch_size=args.initial_z_size,
                                verbose=False)
@@ -224,7 +225,8 @@ def ope_LGC(args, model, policy_net):
     :param b_c:
     :return:
     """
-    random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    ope_dir = Path(__file__).parent.resolve()
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=False)
 
     ope = 0
