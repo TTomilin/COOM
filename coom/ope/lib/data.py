@@ -7,7 +7,7 @@ import numpy as np
 import os
 import random
 from chainer import dataset
-from utils import log, pre_process_image_tensor
+from lib.utils import log, pre_process_image_tensor
 
 
 def load_frames_worker(frames_file):

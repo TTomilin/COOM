@@ -118,7 +118,7 @@ def main():
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--num_rollouts', '-n', default=100, type=int, help='Number of rollouts to collect')
-    parser.add_argument('--max_episode_steps', default=1000, type=int, help='Number of rollouts to collect')
+    parser.add_argument('--max_episode_steps', default=1000, type=int, help='Max steps per episode')
     parser.add_argument('--offset', '-o', default=0, type=int,
                         help='Offset rollout count, in case running on distributed cluster')
     parser.add_argument('--frame_resize', '-r', default=64, type=int, help='h x w resize of each observation frame')
