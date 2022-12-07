@@ -57,6 +57,7 @@ def rollout(rollout_arg_tuple):
         if args.in_dream:
             log(ID, "Loading random rollouts for initial frames for dream training")
             initial_z_t = ModelDataset(dir=random_rollouts_dir,
+                                       n_rollouts=args.n_rollouts,
                                        load_batch_size=args.initial_z_size,
                                        verbose=False)
 
@@ -346,6 +347,7 @@ def main():
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
+    parser.add_argument('--n_rollouts', default=10, type=int, help='Number of rollouts to sample for training')
     parser.add_argument('--model', '-m', default='', help='Initialize the model from given file')
     parser.add_argument('--no_resume', action='store_true', help='Don''t auto resume from the latest snapshot')
     parser.add_argument('--resume_from', '-r', default='', help='Resume the optimization from a specific snapshot')
@@ -409,6 +411,7 @@ def main():
     if args.in_dream:
         log(ID, "Loading random rollouts for initial frames for dream training")
         initial_z_t = ModelDataset(dir=random_rollouts_dir,
+                                   n_rollouts=args.n_rollouts,
                                    load_batch_size=args.initial_z_size,
                                    verbose=False)
 

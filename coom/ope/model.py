@@ -91,6 +91,7 @@ def train_lgc(args, model):
     ope_dir = Path(__file__).parent.resolve()
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     initial_z_t = ModelDataset(dir=random_rollouts_dir,
+                               n_rollouts=args.n_rollouts,
                                load_batch_size=args.initial_z_size,
                                verbose=False)
 
@@ -227,7 +228,8 @@ def ope_LGC(args, model, policy_net):
     """
     ope_dir = Path(__file__).parent.resolve()
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
-    train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=False)
+    train = ModelDataset(dir=random_rollouts_dir, n_rollouts=args.n_rollouts, load_batch_size=args.load_batch_size,
+                         verbose=False)
 
     ope = 0
 
@@ -498,6 +500,7 @@ def main():
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
+    parser.add_argument('--n_rollouts', default=10, type=int, help='Number of rollouts to sample for training')
     parser.add_argument('--load_batch_size', default=100, type=int,
                         help='Load rollouts in batches so as not to run out of memory')
     parser.add_argument('--model', '-m', default='',
@@ -585,7 +588,8 @@ def main():
         optimizer.add_hook(chainer.optimizer_hooks.GradientClipping(args.gradient_clip))
 
     log(ID, "Loading training data")
-    train = ModelDataset(dir=random_rollouts_dir, load_batch_size=args.load_batch_size, verbose=True)
+    train = ModelDataset(dir=random_rollouts_dir, n_rollouts=args.n_rollouts, load_batch_size=args.load_batch_size,
+                         verbose=True)
     train_iter = chainer.iterators.SerialIterator(train, batch_size=1, shuffle=False)
 
     env = gym.make(args.game)

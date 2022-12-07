@@ -1,14 +1,13 @@
+from multiprocessing import cpu_count, Pool
+
+import chainer.functions as F
+import gc
 import gzip
 import numpy as np
 import os
 import random
-import gc
-from multiprocessing import cpu_count, Pool
-
 from chainer import dataset
-import chainer.functions as F
-
-from lib.utils import log, pre_process_image_tensor
+from utils import log, pre_process_image_tensor
 
 
 def load_frames_worker(frames_file):
@@ -158,8 +157,9 @@ class VisionDataset(dataset.DatasetMixin):
 
 
 class ModelDataset(dataset.DatasetMixin):
-    def __init__(self, dir='', load_batch_size=10, verbose=True):
+    def __init__(self, dir='', n_rollouts=10, load_batch_size=10, verbose=True):
         rollouts = os.listdir(dir)
+        rollouts = np.random.choice(rollouts, size=n_rollouts, replace=False)
         rollouts_counts = {}
 
         for rollout in rollouts:
