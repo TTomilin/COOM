@@ -54,7 +54,7 @@ def worker(worker_arg_tuple):
     if args.game in DOOM_GAMES:
         env = ViZDoomWrapper(args.game)
     else:
-        env = gym.make(args.game, max_episode_steps=args.max_episode_steps)
+        env = gym.make(args.game, max_episode_steps=args.max_episode_steps, render_mode="human")
 
     for rollout_num in rollouts_per_core:
         t = 1
@@ -78,6 +78,7 @@ def worker(worker_arg_tuple):
                                      force_actions=False if args.game in DOOM_GAMES else True)
             prev_action = action
             observation, reward, done, truncated, _ = env.step(action)
+            # env.render()
             actions_array.append(action)
             frames_array.append(cv2.resize(observation, dsize))
             rewards_array.append(reward)

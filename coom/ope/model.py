@@ -17,6 +17,7 @@ from chainer import Chain
 from chainer import optimizers
 from chainer import training
 from chainer.backends import cuda
+from chainer.backends.cuda import GpuDevice
 from chainer.training import extensions
 from datetime import datetime
 from itertools import count
@@ -41,8 +42,8 @@ class PolicyNet(Chain):
             self.W_c = L.Linear(None, args.action_dim)
 
     def forward(self, args, z_t, h_t, c_t):
-        if args.gpu >= 0:
-            self.W_c.to_gpu(args.gpu)
+        # if args.gpu >= 0:
+        #     self.W_c.to_gpu(args.gpu)
         if args.weights_type == 1:
             input = F.concat((z_t, h_t), axis=0).data
             input = F.reshape(input, (1, input.shape[0]))
@@ -68,7 +69,7 @@ class PolicyNet(Chain):
                 start += action_range
             mid = action_dim // 2  # reserve action[mid] for no action
             action = action[0:mid] + action[mid + 1:action_dim]
-        if args.gpu >= 0:
+        if isinstance(self.device, GpuDevice):
             action = cp.asarray(action).astype(cp.float32)
         else:
             action = np.asarray(action).astype(np.float32)
@@ -122,6 +123,7 @@ def train_lgc(args, model):
         if args.gpu >= 0:
             h_t = cp.zeros(args.hidden_dim).astype(cp.float32)
             c_t = cp.zeros(args.hidden_dim).astype(cp.float32)
+            policy_net.to_gpu(args.gpu)
         else:
             h_t = np.zeros(args.hidden_dim).astype(np.float32)
             c_t = np.zeros(args.hidden_dim).astype(np.float32)
@@ -228,7 +230,8 @@ def ope_LGC(args, model, policy_net):
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     train = ModelDataset(dir=random_rollouts_dir, n_rollouts=args.n_rollouts, load_batch_size=args.load_batch_size,
                          verbose=False)
-
+    policy_net.to_cpu()
+    model.to_cpu()
     ope = 0
 
     for i in range(len(train)):
@@ -237,14 +240,8 @@ def ope_LGC(args, model, policy_net):
 
         rollout_z_t, rollout_z_t_plus_1, rollout_action, rollout_reward, rollout_done = train[i]  # Pick a real rollout
 
-        if args.gpu >= 0:
-            rollout_z_t = cuda.to_gpu(rollout_z_t)
-            h_t = cp.zeros(args.hidden_dim).astype(cp.float32)
-            c_t = cp.zeros(args.hidden_dim).astype(cp.float32)
-            policy_net.to_gpu(args.gpu)
-        else:
-            h_t = np.zeros(args.hidden_dim).astype(np.float32)
-            c_t = np.zeros(args.hidden_dim).astype(np.float32)
+        h_t = np.zeros(args.hidden_dim).astype(np.float32)
+        c_t = np.zeros(args.hidden_dim).astype(np.float32)
         done = rollout_done[0]
         weight_prod = 1
 
@@ -257,12 +254,10 @@ def ope_LGC(args, model, policy_net):
             # TODO: yikes this shouldn't be hardcoded...
             action_policy_std = 0.1
             #
-            eval_policy_mean = cuda.to_cpu(eval_policy_mean)
             weight_prod *= scipy.stats.multivariate_normal.pdf(rollout_action[t], eval_policy_mean, action_policy_std * np.identity(args.action_dim))
             ope += weight_prod * rollout_reward[t]
 
-            action = cuda.to_gpu(rollout_action[t])
-            model(z_t, action, temperature=args.temperature)
+            model(z_t, rollout_action[t], temperature=args.temperature)
             h_t = model.get_h().data[0]
             c_t = model.get_c().data[0]
 
