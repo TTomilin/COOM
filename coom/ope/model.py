@@ -434,7 +434,7 @@ class ImageSampler(chainer.training.Extension):
                 z_t_plus_1s.append(z_t_plus_1)
                 if self.args.predict_done:
                     dones.append(done[0])
-            z_t_plus_1s = np.asarray(z_t_plus_1s)
+            z_t_plus_1s = np.asarray(cuda.to_cpu(z_t_plus_1s))
             dones = np.asarray(dones).reshape(-1)
             img_t_plus_1 = post_process_image_tensor(self.vision.decode(z_t_plus_1s).data)
             if self.args.predict_done:
@@ -473,6 +473,7 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         action = chainer.Variable(action[0])
         done = chainer.Variable(done[0])
         if self.args.gpu >= 0:
+            self.model.to_gpu(self.args.gpu)
             z_t.to_gpu(self.args.gpu)
             z_t_plus_1.to_gpu(self.args.gpu)
             action.to_gpu(self.args.gpu)
@@ -515,6 +516,7 @@ def main():
     parser.add_argument('--test', action='store_true', help='Generate samples only')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
     parser.add_argument('--epoch', '-e', default=20, type=int, help='number of epochs to learn')
+    parser.add_argument('--image_interval', default=10, type=int, help='number of iterations between image save')
     parser.add_argument('--snapshot_interval', '-s', default=200, type=int, help='snapshot every x games')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--hidden_dim', default=256, type=int, help='LSTM hidden units')
@@ -524,7 +526,6 @@ def main():
     parser.add_argument('--sample_temperature', default=1., type=float, help='Temperature for generating samples')
     parser.add_argument('--gradient_clip', default=0., type=float, help='Clip grads L2 norm threshold. 0 = no clip')
     parser.add_argument('--sequence_length', type=int, default=128, help='sequence length for LSTM for TBPTT')
-    parser.add_argument('--in_dream', action='store_true', help='Whether to train in dream, or real environment')
     parser.add_argument('--initial_z_noise', default=0., type=float,
                         help="Gaussian noise std for initial z for dream training")
     parser.add_argument('--done_threshold', default=0.5, type=float, help='What done probability really means done')
@@ -626,7 +627,7 @@ def main():
     save_images_collage(img_t, os.path.join(output_dir, 'train_t.png'))
     save_images_collage(img_t_plus_1, os.path.join(output_dir, 'train_t_plus_1.png'))
     image_sampler = ImageSampler(model.copy(), vision, args, output_dir, sample_z_t, sample_action)
-    trainer.extend(image_sampler, trigger=(args.snapshot_interval, 'iteration'))
+    trainer.extend(image_sampler, trigger=(args.image_interval, 'iteration'))
 
     if args.resume_from:
         log(ID, "Resuming trainer manually from snapshot: " + args.resume_from)
