@@ -1,3 +1,5 @@
+import time
+
 import argparse
 import chainer
 import chainer.distributions as D
@@ -460,10 +462,14 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         self.model = self.model.to_gpu(self.args.gpu)
 
         # Train linear Gaussian controller policy given the current latent space transition model, self.model
+        start = time.time()
         policy_net = train_lgc(self.args, self.model)
+        print("LGC training time: {}".format(time.time() - start))
 
         # Evaluate linear Gaussian controller on historical data
+        start = time.time()
         ope = ope_LGC(self.args, self.model, policy_net)
+        print("OPE time: {}".format(time.time() - start))
 
         batch = train_iter.__next__()
         total_loss = 0
