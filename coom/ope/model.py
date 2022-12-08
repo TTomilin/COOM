@@ -600,11 +600,13 @@ def main():
 
     trainer = training.Trainer(updater, (args.epoch, 'epoch'), out=output_dir)
     trainer.extend(extensions.snapshot(), trigger=(args.snapshot_interval, 'iteration'))
-    trainer.extend(extensions.LogReport(trigger=(10 if args.gpu >= 0 else 1, 'iteration')))
+    # trainer.extend(extensions.LogReport(trigger=(10 if args.gpu >= 0 else 1, 'iteration')))
+    trainer.extend(extensions.LogReport(trigger=(1, 'iteration')))
     trainer.extend(extensions.PrintReport(['epoch', 'iteration', 'loss', 'elapsed_time']))
     trainer.extend(SummaryReport(['loss'], interval=1))
     if not args.no_progress_bar:
-        trainer.extend(extensions.ProgressBar(update_interval=10 if args.gpu >= 0 else 1))
+        # trainer.extend(extensions.ProgressBar(update_interval=10 if args.gpu >= 0 else 1))
+        trainer.extend(extensions.ProgressBar(update_interval=1))
 
     sample_size = 256
     rollout_z_t, rollout_z_t_plus_1, rollout_action, _, done = train[0]
@@ -641,7 +643,7 @@ def main():
 
     log(ID, "Generating gif for a rollout generated in dream")
     if args.gpu >= 0:
-        model.to_cpu()
+        model.to_gpu(args.gpu)
     model.reset_state()
     # current_z_t = np.random.randn(64).astype(np.float32)  # Noise as starting frame
     rollout_z_t, rollout_z_t_plus_1, rollout_action, rewards, done = train[
@@ -651,9 +653,13 @@ def main():
         np.float32)  # Add some noise to the real rollout starting frame
     all_z_t = [current_z_t]
     # current_action = np.asarray([0., 1.]).astype(np.float32)
+    if args.gpu >= 0:
+        current_z_t = cp.asarray(current_z_t)
     for i in range(rollout_z_t.shape[0]):
         # if i != 0 and i % 200 == 0: current_action = 1 - current_action  # Flip actions every 100 frames
         current_action = np.expand_dims(rollout_action[i], 0)  # follow actions performed in a real rollout
+        if args.gpu >= 0:
+            current_action = cp.asarray(current_action)
         output = model(current_z_t, current_action, temperature=args.sample_temperature)
         if args.predict_done:
             current_z_t, done = output
@@ -664,7 +670,7 @@ def main():
         all_z_t.append(current_z_t.data)
         if args.predict_done and done[0] >= 0.5:
             break
-    dream_rollout_imgs = vision.decode(np.asarray(all_z_t).astype(np.float32)).data
+    dream_rollout_imgs = vision.decode(np.asarray(cuda.to_cpu(all_z_t)).astype(np.float32)).data
     dream_rollout_imgs = post_process_image_tensor(dream_rollout_imgs)
     imageio.mimsave(os.path.join(output_dir, 'dream_rollout.gif'), dream_rollout_imgs, fps=20)
 
