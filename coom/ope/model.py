@@ -40,11 +40,9 @@ class PolicyNet(Chain):
             self.args = args
             self.W_c = L.Linear(None, args.action_dim)
 
-    def forward(self, args, z_t, h_t, c_t, use_cpu=False):
+    def forward(self, args, z_t, h_t, c_t):
         if args.gpu >= 0:
             self.W_c.to_gpu(args.gpu)
-        if use_cpu:
-            self.W_c.to_cpu()
         if args.weights_type == 1:
             input = F.concat((z_t, h_t), axis=0).data
             input = F.reshape(input, (1, input.shape[0]))
@@ -70,7 +68,7 @@ class PolicyNet(Chain):
                 start += action_range
             mid = action_dim // 2  # reserve action[mid] for no action
             action = action[0:mid] + action[mid + 1:action_dim]
-        if args.gpu >= 0 and not use_cpu:
+        if args.gpu >= 0:
             action = cp.asarray(action).astype(cp.float32)
         else:
             action = np.asarray(action).astype(np.float32)
@@ -233,32 +231,38 @@ def ope_LGC(args, model, policy_net):
 
     ope = 0
 
-    pbar = tqdm(range(len(train)))
-    for i in pbar:
-        pbar.set_description(f"Processing batch {i}")
-        h_t = np.zeros(args.hidden_dim).astype(np.float32)
-        c_t = np.zeros(args.hidden_dim).astype(np.float32)
+    for i in range(len(train)):
+        print('Evaluating OPE on rollout {}/{}'.format(i + 1, len(train)))
         t = 0
 
         rollout_z_t, rollout_z_t_plus_1, rollout_action, rollout_reward, rollout_done = train[i]  # Pick a real rollout
+
+        if args.gpu >= 0:
+            rollout_z_t = cuda.to_gpu(rollout_z_t)
+            h_t = cp.zeros(args.hidden_dim).astype(cp.float32)
+            c_t = cp.zeros(args.hidden_dim).astype(cp.float32)
+            policy_net.to_gpu(args.gpu)
+        else:
+            h_t = np.zeros(args.hidden_dim).astype(np.float32)
+            c_t = np.zeros(args.hidden_dim).astype(np.float32)
         done = rollout_done[0]
         weight_prod = 1
 
         while not done:
             z_t = rollout_z_t[t]
 
-            eval_policy_mean = policy_net(args, z_t, h_t, c_t, use_cpu=True)
+            eval_policy_mean = policy_net(args, z_t, h_t, c_t)
             eval_policy_mean = np.transpose(eval_policy_mean).reshape(args.action_dim)
 
             # TODO: yikes this shouldn't be hardcoded...
             action_policy_std = 0.1
             #
-            weight_prod *= scipy.stats.multivariate_normal.pdf(rollout_action[t], eval_policy_mean,
-                                                               action_policy_std * np.identity(args.action_dim))
+            eval_policy_mean = cuda.to_cpu(eval_policy_mean)
+            weight_prod *= scipy.stats.multivariate_normal.pdf(rollout_action[t], eval_policy_mean, action_policy_std * np.identity(args.action_dim))
             ope += weight_prod * rollout_reward[t]
 
-            model.to_cpu()
-            model(z_t, rollout_action[t], temperature=args.temperature)
+            action = cuda.to_gpu(rollout_action[t])
+            model(z_t, action, temperature=args.temperature)
             h_t = model.get_h().data[0]
             c_t = model.get_c().data[0]
 
@@ -458,6 +462,7 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
     def update_core(self):
         train_iter = self.get_iterator('main')
         optimizer = self.get_optimizer('main')
+        self.model = self.model.to_gpu(self.args.gpu)
 
         # Train linear Gaussian controller policy given the current latent space transition model, self.model
         policy_net = train_lgc(self.args, self.model)
@@ -472,6 +477,11 @@ class TBPTTUpdater(training.updaters.StandardUpdater):
         z_t_plus_1 = chainer.Variable(z_t_plus_1[0])
         action = chainer.Variable(action[0])
         done = chainer.Variable(done[0])
+        if self.args.gpu >= 0:
+            z_t.to_gpu(self.args.gpu)
+            z_t_plus_1.to_gpu(self.args.gpu)
+            action.to_gpu(self.args.gpu)
+            done.to_gpu(self.args.gpu)
         for i in range(math.ceil(z_t.shape[0] / self.sequence_length)):
             start_idx = i * self.sequence_length
             end_idx = (i + 1) * self.sequence_length
