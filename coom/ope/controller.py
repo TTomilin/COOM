@@ -385,6 +385,16 @@ def main():
     parser.add_argument('--cluster_max_wait', default=5400, type=int,
                         help="Move on after this many seconds of no response from worker(s)")
 
+    # WandB
+    parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
+    parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
+    parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
+    parser.add_argument('--wandb_group', default='model', type=str, help='WandB "Group"')
+    parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
+    parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
+    parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
+    parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
+
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
