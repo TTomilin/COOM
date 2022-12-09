@@ -17,7 +17,7 @@ import numpy as np
 import imageio
 import numba
 
-from coom.ope.lib.wandb import SummaryReport
+from lib.wandb import SummaryReport
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from lib.data import ModelDataset
 from vision import CVAE
