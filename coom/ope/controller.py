@@ -135,7 +135,7 @@ def rollout(rollout_arg_tuple):
                     done = False
             else:
                 observation, reward, done, _, _ = env.step(a_t if gpu is None else cp.asnumpy(a_t))
-                model(z_t, a_t, temperature=args.temperature)
+                model(z_t, a_t, temperature=args.temperature, cpu=False)
             if with_frames:
                 frames_array.append(observation)
 
@@ -412,7 +412,7 @@ def main():
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
 
-    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done, args.gpu >= 0)
+    model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)
     vision = CVAE(args.z_dim)
     chainer.serializers.load_npz(os.path.join(vision_dir, "vision.model"), vision)
