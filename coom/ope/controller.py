@@ -1,25 +1,24 @@
-from pathlib import Path
+from multiprocessing import cpu_count, Pool
 
 import argparse
 import ast
-import math
-import os
-import re
-import socket
-import time
-import traceback
-from io import BytesIO
-from multiprocessing import cpu_count, Pool
-from multiprocessing.pool import ThreadPool
-from threading import Thread, Lock, Event
-
 import chainer
 import cupy as cp
 import cv2
 import gym
 import imageio
+import math
 import numpy as np
+import os
+import re
+import socket
+import time
+import traceback
 from chainer.backends import cuda
+from io import BytesIO
+from multiprocessing.pool import ThreadPool
+from pathlib import Path
+from threading import Thread, Lock, Event
 
 from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
 
