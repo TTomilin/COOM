@@ -419,7 +419,7 @@ def main():
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
     init_wandb(args)
-    # tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     # tb_writer.set_as_default()
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
