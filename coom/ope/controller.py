@@ -1,28 +1,26 @@
-from multiprocessing import cpu_count, Pool
+from pathlib import Path
 
 import argparse
 import ast
+import math
+import os
+import re
+import socket
+import time
+import traceback
+from io import BytesIO
+from multiprocessing import cpu_count, Pool
+from multiprocessing.pool import ThreadPool
+from threading import Thread, Lock, Event
+
 import chainer
 import cupy as cp
 import cv2
 import gym
 import imageio
-import math
 import numpy as np
-import os
-import re
-import socket
-import tensorflow as tf
-import time
-import traceback
 from chainer.backends import cuda
-from datetime import datetime
-from io import BytesIO
-from multiprocessing.pool import ThreadPool
-from pathlib import Path
-from threading import Thread, Lock, Event
 
-from coom.utils.wandb import init_wandb
 from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
 
 try:
@@ -217,9 +215,6 @@ def rollout_worker(worker_arg_tuple):
     log(ID, ">> Finished generation #{}, mutation #{}, in {:.2f}s with averge cumulative reward {:.2f} over {} trials"
         .format(generation, (mutation_idx + 1), (time.time() - start_time), avg_cumulative_reward, args.trials))
 
-    step = (generation - 1) * 4 + mutation_idx
-    tf.summary.scalar('reward', data=avg_cumulative_reward, step=step)
-
     return avg_cumulative_reward
 
 
@@ -366,7 +361,8 @@ def main():
     parser.add_argument('--target_cumulative_reward', default=900, type=int, help='Target cumulative reward')
     parser.add_argument('--frame_resize', default=64, type=int, help='h x w resize of each observation frame')
     parser.add_argument('--temperature', '-t', default=1.0, type=float, help='Temperature (tau) for MDN-RNN (model)')
-    parser.add_argument('--snapshot_interval', '-s', default=20, type=int, help='snapshot every x generations')
+    parser.add_argument('--snapshot_interval', '-s', default=5, type=int,
+                        help='snapshot every x generations of evolution')
     parser.add_argument('--cluster_mode', action='store_true',
                         help='If in a distributed cpu cluster. Set CLUSTER_ variables accordingly.')
     parser.add_argument('--test', action='store_true',
@@ -394,7 +390,7 @@ def main():
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
     parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
-    parser.add_argument('--wandb_group', default='controller', type=str, help='WandB "Group"')
+    parser.add_argument('--wandb_group', default='model', type=str, help='WandB "Group"')
     parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
@@ -416,13 +412,6 @@ def main():
     model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
-
-    # WandB
-    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
-    init_wandb(args)
-    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
-    tb_writer.set_as_default()
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)
