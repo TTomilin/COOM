@@ -1,6 +1,8 @@
+from datetime import datetime
 from multiprocessing import cpu_count, Pool
 
 import argparse
+import tensorflow as tf
 import ast
 import chainer
 import cupy as cp
@@ -20,6 +22,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Thread, Lock, Event
 
+from coom.utils.wandb import init_wandb
 from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
 
 try:
@@ -411,6 +414,13 @@ def main():
     model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+
+    # WandB
+    # args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
+    # init_wandb(args)
+    # tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    # tb_writer.set_as_default()
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)
