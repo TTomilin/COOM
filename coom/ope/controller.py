@@ -374,6 +374,7 @@ def main():
     parser.add_argument('--done_threshold', default=0.5, type=float, help='What done probability really means done')
     parser.add_argument('--weights_type', default=1, type=int,
                         help="1=action_dim*(z_dim+hidden_dim), 2=z_dim+2*hidden_dim")
+    parser.add_argument('--render_mode', default='rgb_array', type=str, help='rgb_array or human')
     parser.add_argument('--in_dream', action='store_true', help='Whether to train in dream, or real environment')
     parser.add_argument('--dream_max_len', default=2100, type=int, help="Maximum timesteps for dream to avoid runaway")
     parser.add_argument('--cores', default=0, type=int,
@@ -428,7 +429,7 @@ def main():
     if args.game in DOOM_GAMES:
         env = ViZDoomWrapper(args.game)
     else:
-        env = gym.make(args.game)
+        env = gym.make(args.game, render_mode=args.render_mode)
     action_dim = len(env.action_space.low)
     args.action_dim = action_dim
     env = None
