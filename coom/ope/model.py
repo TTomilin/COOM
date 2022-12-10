@@ -1,25 +1,24 @@
-from pathlib import Path
-
 import argparse
-import os
-import re
-import math
-
 import chainer
 import chainer.functions as F
 import chainer.links as L
+import cupy as cp
+import imageio
+import math
+import numba
+import numpy as np
+import os
+import re
+import tensorflow as tf
 from chainer import training
 from chainer.training import extensions
+from datetime import datetime
+from pathlib import Path
 
-import cupy as cp
-
-import numpy as np
-import imageio
-import numba
-
-from lib.wandb import SummaryReport
-from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
+from coom.utils.wandb import init_wandb
 from lib.data import ModelDataset
+from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
+from lib.wandb import SummaryReport
 from vision import CVAE
 
 ID = "model"
@@ -282,6 +281,13 @@ def main():
     mkdir(output_dir)
     random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
+
+    # WandB
+    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
+    init_wandb(args)
+    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    tb_writer.set_as_default()
 
     log(ID, "Starting")
 
