@@ -1,8 +1,6 @@
-from datetime import datetime
 from multiprocessing import cpu_count, Pool
 
 import argparse
-import tensorflow as tf
 import ast
 import chainer
 import cupy as cp
@@ -16,7 +14,9 @@ import re
 import socket
 import time
 import traceback
+import wandb
 from chainer.backends import cuda
+from datetime import datetime
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -217,6 +217,8 @@ def rollout_worker(worker_arg_tuple):
     log(ID, ">> Finished generation #{}, mutation #{}, in {:.2f}s with averge cumulative reward {:.2f} over {} trials"
         .format(generation, (mutation_idx + 1), (time.time() - start_time), avg_cumulative_reward, args.trials))
 
+    wandb.log({'reward': avg_cumulative_reward})
+
     return avg_cumulative_reward
 
 
@@ -392,7 +394,7 @@ def main():
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')
     parser.add_argument('--wandb_entity', default=None, type=str, help='WandB username (entity).')
     parser.add_argument('--wandb_project', default='COOM', type=str, help='WandB "Project"')
-    parser.add_argument('--wandb_group', default='model', type=str, help='WandB "Group"')
+    parser.add_argument('--wandb_group', default='controller', type=str, help='WandB "Group"')
     parser.add_argument('--wandb_job_type', default='train', type=str, help='WandB job type')
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
@@ -419,7 +421,7 @@ def main():
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
     init_wandb(args)
-    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
+    # tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     # tb_writer.set_as_default()
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
