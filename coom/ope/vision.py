@@ -160,6 +160,7 @@ def main():
     parser.add_argument('--wandb_tags', default=[], type=str, nargs='*', help='Tags can help finding experiments')
     parser.add_argument('--wandb_key', default=None, type=str, help='API key for authorizing WandB')
     parser.add_argument('--wandb_dir', default=None, type=str, help='the place to save WandB files')
+    parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
@@ -171,7 +172,7 @@ def main():
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.timestamp}'
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.wandb_experiment}_{args.timestamp}'
     init_wandb(args)
     tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     tb_writer.set_as_default()
