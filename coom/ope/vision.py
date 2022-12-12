@@ -183,7 +183,7 @@ def main():
     for file in files:
         if re.match(r'^snapshot_iter_', file):
             iter = int(re.search(r'\d+', file).group())
-            if (iter > max_iter):
+            if iter > max_iter:
                 max_iter = iter
     if max_iter > 0:
         auto_resume_file = os.path.join(output_dir, "snapshot_iter_{}".format(max_iter))

@@ -54,7 +54,8 @@ def rollout(rollout_arg_tuple):
         global initial_z_t
         generation, mutation_idx, trial, args, vision, model, gpu, W_c, b_c, max_timesteps, with_frames = rollout_arg_tuple
 
-        random_rollouts_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+        ope_dir = Path(__file__).parent.resolve()
+        random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
 
         if args.in_dream:
             log(ID, "Loading random rollouts for initial frames for dream training")
