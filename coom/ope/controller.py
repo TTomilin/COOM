@@ -50,19 +50,19 @@ initial_z_t = None
 
 
 def rollout(rollout_arg_tuple):
+    global initial_z_t
     try:
-        global initial_z_t
         generation, mutation_idx, trial, args, vision, model, gpu, W_c, b_c, max_timesteps, with_frames = rollout_arg_tuple
 
-        ope_dir = Path(__file__).parent.resolve()
-        random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
-
-        if args.in_dream:
-            log(ID, "Loading random rollouts for initial frames for dream training")
-            initial_z_t = ModelDataset(dir=random_rollouts_dir,
-                                       n_rollouts=args.n_rollouts,
-                                       load_batch_size=args.initial_z_size,
-                                       verbose=False)
+        if initial_z_t is None:
+            ope_dir = Path(__file__).parent.resolve()
+            random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+            if args.in_dream:
+                log(ID, "Loading random rollouts for initial frames for dream training")
+                initial_z_t = ModelDataset(dir=random_rollouts_dir,
+                                           n_rollouts=args.n_rollouts,
+                                           load_batch_size=args.initial_z_size,
+                                           verbose=False)
 
         # The same starting seed gets passed in multiprocessing, need to reset it for each process:
         np.random.seed()
@@ -127,8 +127,12 @@ def rollout(rollout_arg_tuple):
             a_t = action(args, W_c, b_c, z_t, h_t, c_t, gpu)
 
             if args.in_dream:
-                z_t, done = model(z_t, a_t, temperature=args.temperature)
-                done = done.data[0]
+                if args.predict_done:
+                    z_t, done = model(z_t, a_t, temperature=args.temperature, cpu=args.gpu is None)
+                    done = done.data[0]
+                else:
+                    z_t = model(z_t, a_t, temperature=args.temperature, cpu=args.gpu is None)
+                    done = 0.0
                 if with_frames:
                     observation = post_process_image_tensor(vision.decode(z_t).data)[0]
                 reward = 1
