@@ -218,7 +218,8 @@ def rollout_worker(worker_arg_tuple):
     log(ID, ">> Finished generation #{}, mutation #{}, in {:.2f}s with averge cumulative reward {:.2f} over {} trials"
         .format(generation, (mutation_idx + 1), (time.time() - start_time), avg_cumulative_reward, args.trials))
 
-    wandb.log({'reward': avg_cumulative_reward})
+    if args.with_wandb:
+        wandb.log({'reward': avg_cumulative_reward})
 
     return avg_cumulative_reward
 
