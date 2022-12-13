@@ -399,7 +399,7 @@ def main():
     parser.add_argument('--done_threshold', default=0.5, type=float, help='What done probability really means done')
     parser.add_argument('--weights_type', default=1, type=int,
                         help="1=action_dim*(z_dim+hidden_dim), 2=z_dim+2*hidden_dim")
-    parser.add_argument('--render_mode', default='rgb_array', type=str, help='rgb_array or human')
+    parser.add_argument('--render_mode', default='human', type=str, help='rgb_array or human')
     parser.add_argument('--in_dream', action='store_true', help='Whether to train in dream, or real environment')
     parser.add_argument('--dream_max_len', default=2100, type=int, help="Maximum timesteps for dream to avoid runaway")
     parser.add_argument('--cores', default=0, type=int,
@@ -433,7 +433,8 @@ def main():
         curriculum_step = int(args.curriculum.split(',')[1])
 
     ope_dir = Path(__file__).parent.resolve()
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    output_folder = f'{ID}_{args.domain}' if args.domain else ID
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, output_folder)
     mkdir(output_dir)
     model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
