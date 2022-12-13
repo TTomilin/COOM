@@ -102,7 +102,7 @@ def rollout(rollout_arg_tuple):
             if args.game in DOOM_GAMES:
                 env = ViZDoomWrapper(args.game)
             else:
-                env = gym.make(args.game, render_mode='human')
+                env = gym.make(args.game, render_mode=args.render_mode)
             if args.domain:
                 env.unwrapped.road_color = domains[args.domain]['road_color']
                 env.unwrapped.bg_color = domains[args.domain]['bg_color']
