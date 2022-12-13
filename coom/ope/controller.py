@@ -23,10 +23,11 @@ from pathlib import Path
 from threading import Thread, Lock, Event
 
 from coom.utils.wandb import init_wandb
+from env.car_racing import domains
 from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
 
 try:
-    from lib.env_wrappers import ViZDoomWrapper
+    from env.wrappers import ViZDoomWrapper
 except Exception as e:
     None
 from lib.constants import DOOM_GAMES
@@ -56,7 +57,8 @@ def rollout(rollout_arg_tuple):
 
         if initial_z_t is None:
             ope_dir = Path(__file__).parent.resolve()
-            random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+            random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name,
+                                               'random_rollouts')
             if args.in_dream:
                 log(ID, "Loading random rollouts for initial frames for dream training")
                 initial_z_t = ModelDataset(dir=random_rollouts_dir,
@@ -100,8 +102,14 @@ def rollout(rollout_arg_tuple):
             if args.game in DOOM_GAMES:
                 env = ViZDoomWrapper(args.game)
             else:
-                env = gym.make(args.game)
+                env = gym.make(args.game, render_mode='human')
+            if args.domain:
+                env.unwrapped.road_color = domains[args.domain]['road_color']
+                env.unwrapped.bg_color = domains[args.domain]['bg_color']
+                env.unwrapped.grass_color = domains[args.domain]['grass_color']
             observation = env.reset()[0]
+            if args.domain:
+                env.unwrapped.car.hull.color = domains[args.domain]['car_color']
         if with_frames:
             frames_array.append(observation)
 
@@ -134,6 +142,8 @@ def rollout(rollout_arg_tuple):
                     z_t = model(z_t, a_t, temperature=args.temperature, cpu=args.gpu is None)
                     done = 0.0
                 if with_frames:
+                    # observation = post_process_image_tensor(vision.to_gpu().decode(z_t).data)[0]
+                    z_t.to_cpu()
                     observation = post_process_image_tensor(vision.decode(z_t).data)[0]
                 reward = 1
                 if done >= args.done_threshold:
@@ -142,6 +152,8 @@ def rollout(rollout_arg_tuple):
                     done = False
             else:
                 observation, reward, done, _, _ = env.step(a_t if gpu is None else cp.asnumpy(a_t))
+                if args.render:
+                    env.render()
                 model(z_t, a_t, temperature=args.temperature, cpu=False)
             if with_frames:
                 frames_array.append(observation)
@@ -356,6 +368,8 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
+    parser.add_argument('--domain', default=None, type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Change the colors of the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--n_rollouts', default=10, type=int, help='Number of rollouts to sample for training')
     parser.add_argument('--model', '-m', default='', help='Initialize the model from given file')
@@ -377,6 +391,7 @@ def main():
                         help='If in a distributed cpu cluster. Set CLUSTER_ variables accordingly.')
     parser.add_argument('--test', action='store_true',
                         help='Generate a rollout gif only (must have access to saved snapshot or model)')
+    parser.add_argument('--render', action='store_true', help='Render the environment')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
     parser.add_argument('--gpus', default="", help='A list of gpus to use, i.e. "0,1,2,3"')
     parser.add_argument('--curriculum', default="", help='initial,step e.g. 50,5 starts at 50 steps and adds 5 steps')
@@ -442,10 +457,7 @@ def main():
                                    load_batch_size=args.initial_z_size,
                                    verbose=False)
 
-    if args.game in DOOM_GAMES:
-        env = ViZDoomWrapper(args.game)
-    else:
-        env = gym.make(args.game, render_mode=args.render_mode)
+    env = ViZDoomWrapper(args.game) if args.game in DOOM_GAMES else gym.make(args.game)
     action_dim = len(env.action_space.low)
     args.action_dim = action_dim
     env = None

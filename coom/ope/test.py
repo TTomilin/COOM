@@ -1,21 +1,22 @@
-import os
-import argparse
-import time
 from multiprocessing import cpu_count, Pool
-import gzip
-import traceback
 
+import argparse
 import chainer
-
-import numpy as np
-from scipy.misc import imresize
+import cv2
 import gym
+import gzip
 import imageio
+import numpy as np
+import os
+import time
+import traceback
+from pathlib import Path
 
-from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
 from lib.constants import DOOM_GAMES
+from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
+
 try:
-    from lib.env_wrappers import ViZDoomWrapper
+    from env.wrappers import ViZDoomWrapper
 except Exception as e:
     None
 from model import MDN_RNN
@@ -33,37 +34,37 @@ def worker(worker_arg_tuple):
 
         model.reset_state()
 
+        render_mode = 'rgb_array' if args.record else 'human'
+
         if args.game in DOOM_GAMES:
             env = ViZDoomWrapper(args.game)
         else:
-            env = gym.make(args.game)
+            env = gym.make(args.game, render_mode=render_mode, domain_randomize=args.domain_randomization)
 
         h_t = np.zeros(args.hidden_dim).astype(np.float32)
         c_t = np.zeros(args.hidden_dim).astype(np.float32)
 
         t = 0
         cumulative_reward = 0
-        if args.record:
-            frames_array = []
+        frames_array = []
 
-        observation = env.reset()
-        if args.record:
-            frames_array.append(observation)
+        observation = env.reset()[0]
 
         start_time = time.time()
         while True:
-            observation = imresize(observation, (args.frame_resize, args.frame_resize))
+            observation = cv2.resize(observation, (args.frame_resize, args.frame_resize))
             observation = pre_process_image_tensor(np.expand_dims(observation, 0))
 
             z_t = vision.encode(observation, return_z=True).data[0]
 
             a_t = action(args, W_c, b_c, z_t, h_t, c_t, None)
 
-            observation, reward, done, _ = env.step(a_t)
-            model(z_t, a_t, temperature=args.temperature)
-
+            observation, reward, done, _, _ = env.step(a_t)
             if args.record:
-                frames_array.append(observation)
+                frames_array.append(env.render())
+            elif args.render:
+                env.render()
+            model(z_t, a_t, temperature=args.temperature)
             cumulative_reward += reward
 
             h_t = model.get_h().data[0]
@@ -71,7 +72,7 @@ def worker(worker_arg_tuple):
 
             t += 1
 
-            if done:
+            if done or t >= args.max_timesteps:
                 break
 
         log(ID,
@@ -97,29 +98,29 @@ def worker(worker_arg_tuple):
 
 def main():
     parser = argparse.ArgumentParser(description='World Models ' + ID)
-    parser.add_argument('--data_dir', '-d', default="/data/wm", help='The base data/output directory')
-    parser.add_argument('--game', default='CarRacing-v0',
-                        help='Game to use')  # https://gym.openai.com/envs/CarRacing-v0/
+    parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
+    parser.add_argument('--game', default='CarRacing-v2',
+                        help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
-    parser.add_argument('--rollouts', '-n', default=100, type=int, help='Number of times to rollout')
+    parser.add_argument('--rollouts', '-n', default=5, type=int, help='Number of times to rollout')
     parser.add_argument('--frame_resize', default=64, type=int, help='h x w resize of each observation frame')
     parser.add_argument('--hidden_dim', default=256, type=int, help='LSTM hidden units')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--mixtures', default=5, type=int, help='number of gaussian mixtures for MDN')
     parser.add_argument('--temperature', '-t', default=1.0, type=float, help='Temperature (tau) for MDN-RNN (model)')
     parser.add_argument('--predict_done', action='store_true', help='Whether MDN-RNN should also predict done state')
+    parser.add_argument('--max_timesteps', default=200, type=int, help='Max timesteps per rollout')
     parser.add_argument('--cores', default=0, type=int, help='Number of CPU cores to use. 0=all cores')
     parser.add_argument('--weights_type', default=1, type=int,
                         help="1=action_dim*(z_dim+hidden_dim), 2=z_dim+2*hidden_dim")
     parser.add_argument('--record', action='store_true', help='Record as gifs')
+    parser.add_argument('--render', action='store_true', help='Render the environment')
+    parser.add_argument('--domain_randomization', action='store_true', help='Randomize the colors of the environment')
 
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
-    if args.game in DOOM_GAMES:
-        env = ViZDoomWrapper(args.game)
-    else:
-        env = gym.make(args.game)
+    env = ViZDoomWrapper(args.game) if args.game in DOOM_GAMES else gym.make(args.game)
     action_dim = len(env.action_space.low)
     args.action_dim = action_dim
     env = None
@@ -129,11 +130,12 @@ def main():
     else:
         cores = args.cores
 
-    output_dir = os.path.join(args.data_dir, args.game, args.experiment_name, ID)
+    ope_dir = Path(__file__).parent.resolve()
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
     mkdir(output_dir)
-    model_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'model')
-    vision_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'vision')
-    controller_dir = os.path.join(args.data_dir, args.game, args.experiment_name, 'controller')
+    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
+    controller_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'controller')
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)

@@ -14,7 +14,7 @@ from lib.constants import DOOM_GAMES
 from lib.utils import log, mkdir
 
 try:
-    from lib.env_wrappers import ViZDoomWrapper
+    from env.wrappers import ViZDoomWrapper
 except Exception as e:
     print(e)
 
