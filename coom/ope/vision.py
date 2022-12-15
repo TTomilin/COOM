@@ -174,7 +174,7 @@ def main():
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    init_wandb(args, ID)
+    init_wandb(ID, args)
 
     max_iter = 0
     auto_resume_file = None

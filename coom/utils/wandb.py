@@ -34,7 +34,7 @@ def retry(times, exceptions):
     return decorator
 
 
-def init_wandb(args: Namespace, job=None):
+def init_wandb(job, args: Namespace):
     """
     Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
