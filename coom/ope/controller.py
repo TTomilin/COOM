@@ -397,6 +397,7 @@ def main():
     parser.add_argument('--render_mode', default=None, type=str, choices=['rgb_array', 'human'], help='Render mode')
     parser.add_argument('--in_dream', action='store_true', help='Whether to train in dream, or real environment')
     parser.add_argument('--dream_max_len', default=2100, type=int, help="Maximum timesteps for dream to avoid runaway")
+    parser.add_argument('--gif_length', default=1000, type=int, help="Number of timestep to record for the final gif")
     parser.add_argument('--cores', default=0, type=int,
                         help='# CPU cores for main CMA-ES loop in non-cluster_mode. 0=all cores')
     parser.add_argument('--initial_z_size', default=10000, type=int,
@@ -433,7 +434,8 @@ def main():
     mkdir(output_dir)
     model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model', args.domain)
     vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision', args.domain)
-    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts', args.domain)
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts',
+                                       args.domain)
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -753,7 +755,8 @@ def main():
 
     log(ID, "Generating a rollout gif with the controller model in the environment")
     W_c, b_c = transform_to_weights(args, parameters)
-    cumulative_reward, frames = rollout((0, 0, 0, args, vision.to_cpu(), model.to_cpu(), None, W_c, b_c, None, True))
+    cumulative_reward, frames = rollout(
+        (0, 0, 0, args, vision.to_cpu(), model.to_cpu(), None, W_c, b_c, args.gif_length, True))
     imageio.mimsave(os.path.join(output_dir, 'env_rollout.gif'), frames, fps=20)
     log(ID, "Final cumulative reward in environment: " + str(cumulative_reward))
 
