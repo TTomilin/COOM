@@ -21,7 +21,6 @@ sys.path.insert(0, Path(__file__).parent.parent.resolve())
 sys.path.insert(0, Path(__file__).parent.parent.parent.resolve())
 for path in sys.path:
     print(path)
-sys.path.insert(0, os.path.abspath('..'))
 try:
     from coom.utils.wandb_utils import init_wandb
 except:
