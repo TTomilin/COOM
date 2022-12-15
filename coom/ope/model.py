@@ -285,7 +285,8 @@ def main():
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    init_wandb(ID, args)
+    args.ID = ID
+    init_wandb(args)
 
     log(ID, "Starting")
 

@@ -32,7 +32,7 @@ def retry(times, exceptions):
     return decorator
 
 
-def init_wandb(job, args: Namespace):
+def init_wandb(args: Namespace):
     """
     Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
@@ -49,7 +49,7 @@ def init_wandb(job, args: Namespace):
             method = args.cl_method if args.cl_method else 'sac'
             args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
         else:
-            args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{job}_{args.wandb_experiment}_{args.timestamp}'
+            args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.ID}_{args.wandb_experiment}_{args.timestamp}'
 
     logging.info(
         f'Weights and Biases integration enabled. Project: {args.wandb_project}, user: {args.wandb_entity}, '
