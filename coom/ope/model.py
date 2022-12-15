@@ -15,9 +15,9 @@ from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
-print('Appending', os.path.abspath('..'))
-sys.path.append('../')
-sys.path.append('../../')
+# print('Appending', os.path.abspath('..'))
+# sys.path.append(os.getcwd())
+sys.path.append(Path(__file__).parent.parent.resolve())
 for path in sys.path:
     print(path)
 sys.path.insert(0, os.path.abspath('..'))
