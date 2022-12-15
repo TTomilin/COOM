@@ -18,6 +18,7 @@ from pathlib import Path
 # print('Appending', os.path.abspath('..'))
 # sys.path.append(os.getcwd())
 sys.path.insert(0, Path(__file__).parent.parent.resolve())
+sys.path.insert(0, Path(__file__).parent.parent.parent.resolve())
 for path in sys.path:
     print(path)
 sys.path.insert(0, os.path.abspath('..'))
