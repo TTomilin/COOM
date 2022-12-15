@@ -1,7 +1,10 @@
+import gym
 import imageio
 import numpy as np
 import os
 from datetime import datetime, timezone
+
+from coom.ope.env.car_racing import domains
 
 
 def pre_process_image_tensor(images):
@@ -59,3 +62,14 @@ def mkdir(dir_name):
 
 def log(id, message):
     print(str(datetime.now(timezone.utc)) + " [" + str(id) + "] " + str(message))
+
+
+def reset_with_domain(env: gym.Env, domain: str) -> np.ndarray:
+    if domain:
+        env.unwrapped.road_color = domains[domain]['road_color']
+        env.unwrapped.bg_color = domains[domain]['bg_color']
+        env.unwrapped.grass_color = domains[domain]['grass_color']
+    observation = env.reset()[0]
+    if domain:
+        env.unwrapped.car.hull.color = domains[domain]['car_color']
+    return observation

@@ -23,8 +23,7 @@ from pathlib import Path
 from threading import Thread, Lock, Event
 
 from coom.utils.wandb import init_wandb
-from env.car_racing import domains
-from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
+from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor, reset_with_domain
 
 try:
     from env.wrappers import ViZDoomWrapper
@@ -103,13 +102,7 @@ def rollout(rollout_arg_tuple):
                 env = ViZDoomWrapper(args.game)
             else:
                 env = gym.make(args.game, render_mode=args.render_mode)
-            if args.domain:
-                env.unwrapped.road_color = domains[args.domain]['road_color']
-                env.unwrapped.bg_color = domains[args.domain]['bg_color']
-                env.unwrapped.grass_color = domains[args.domain]['grass_color']
-            observation = env.reset()[0]
-            if args.domain:
-                env.unwrapped.car.hull.color = domains[args.domain]['car_color']
+            observation = reset_with_domain(env, args.domain)
         if with_frames:
             frames_array.append(observation)
 
@@ -368,8 +361,10 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
-    parser.add_argument('--domain', default=None, type=str, choices=['default', 'B1', 'B2', 'B3'],
-                        help='Change the colors of the Car Racing environment')
+    parser.add_argument('--previous_domain', default=None, type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Predefined colors of the previously trained Car Racing environment')
+    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Apply predefined colors for the current Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--n_rollouts', default=10, type=int, help='Number of rollouts to sample for training')
     parser.add_argument('--model', '-m', default='', help='Initialize the model from given file')
@@ -433,12 +428,12 @@ def main():
         curriculum_step = int(args.curriculum.split(',')[1])
 
     ope_dir = Path(__file__).parent.resolve()
-    output_folder = f'{ID}_{args.domain}' if args.domain else ID
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, output_folder)
+    controller_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    output_dir = os.path.join(controller_dir, args.domain)
     mkdir(output_dir)
-    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
-    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
-    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model', args.domain)
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision', args.domain)
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts', args.domain)
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -476,7 +471,11 @@ def main():
             auto_resume_file = os.path.join(output_dir, "snapshot_iter_{}.npz".format(max_iter))
 
     resume = None
-    if args.model:
+    if args.previous_domain:
+        args.model = os.path.join(controller_dir, args.previous_domain, ID + ".model")
+        log(ID, "Loading saved model from previous domain: " + args.previous_domain)
+        resume = args.model
+    elif args.model:
         if args.model == 'default':
             args.model = os.path.join(output_dir, ID + ".model")
         log(ID, "Loading saved model from: " + args.model)

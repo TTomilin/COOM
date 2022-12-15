@@ -134,6 +134,8 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
+    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Use predefined colors for the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=10, type=int,
                         help='Load game frames in batches so as not to run out of memory')
@@ -144,7 +146,7 @@ def main():
     parser.add_argument('--test', action='store_true', help='Generate samples only')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
     parser.add_argument('--epoch', '-e', default=100, type=int, help='number of epochs to learn')
-    parser.add_argument('--snapshot_interval', '-s', default=100, type=int,
+    parser.add_argument('--snapshot_interval', '-s', default=500, type=int,
                         help='100 = snapshot every 100itr*batch_size imgs processed')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--batch_size', '-b', type=int, default=100, help='learning minibatch size')
@@ -166,13 +168,14 @@ def main():
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
     ope_dir = Path(__file__).parent.resolve()
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
-    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID, args.domain)
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts',
+                                       args.domain)
     mkdir(output_dir)
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.wandb_experiment}_{args.timestamp}'
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.wandb_experiment}_{args.timestamp}'
     init_wandb(args)
     tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     tb_writer.set_as_default()

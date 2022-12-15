@@ -135,9 +135,7 @@ class MDN_RNN(chainer.Chain):
 
             z_t_plus_1 = F.repeat(z_t_plus_1, k, 1).reshape(-1, output_dim, k)
 
-            normals = F.sum(
-                coef * F.exp(-F.gaussian_nll(z_t_plus_1, mu, ln_var, reduce='no'))
-                , axis=2)
+            normals = F.sum(coef * F.exp(-F.gaussian_nll(z_t_plus_1, mu, ln_var, reduce='no')), axis=2)
             densities = F.sum(normals, axis=1)
             nll = -F.log(densities)
 
@@ -243,6 +241,8 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
+    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Use predefined colors for the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=100, type=int,
                         help='Load rollouts in batches so as not to run out of memory')
@@ -252,7 +252,7 @@ def main():
     parser.add_argument('--resume_from', '-r', default='', help='Resume the optimization from a specific snapshot')
     parser.add_argument('--test', action='store_true', help='Generate samples only')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--epoch', '-e', default=20, type=int, help='number of epochs to learn')
+    parser.add_argument('--epoch', '-e', default=100, type=int, help='number of epochs to learn')
     parser.add_argument('--snapshot_interval', '-s', default=200, type=int, help='snapshot every x games')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--hidden_dim', default=256, type=int, help='LSTM hidden units')
@@ -278,14 +278,15 @@ def main():
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
     ope_dir = Path(__file__).parent.resolve()
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID, args.domain)
     mkdir(output_dir)
-    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts')
-    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
+    random_rollouts_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'random_rollouts',
+                                       args.domain)
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision', args.domain)
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.wandb_experiment}_{args.timestamp}'
+    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.wandb_experiment}_{args.timestamp}'
     init_wandb(args)
     tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     tb_writer.set_as_default()

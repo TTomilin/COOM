@@ -13,7 +13,7 @@ import traceback
 from pathlib import Path
 
 from lib.constants import DOOM_GAMES
-from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor
+from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor, reset_with_domain
 
 try:
     from env.wrappers import ViZDoomWrapper
@@ -40,15 +40,14 @@ def worker(worker_arg_tuple):
             env = ViZDoomWrapper(args.game)
         else:
             env = gym.make(args.game, render_mode=render_mode, domain_randomize=args.domain_randomization)
+        observation = reset_with_domain(env, args.domain)
 
         h_t = np.zeros(args.hidden_dim).astype(np.float32)
         c_t = np.zeros(args.hidden_dim).astype(np.float32)
 
         t = 0
         cumulative_reward = 0
-        frames_array = []
-
-        observation = env.reset()[0]
+        frames_array = [observation]
 
         start_time = time.time()
         while True:
@@ -109,13 +108,15 @@ def main():
     parser.add_argument('--mixtures', default=5, type=int, help='number of gaussian mixtures for MDN')
     parser.add_argument('--temperature', '-t', default=1.0, type=float, help='Temperature (tau) for MDN-RNN (model)')
     parser.add_argument('--predict_done', action='store_true', help='Whether MDN-RNN should also predict done state')
-    parser.add_argument('--max_timesteps', default=200, type=int, help='Max timesteps per rollout')
+    parser.add_argument('--max_timesteps', default=2000, type=int, help='Max timesteps per rollout')
     parser.add_argument('--cores', default=0, type=int, help='Number of CPU cores to use. 0=all cores')
     parser.add_argument('--weights_type', default=1, type=int,
                         help="1=action_dim*(z_dim+hidden_dim), 2=z_dim+2*hidden_dim")
     parser.add_argument('--record', action='store_true', help='Record as gifs')
     parser.add_argument('--render', action='store_true', help='Render the environment')
     parser.add_argument('--domain_randomization', action='store_true', help='Randomize the colors of the environment')
+    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Use predefined colors for the Car Racing environment')
 
     args = parser.parse_args()
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
@@ -131,11 +132,11 @@ def main():
         cores = args.cores
 
     ope_dir = Path(__file__).parent.resolve()
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID, args.domain)
     mkdir(output_dir)
-    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model')
-    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision')
-    controller_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'controller')
+    model_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'model', args.domain)
+    vision_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'vision', args.domain)
+    controller_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, 'controller', args.domain)
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)

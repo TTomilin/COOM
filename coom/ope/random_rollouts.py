@@ -11,7 +11,7 @@ import gym
 import numpy as np
 
 from lib.constants import DOOM_GAMES
-from lib.utils import log, mkdir
+from lib.utils import log, mkdir, reset_with_domain
 
 try:
     from env.wrappers import ViZDoomWrapper
@@ -54,7 +54,8 @@ def worker(worker_arg_tuple):
     if args.game in DOOM_GAMES:
         env = ViZDoomWrapper(args.game)
     else:
-        env = gym.make(args.game, max_episode_steps=args.max_episode_steps, render_mode="human")
+        env = gym.make(args.game, max_episode_steps=args.max_episode_steps)
+        # env = gym.make(args.game, max_episode_steps=args.max_episode_steps, render_mode="human")
 
     for rollout_num in rollouts_per_core:
         t = 1
@@ -63,9 +64,9 @@ def worker(worker_arg_tuple):
         frames_array = []
         rewards_array = []
 
-        observation = env.reset()
+        observation = reset_with_domain(env, args.domain)
         dsize = (args.frame_resize, args.frame_resize)
-        frames_array.append(cv2.resize(observation[0], dsize))
+        frames_array.append(cv2.resize(observation, dsize))
 
         start_time = time.time()
         prev_action = None
@@ -117,6 +118,8 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
+    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+                        help='Use predefined colors for the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--num_rollouts', '-n', default=100, type=int, help='Number of rollouts to collect')
     parser.add_argument('--max_episode_steps', default=1000, type=int, help='Max steps per episode')
@@ -128,7 +131,7 @@ def main():
     log(ID, "args =\n " + str(vars(args)).replace(",", ",\n "))
 
     ope_dir = Path(__file__).parent.resolve()
-    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID)
+    output_dir = os.path.join(ope_dir, args.data_dir, args.game, args.experiment_name, ID, args.domain)
     mkdir(output_dir)
 
     log(ID, "Starting")
