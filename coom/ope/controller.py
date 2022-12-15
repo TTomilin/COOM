@@ -22,7 +22,7 @@ from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from threading import Thread, Lock, Event
 
-from coom.utils.wandb import init_wandb
+from coom.utils.wandb_utils import init_wandb
 from lib.utils import log, mkdir, pre_process_image_tensor, post_process_image_tensor, reset_with_domain
 
 try:

@@ -9,7 +9,7 @@ from coom.sac.utils.logx import EpochLogger
 from coom.utils.enums import BufferType
 from coom.utils.run_utils import get_sac_class
 from coom.utils.utils import get_activation_from_str
-from coom.utils.wandb import init_wandb
+from coom.utils.wandb_utils import init_wandb
 from input_args import parse_args
 
 
