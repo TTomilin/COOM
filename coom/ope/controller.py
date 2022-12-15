@@ -366,7 +366,7 @@ def main():
     parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
                         help='Apply predefined colors for the current Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
-    parser.add_argument('--n_rollouts', default=10, type=int, help='Number of rollouts to sample for training')
+    parser.add_argument('--n_rollouts', default=1000, type=int, help='Number of rollouts to sample for training')
     parser.add_argument('--model', '-m', default='', help='Initialize the model from given file')
     parser.add_argument('--no_resume', action='store_true', help='Don''t auto resume from the latest snapshot')
     parser.add_argument('--resume_from', '-r', default='', help='Resume the optimization from a specific snapshot')
