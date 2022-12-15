@@ -7,7 +7,6 @@ import imageio
 import math
 import numba
 import numpy as np
-import sys
 import os
 import re
 from chainer import training
@@ -15,29 +14,10 @@ from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
-# print('Appending', os.path.abspath('..'))
-# sys.path.append(os.getcwd())
-sys.path.append(Path(__file__).resolve())
-sys.path.append(Path(__file__).parent.resolve())
-sys.path.append(Path(__file__).parent.parent.resolve())
-sys.path.append(Path(__file__).parent.parent.parent.resolve())
-for path in sys.path:
-    print(path)
-try:
-    from coom.utils.wandb_utils import init_wandb
-except:
-    print("Could not import init_wandb from coom.utils.wandb_utils")
-try:
-    from utils.wandb_utils import init_wandb
-except:
-    print("Could not import init_wandb from utils.wandb_utils")
-try:
-    from wandb_utils import init_wandb
-except:
-    print("Could not import init_wandb from wandb_utils")
+from coom.utils.wandb_utils import init_wandb
 from lib.data import ModelDataset
-from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from lib.logging import SummaryReport
+from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from vision import CVAE
 
 ID = "model"
