@@ -286,8 +286,7 @@ def main():
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.wandb_experiment}_{args.timestamp}'
-    init_wandb(args)
+    init_wandb(args, ID)
     tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
     tb_writer.set_as_default()
 

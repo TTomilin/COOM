@@ -1,9 +1,9 @@
-from argparse import Namespace
-
 import logging
 import time
-
 import wandb
+from argparse import Namespace
+
+from coom.ope.lib.constants import DOOM_GAMES
 
 
 def retry(times, exceptions):
@@ -34,7 +34,7 @@ def retry(times, exceptions):
     return decorator
 
 
-def init_wandb(args: Namespace):
+def init_wandb(args: Namespace, id_=None):
     """
     Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
@@ -47,9 +47,11 @@ def init_wandb(args: Namespace):
         args.wandb_group = args.scenarios[0] if len(args.scenarios) == 1 else 'Cross-Scenario'
 
     if 'wandb_unique_id' not in args:
-        method = args.cl_method if args.cl_method else 'sac'
-        # if we're going to restart the experiment, this will be saved to a json file
-        args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
+        if args.game in DOOM_GAMES:
+            method = args.cl_method if args.cl_method else 'sac'
+            args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
+        else:
+            args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{id_}_{args.wandb_experiment}_{args.timestamp}'
 
     logging.info(
         f'Weights and Biases integration enabled. Project: {args.wandb_project}, user: {args.wandb_entity}, '

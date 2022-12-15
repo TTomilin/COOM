@@ -439,8 +439,7 @@ def main():
 
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.wandb_experiment}_{args.timestamp}'
-    init_wandb(args)
+    init_wandb(args, ID)
 
     model = MDN_RNN(args.hidden_dim, args.z_dim, args.mixtures, args.predict_done)
     chainer.serializers.load_npz(os.path.join(model_dir, "model.model"), model)
