@@ -7,7 +7,6 @@ import gc
 import numpy as np
 import os
 import re
-import tensorflow as tf
 from chainer import training
 from chainer.backend import CpuDevice
 from chainer.training import extensions
@@ -176,8 +175,6 @@ def main():
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     init_wandb(args, ID)
-    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
-    tb_writer.set_as_default()
 
     max_iter = 0
     auto_resume_file = None

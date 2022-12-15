@@ -9,7 +9,6 @@ import numba
 import numpy as np
 import os
 import re
-import tensorflow as tf
 from chainer import training
 from chainer.training import extensions
 from datetime import datetime
@@ -287,8 +286,6 @@ def main():
     # WandB
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     init_wandb(args, ID)
-    tb_writer = tf.summary.create_file_writer(os.path.join(ope_dir, 'logs', args.wandb_unique_id))
-    tb_writer.set_as_default()
 
     log(ID, "Starting")
 

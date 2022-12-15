@@ -1,5 +1,5 @@
 import numpy as np
-import tensorflow as tf
+import wandb
 from chainer.training import extension
 
 
@@ -17,7 +17,7 @@ class SummaryReport(extension.Extension):
             self._metrics[key].append(trainer.observation[key].item())
         step = trainer.updater.iteration
         if step % self._interval == 0:
+            wandb.log({'step': step})
             for key in self._keys:
-                tf.summary.scalar(key, data=np.mean(self._metrics[key]), step=step)
+                wandb.log({key: np.mean(self._metrics[key])})
                 self._metrics[key] = []
-            tf.summary.flush()

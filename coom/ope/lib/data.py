@@ -157,9 +157,10 @@ class VisionDataset(dataset.DatasetMixin):
 
 
 class ModelDataset(dataset.DatasetMixin):
-    def __init__(self, dir='', n_rollouts=1000, load_batch_size=10, verbose=True):
+    def __init__(self, dir='', n_rollouts: int = None, load_batch_size=10, verbose=True):
         rollouts = os.listdir(dir)
-        rollouts = np.random.choice(rollouts, size=n_rollouts, replace=False)
+        if n_rollouts:
+            rollouts = np.random.choice(rollouts, size=n_rollouts, replace=False)
         rollouts_counts = {}
 
         for rollout in rollouts:
