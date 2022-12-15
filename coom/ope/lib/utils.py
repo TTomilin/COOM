@@ -2,9 +2,11 @@ import gym
 import imageio
 import numpy as np
 import os
+import sys
 from datetime import datetime, timezone
 
-from ..env.car_racing import domains
+sys.path.append('../')
+from coom.ope.env.car_racing import domains
 
 
 def pre_process_image_tensor(images):
