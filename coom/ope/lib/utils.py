@@ -5,17 +5,12 @@ import os
 import sys
 from datetime import datetime, timezone
 
-sys.path.append('../')
 sys.path.append('../../')
 sys.path.insert(0, os.path.abspath('..'))
 try:
     from env.car_racing import domains
 except:
     print("Could not import domains from env.car_racing")
-try:
-    from ope.env.car_racing import domains
-except:
-    print("Could not import domains from ope.env.car_racing")
 try:
     from coom.ope.env.car_racing import domains
 except:
