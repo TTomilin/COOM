@@ -4,7 +4,7 @@ import numpy as np
 import os
 from datetime import datetime, timezone
 
-from coom.ope.env.car_racing import domains
+from ..env.car_racing import domains
 
 
 def pre_process_image_tensor(images):
