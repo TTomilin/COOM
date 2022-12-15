@@ -29,6 +29,10 @@ try:
     from utils.wandb_utils import init_wandb
 except:
     print("Could not import init_wandb from utils.wandb_utils")
+try:
+    from wandb_utils import init_wandb
+except:
+    print("Could not import init_wandb from wandb_utils")
 from lib.data import ModelDataset
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from lib.logging import SummaryReport
