@@ -16,6 +16,8 @@ from datetime import datetime
 from pathlib import Path
 
 print('Appending', os.path.abspath('..'))
+for path in sys.path:
+    print(path)
 sys.path.insert(0, os.path.abspath('..'))
 try:
     from coom.utils.wandb_utils import init_wandb
