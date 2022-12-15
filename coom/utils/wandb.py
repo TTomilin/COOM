@@ -3,8 +3,6 @@ import time
 import wandb
 from argparse import Namespace
 
-from coom.ope.lib.constants import DOOM_GAMES
-
 
 def retry(times, exceptions):
     """

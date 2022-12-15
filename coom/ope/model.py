@@ -17,7 +17,7 @@ from pathlib import Path
 from coom.utils.wandb import init_wandb
 from lib.data import ModelDataset
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
-from lib.wandb import SummaryReport
+from lib.logging import SummaryReport
 from vision import CVAE
 
 ID = "model"
