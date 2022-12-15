@@ -17,10 +17,10 @@ from pathlib import Path
 
 # print('Appending', os.path.abspath('..'))
 # sys.path.append(os.getcwd())
-sys.path.insert(0, Path(__file__).resolve())
-sys.path.insert(0, Path(__file__).parent.resolve())
-sys.path.insert(0, Path(__file__).parent.parent.resolve())
-sys.path.insert(0, Path(__file__).parent.parent.parent.resolve())
+sys.path.append(Path(__file__).resolve())
+sys.path.append(Path(__file__).parent.resolve())
+sys.path.append(Path(__file__).parent.parent.resolve())
+sys.path.append(Path(__file__).parent.parent.parent.resolve())
 for path in sys.path:
     print(path)
 try:
