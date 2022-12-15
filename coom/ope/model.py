@@ -17,14 +17,18 @@ from pathlib import Path
 
 # print('Appending', os.path.abspath('..'))
 # sys.path.append(os.getcwd())
-sys.path.append(Path(__file__).parent.parent.resolve())
+sys.path.insert(0, Path(__file__).parent.parent.resolve())
 for path in sys.path:
     print(path)
 sys.path.insert(0, os.path.abspath('..'))
 try:
     from coom.utils.wandb_utils import init_wandb
 except:
+    print("Could not import init_wandb from coom.utils.wandb_utils")
+try:
     from utils.wandb_utils import init_wandb
+except:
+    print("Could not import init_wandb from utils.wandb_utils")
 from lib.data import ModelDataset
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from lib.logging import SummaryReport
