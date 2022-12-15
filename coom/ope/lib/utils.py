@@ -6,6 +6,7 @@ import sys
 from datetime import datetime, timezone
 
 sys.path.append('../')
+sys.path.append('../../')
 from coom.ope.env.car_racing import domains
 
 
