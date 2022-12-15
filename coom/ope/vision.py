@@ -137,7 +137,7 @@ def main():
     parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
                         help='Use predefined colors for the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
-    parser.add_argument('--load_batch_size', default=10, type=int,
+    parser.add_argument('--load_batch_size', default=100, type=int,
                         help='Load game frames in batches so as not to run out of memory')
     parser.add_argument('--model', '-m', default='',
                         help='Initialize the model from given file, or "default" for one in data folder')
@@ -145,8 +145,8 @@ def main():
     parser.add_argument('--resume_from', '-r', default='', help='Resume the optimization from a specific snapshot')
     parser.add_argument('--test', action='store_true', help='Generate samples only')
     parser.add_argument('--gpu', '-g', default=-1, type=int, help='GPU ID (negative value indicates CPU)')
-    parser.add_argument('--epoch', '-e', default=100, type=int, help='number of epochs to learn')
-    parser.add_argument('--snapshot_interval', '-s', default=500, type=int,
+    parser.add_argument('--epoch', '-e', default=1, type=int, help='number of epochs to learn')
+    parser.add_argument('--snapshot_interval', '-s', default=1000, type=int,
                         help='100 = snapshot every 100itr*batch_size imgs processed')
     parser.add_argument('--z_dim', '-z', default=32, type=int, help='dimension of encoded vector')
     parser.add_argument('--batch_size', '-b', type=int, default=100, help='learning minibatch size')
