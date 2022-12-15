@@ -15,7 +15,7 @@ from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
-sys.path.append('../../')
+sys.path.append('../')
 try:
     from coom.utils.wandb_utils import init_wandb
 except:
