@@ -47,7 +47,7 @@ def init_wandb(job, args: Namespace):
         args.wandb_group = args.scenarios[0] if len(args.scenarios) == 1 else 'Cross-Scenario'
 
     if 'wandb_unique_id' not in args:
-        if args.game in DOOM_GAMES:
+        if 'scenarios' in args.game:
             method = args.cl_method if args.cl_method else 'sac'
             args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
         else:
