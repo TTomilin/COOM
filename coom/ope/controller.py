@@ -361,9 +361,9 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
-    parser.add_argument('--previous_domain', default=None, type=str, choices=['default', 'B1', 'B2', 'B3'],
+    parser.add_argument('--previous_domain', default=None, type=str, choices=['B0', 'B1', 'B2', 'B3'],
                         help='Predefined colors of the previously trained Car Racing environment')
-    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+    parser.add_argument('--domain', default='B0', type=str, choices=['B0', 'B1', 'B2', 'B3'],
                         help='Apply predefined colors for the current Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--n_rollouts', default=1000, type=int, help='Number of rollouts to sample for training')

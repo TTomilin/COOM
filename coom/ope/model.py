@@ -16,7 +16,7 @@ from pathlib import Path
 
 from coom.utils.wandb_utils import init_wandb
 from lib.data import ModelDataset
-from lib.logging import SummaryReport
+from lib.summary import SummaryReport
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor
 from vision import CVAE
 
@@ -240,7 +240,7 @@ def main():
     parser.add_argument('--data_dir', '-d', default="data/wm", help='The base data/output directory')
     parser.add_argument('--game', default='CarRacing-v2',
                         help='Game to use')  # https://www.gymlibrary.dev/environments/box2d/car_racing/
-    parser.add_argument('--domain', default='default', type=str, choices=['default', 'B1', 'B2', 'B3'],
+    parser.add_argument('--domain', default='B0', type=str, choices=['B0', 'B1', 'B2', 'B3'],
                         help='Use predefined colors for the Car Racing environment')
     parser.add_argument('--experiment_name', default='experiment_1', help='To isolate its files from others')
     parser.add_argument('--load_batch_size', default=100, type=int,
