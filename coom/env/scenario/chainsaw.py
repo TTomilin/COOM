@@ -53,7 +53,7 @@ class Chainsaw(DoomEnv):
 
     @property
     def performance_lower_bound(self) -> float:
-        return 5.0  # Mean kills achievable by random actions
+        return 10.0  # Mean kills achievable by random actions
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         if not self.game_variable_buffer:
