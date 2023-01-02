@@ -110,6 +110,7 @@ def parse_args(args=None):
 
     # DOOM
     parser.add_argument('--render_sleep', type=float, default=0.03, help='Sleep time between frames when rendering')
+    parser.add_argument('--render_mode', type=str, default='rgb_array', help='Mode of rendering')
     parser.add_argument('--render', default=False, action='store_true', help='Render the environment')
     parser.add_argument('--variable_queue_len', type=int, default=5, help='Number of game variables to remember')
     parser.add_argument('--normalize', type=str2bool, default=True, help='Normalize the game state')
