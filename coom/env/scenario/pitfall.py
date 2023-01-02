@@ -12,7 +12,7 @@ class Pitfall(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
         super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
+        self.reward_scaler = args.reward_scaler_pitfall
         self.penalty_death = args.penalty_death
         self.frames = 0
         self.total_dist = 0
@@ -29,7 +29,7 @@ class Pitfall(DoomEnv):
         return self.total_dist
 
     def reward_wrappers(self) -> List[WrapperHolder]:
-        return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler_traversal, 0, True),
+        return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler, 0, True),
                 WrapperHolder(BooleanVariableRewardWrapper, self.penalty_death, DEAD)]
 
     @property

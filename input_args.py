@@ -138,6 +138,7 @@ def parse_args(args=None):
     parser.add_argument('--reward_item_acquired', default=15.0, type=float, help='For picking up weapons/health kits')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
     parser.add_argument('--reward_platform_reached', default=3.0, type=float, help='For reaching a platform')
+    parser.add_argument('--reward_scaler_pitfall', default=0.1, type=float, help='Reward scaler for traversal')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float, help='Reward scaler for traversal')
 
     # Penalty
