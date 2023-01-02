@@ -14,7 +14,7 @@ class FloorIsLava(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
-        self.penalty_health_loss = args.penalty_health_loss
+        self.penalty_lava = args.penalty_lava
         self.reward_frame_survived = args.reward_frame_survived
         self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_platform_reached = args.reward_platform_reached
@@ -34,8 +34,7 @@ class FloorIsLava(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(PlatformReachedRewardWrapper, self.reward_platform_reached, 0),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
-            # WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_lava, 0, True)
         ]
 
     @property

@@ -146,6 +146,7 @@ def parse_args(args=None):
     parser.add_argument('--penalty_passivity', default=-0.1, type=float, help='Penalty for not moving')
     parser.add_argument('--penalty_death', default=-1.0, type=float, help='Negative reward for dying')
     parser.add_argument('--penalty_health_loss', default=-0.01, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_lava', default=-0.1, type=float, help='Penalty for stepping on lava')
     parser.add_argument('--penalty_ammo_used', default=-0.1, type=float, help='Negative reward for using ammo')
 
     # Multi-task
