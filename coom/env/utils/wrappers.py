@@ -164,8 +164,6 @@ class PlatformReachedRewardWrapper(RewardWrapper):
             reward += self.rew
             self.on_platform = True
         elif var_cur != var_prev:
-            if self.on_platform:
-                reward -= self.rew
             self.on_platform = False
         return reward
 
