@@ -27,13 +27,12 @@ class FloorIsLava(DoomEnv):
             distance = distance_traversed(game_var_buf, 1, 2)
             self.distance_buffer.append(distance)
 
-
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(PlatformReachedRewardWrapper, self.reward_platform_reached, 0),
+            WrapperHolder(PlatformReachedRewardWrapper, self.reward_platform_reached, 3),
             WrapperHolder(GameVariableRewardWrapper, self.penalty_lava, 0, True)
         ]
 

@@ -144,27 +144,22 @@ class LocationVariableRewardWrapper(RewardWrapper):
 
 class PlatformReachedRewardWrapper(RewardWrapper):
 
-    def __init__(self, env, reward: float, health_var_index: int = 0):
+    def __init__(self, env, reward: float, z_var_index: int = 0):
         super(PlatformReachedRewardWrapper, self).__init__(env)
-        self.health_var_index = health_var_index
-        self.on_platform = True
+        self.z_var_index = z_var_index
         self.rew = reward
 
     def reward(self, reward):
-        # TODO measure agent height difference
         if len(self.game_variable_buffer) < 2:
             return reward
         vars_cur = self.game_variable_buffer[-1]
         vars_prev = self.game_variable_buffer[-2]
 
-        var_cur = vars_cur[self.health_var_index]
-        var_prev = vars_prev[self.health_var_index]
+        var_cur = vars_cur[self.z_var_index]
+        var_prev = vars_prev[self.z_var_index]
 
-        if var_cur == var_prev and not self.on_platform:
+        if var_cur > var_prev:
             reward += self.rew
-            self.on_platform = True
-        elif var_cur != var_prev:
-            self.on_platform = False
         return reward
 
 
