@@ -18,10 +18,10 @@ class HealthGathering(DoomEnv):
     and move forward. A small reward is granted for every frame the agent manages to survive.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, penalty_health_loss=0.01):
+    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
-        self.reward_item_acquired = args.reward_item_acquired
-        self.penalty_health_loss = penalty_health_loss
+        self.reward_health_kit = args.reward_health_hg
+        self.penalty_health_loss = args.penalty_health_hg
         self.distance_buffer = []
         self.frames_survived = 0
         self.kits_obtained = 0
@@ -45,7 +45,7 @@ class HealthGathering(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.penalty_health_loss),
-            WrapperHolder(GameVariableRewardWrapper, self.reward_item_acquired, 0),
+            WrapperHolder(GameVariableRewardWrapper, self.reward_health_kit, 0),
         ]
 
     @property

@@ -27,7 +27,7 @@ class ArmsDealer(DoomEnv):
         super().__init__(args, env, task_id, num_tasks)
         self.reward_scaler_traversal = args.reward_scaler_traversal
         self.penalty_passivity = args.penalty_passivity
-        self.reward_item_acquired = args.reward_item_acquired
+        self.reward_weapon = args.reward_weapon_ad
         self.reward_delivery = args.reward_delivery
         self.distance_buffer = []
 
@@ -46,7 +46,7 @@ class ArmsDealer(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.penalty_passivity),
-            WrapperHolder(UserVariableRewardWrapper, self.reward_item_acquired, GameVariable.USER1),
+            WrapperHolder(UserVariableRewardWrapper, self.reward_weapon, GameVariable.USER1),
             WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]

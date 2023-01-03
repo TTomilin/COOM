@@ -15,8 +15,8 @@ class HideAndSeek(DoomEnv):
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
         self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_item_acquired = args.reward_item_acquired
-        self.penalty_health_loss = args.penalty_health_loss
+        self.reward_health = args.reward_health_has
+        self.penalty_health_loss = args.penalty_health_has
         self.distance_buffer = []
         self.frames_survived = 0
         self.kits_obtained = 0
@@ -42,7 +42,7 @@ class HideAndSeek(DoomEnv):
 
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(GameVariableRewardWrapper, self.reward_item_acquired, 0),
+            WrapperHolder(GameVariableRewardWrapper, self.reward_health, 0),
             WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]

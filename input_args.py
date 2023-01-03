@@ -133,10 +133,14 @@ def parse_args(args=None):
     parser.add_argument('--wandb_experiment', default='', type=str, help='Identifier to specify the experiment')
 
     # Reward
-    parser.add_argument('--reward_switch_pressed', default=15.0, type=float, help='For pressing a switch')
     parser.add_argument('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
-    parser.add_argument('--reward_kill', default=5.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--reward_item_acquired', default=15.0, type=float, help='For picking up weapons/health kits')
+    parser.add_argument('--reward_switch_pressed', default=15.0, type=float, help='For pressing a switch')
+    parser.add_argument('--reward_kill_dtc', default=1.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_kill_rag', default=5.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_kill_chain', default=5.0, type=float, help='For eliminating an enemy')
+    parser.add_argument('--reward_health_hg', default=1.0, type=float, help='For picking up a health kit')
+    parser.add_argument('--reward_health_has', default=5.0, type=float, help='For picking a health kit')
+    parser.add_argument('--reward_weapon_ad', default=15.0, type=float, help='For picking a weapon')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
     parser.add_argument('--reward_platform_reached', default=3.0, type=float, help='For reaching a platform')
     parser.add_argument('--reward_scaler_pitfall', default=0.1, type=float, help='Reward scaler for traversal')
@@ -145,7 +149,10 @@ def parse_args(args=None):
     # Penalty
     parser.add_argument('--penalty_passivity', default=-0.1, type=float, help='Penalty for not moving')
     parser.add_argument('--penalty_death', default=-1.0, type=float, help='Negative reward for dying')
-    parser.add_argument('--penalty_health_loss', default=-0.01, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_projectile', default=-0.01, type=float, help='Negative reward for projectile hit')
+    parser.add_argument('--penalty_health_hg', default=-0.01, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_health_dtc', default=-1.0, type=float, help='Negative reward for losing health')
+    parser.add_argument('--penalty_health_has', default=-5.0, type=float, help='Negative reward for losing health')
     parser.add_argument('--penalty_lava', default=-0.1, type=float, help='Penalty for stepping on lava')
     parser.add_argument('--penalty_ammo_used', default=-0.1, type=float, help='Negative reward for using ammo')
 

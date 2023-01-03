@@ -19,10 +19,10 @@ class RunAndGun(DoomEnv):
     a reward for each enemy killed.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_kill=1.0):
+    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
         self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_kill = reward_kill
+        self.reward_kill = args.reward_kill_rag
         self.distance_buffer = []
         self.hits_taken = 0
         self.ammo_used = 0

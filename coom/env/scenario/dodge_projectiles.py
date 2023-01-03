@@ -17,7 +17,7 @@ class DodgeProjectiles(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_frame_survived=0.01):
         super().__init__(args, env, task_id, num_tasks)
-        self.penalty_health_loss = args.penalty_health_loss
+        self.penalty_projectile = args.penalty_projectile
         self.reward_frame_survived = reward_frame_survived
         self.frames_survived = 0
         self.hits_taken = 0
@@ -46,7 +46,7 @@ class DodgeProjectiles(DoomEnv):
     def reward_wrappers(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
+            WrapperHolder(GameVariableRewardWrapper, self.penalty_projectile, 0, True),
         ]
 
     @property

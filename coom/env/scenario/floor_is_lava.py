@@ -7,7 +7,7 @@ from typing import List, Dict
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
 from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, \
-    MovementRewardWrapper, PlatformReachedRewardWrapper
+    PlatformReachedRewardWrapper
 
 
 class FloorIsLava(DoomEnv):

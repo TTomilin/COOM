@@ -15,11 +15,11 @@ class DefendTheCenter(DoomEnv):
     each enemy killed.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1, reward_kill=1.0):
+    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
-        self.penalty_health_loss = args.penalty_health_loss
+        self.penalty_health_loss = args.penalty_health_dtc
         self.penalty_ammo_used = args.penalty_ammo_used
-        self.reward_kill = reward_kill
+        self.reward_kill = args.reward_kill_dtc
 
     def get_available_actions(self) -> List[List[float]]:
         actions = []
