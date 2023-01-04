@@ -41,7 +41,7 @@ class Pitfall(DoomEnv):
         return 20000
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
-        return {f'{mode}/distance': self.get_success(), f'{mode}/movement': self.get_success() / self.frames}
+        return {f'{mode}/distance': self.get_success(), f'{mode}/movement': self.get_success() / max(self.frames, 1)}
 
     def clear_episode_statistics(self) -> None:
         super().clear_episode_statistics()
