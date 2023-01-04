@@ -38,7 +38,7 @@ class FloorIsLava(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 3500  # Scenario length
+        return 2500  # Scenario length
 
     @property
     def performance_lower_bound(self) -> float:
