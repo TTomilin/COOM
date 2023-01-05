@@ -56,7 +56,7 @@ def parse_args(args=None):
                         help='Number of steps to decay the learning rate')
 
     # Replay buffer
-    parser.add_argument("--replay_size", type=sci2int, default=int(2e5), help="Size of the replay buffer")
+    parser.add_argument("--replay_size", type=sci2int, default=int(5e4), help="Size of the replay buffer")
     parser.add_argument("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
                         help="Strategy of inserting examples into the buffer")
 
