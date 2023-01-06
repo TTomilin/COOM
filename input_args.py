@@ -138,7 +138,7 @@ def parse_args(args=None):
     parser.add_argument('--reward_kill_dtc', default=1.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--reward_kill_rag', default=5.0, type=float, help='For eliminating an enemy')
     parser.add_argument('--reward_kill_chain', default=5.0, type=float, help='For eliminating an enemy')
-    parser.add_argument('--reward_health_hg', default=1.0, type=float, help='For picking up a health kit')
+    parser.add_argument('--reward_health_hg', default=5.0, type=float, help='For picking up a health kit')
     parser.add_argument('--reward_health_has', default=5.0, type=float, help='For picking a health kit')
     parser.add_argument('--reward_weapon_ad', default=15.0, type=float, help='For picking a weapon')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
