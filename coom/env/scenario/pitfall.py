@@ -34,7 +34,7 @@ class Pitfall(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 100000
+        return 150000
 
     @property
     def performance_lower_bound(self) -> float:
