@@ -20,6 +20,7 @@ def parse_args(args=None):
     parser.add_argument("--sequence", type=str, default=None, choices=['cross-environment', 'cross-scenario'],
                         help="Type of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
+    parser.add_argument('--gpu', '-g', default=None, type=int, help='Which GPU to use')
 
     # Save/Load
     parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")

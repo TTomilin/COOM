@@ -1,3 +1,4 @@
+import tensorflow as tf
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +18,11 @@ def main(args: Namespace):
     args.experiment_dir = Path(__file__).parent.resolve()
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.num_tasks = len(args.scenarios) * len(args.envs)
+
+    if args.gpu:
+        # Restrict TensorFlow to only use the specified GPU
+        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
+        print("Using GPU: ", args.gpu)
 
     # Logging
     init_wandb(args)
