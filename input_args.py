@@ -86,8 +86,7 @@ def parse_args(args=None):
 
     # Testing
     parser.add_argument("--test", type=str2bool, default=True, help="Whether to test the model")
-    parser.add_argument("--test_deterministic", default=False, action='store_true',
-                        help="Whether to also evaluate deterministic actions at test time")
+    parser.add_argument("--test_only", default=False, action='store_true', help="Whether to only test the model")
 
     # Task change
     parser.add_argument("--reset_buffer_on_task_change", type=str2bool, default=True,

@@ -1,9 +1,10 @@
+import numpy as np
 import tensorflow as tf
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 
-from coom.envs import get_cl_env, get_single_envs
+from coom.envs import get_cl_env, get_single_envs, ContinualLearningEnv
 from coom.methods.vcl import VclMlpActor
 from coom.sac.models import MlpActor
 from coom.sac.utils.logx import EpochLogger
@@ -15,9 +16,10 @@ from input_args import parse_args
 
 
 def main(args: Namespace):
+    scenarios = args.test_envs if args.test_only else args.scenarios
     args.experiment_dir = Path(__file__).parent.resolve()
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.num_tasks = len(args.scenarios) * len(args.envs)
+    args.num_tasks = len(scenarios) * len(args.envs)
 
     if args.gpu:
         # Restrict TensorFlow to only use the specified GPU
@@ -28,11 +30,11 @@ def main(args: Namespace):
     init_wandb(args)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
-    task_sequence = args.scenarios if len(args.envs) == 1 else args.envs
+    task_sequence = scenarios if len(args.envs) == 1 else args.envs
     logger.log(f'Task sequence: {task_sequence}')
 
-    train_env = get_cl_env(args)
-    test_envs = get_single_envs(args)
+    test_envs = get_single_envs(args, scenarios, args.envs)
+    train_env = ContinualLearningEnv(np.repeat(test_envs[0], len(args.scenarios)).tolist(), args.steps_per_env) if args.test_only else get_cl_env(args)
 
     num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
@@ -49,8 +51,9 @@ def main(args: Namespace):
         "env": train_env,
         "test_envs": test_envs,
         "test": args.test,
+        "test_only": args.test_only,
         "logger": logger,
-        "scenarios": args.scenarios,
+        "scenarios": scenarios,
         "cl_method": args.cl_method,
         "seed": args.seed,
         "steps_per_env": args.steps_per_env,

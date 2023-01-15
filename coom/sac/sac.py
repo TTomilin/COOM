@@ -26,6 +26,7 @@ class SAC:
             logger: EpochLogger,
             scenarios: List[str],
             test: bool = True,
+            test_only: bool = False,
             cl_method: str = None,
             actor_cl: type = models.MlpActor,
             critic_cl: type = models.MlpCritic,
@@ -123,6 +124,7 @@ class SAC:
         self.logger = logger
         self.scenarios = scenarios
         self.test = test
+        self.test_only = test_only
         self.cl_method = cl_method
         self.critic_cl = critic_cl
         self.policy_kwargs = policy_kwargs
@@ -619,6 +621,11 @@ class SAC:
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
+
+        if self.test_only:
+            self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+            return
+
         obs, info = self.env.reset()
         episodes, episode_return, episode_len = 0, 0, 0
 
