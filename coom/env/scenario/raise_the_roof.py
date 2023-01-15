@@ -1,8 +1,8 @@
-from argparse import Namespace
 from collections import deque
-from typing import List, Dict
 
 import numpy as np
+from argparse import Namespace
+from typing import List, Dict
 from vizdoom import GameVariable
 
 from coom.env.scenario.scenario import DoomEnv
@@ -12,6 +12,17 @@ from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, Consta
 
 
 class RaiseTheRoof(DoomEnv):
+    """
+    In this scenario, the agent is randomly spawned in one of 20 possible locations within a maze-like environment. The
+    room has a very high ceiling at the beginning of an episode, which, however, starts to be slowly but constantly
+    lowered. At specific locations of the area, there are switches on the walls that can be pressed to raise the ceiling
+    back up a bit. After a switch is pressed, it disappears and can no longer be used. If the switches are not pressed
+    with a high enough frequency, the ceiling will eventually crush the agent, which terminates the episode. The goal of
+    the agent is thus to locate and press the switches to keep the ceiling high before the episodes timeouts. The agent
+    can move forward, turn left and right, and activate a switch. In the sparse reward case, the agent only acquires a
+    reward for surviving a frame. With dense rewards, the agent is rewarded for movement, pressing a switch, and
+    surviving for a frames.
+    """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)

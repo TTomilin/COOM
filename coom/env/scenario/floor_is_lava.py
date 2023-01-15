@@ -11,6 +11,16 @@ from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, \
 
 
 class FloorIsLava(DoomEnv):
+    """
+    In this scenario, the agent is located in a square-shaped room divided into 16x16 equal sized squares. The room is
+    filled with lava, which inflicts 1 health point of damage if being stood upon. After every fixed time interval each
+    square section of lava has a 20% chance of being changed to a platform, which no longer causes damage. The objective
+    is to survive by minimizing the time spent standing in lava. The agent ought to identify the platforms and quickly
+    navigate on top of them as soon as they appear to avoid running out of health. The agent can turn left and right,
+    move forward, and accelerate. A small reward is granted for every frame the agent manages to survive with sparse
+    rewards. With auxiliary rewards, the agent is rewarded for stepping onto a platform whilst having previously stood
+    in lava, and penalized for standing in lava.
+    """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)

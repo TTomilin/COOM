@@ -38,7 +38,7 @@ class DoomEnv(CommonEnv):
         self.render_mode = args.render_mode
         if args.render:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
-        elif args.resolution:
+        elif args.resolution:  # Use a particular predefines resolution
             self.game.set_screen_resolution(get_screen_resolution(args.resolution))
         if args.acceleration:  # Add SPEED action to the available in-game actions
             actions = self.game.get_available_buttons()

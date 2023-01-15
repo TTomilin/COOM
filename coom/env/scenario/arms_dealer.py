@@ -1,8 +1,8 @@
-from argparse import Namespace
 from collections import deque
-from typing import Dict, List
 
 import numpy as np
+from argparse import Namespace
+from typing import Dict, List
 from vizdoom import GameVariable
 
 from coom.env.scenario.scenario import DoomEnv

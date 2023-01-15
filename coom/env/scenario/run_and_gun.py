@@ -1,8 +1,8 @@
-from argparse import Namespace
 from collections import deque
-from typing import List, Dict
 
 import numpy as np
+from argparse import Namespace
+from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed

@@ -1,5 +1,6 @@
-from argparse import Namespace
 from collections import deque
+
+from argparse import Namespace
 from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv

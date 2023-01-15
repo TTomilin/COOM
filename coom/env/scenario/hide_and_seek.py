@@ -1,16 +1,26 @@
-from argparse import Namespace
 from collections import deque
-from typing import List, Dict
 
 import numpy as np
+from argparse import Namespace
+from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, GameVariableRewardWrapper, \
-    ConstantRewardWrapper
+from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, GameVariableRewardWrapper
 
 
 class HideAndSeek(DoomEnv):
+    """
+    In this scenario, the agent is randomly spawned in one of 20 possible locations within a maze-like environment.
+    5 enemies are spawned at random locations at the beginning of an episode. The enemies can only inflict damage at
+    close distance and thus constantly attempt to move closer to the agent. Health kits granting 25 hit points
+    continually spawn in random locations at specified time intervals. The objective of the agent is to survive by
+    hiding from the enemies. The agent should identify the enemies and attempt to constantly move away from them while
+    collecting the health kits when at low health. The agent can turn left and right, move forward, and run. In the
+    sparse reward case, a small reward is granted for every frame the agent manages to survive. With auxiliary rewards,
+    the agent is rewarded for movement and each health item collected, and penalized for having damage inflicted by
+    enemies.
+    """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)

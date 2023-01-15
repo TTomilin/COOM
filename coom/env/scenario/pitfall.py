@@ -9,6 +9,19 @@ from coom.env.utils.wrappers import WrapperHolder, ProportionalVariableRewardWra
 
 
 class Pitfall(DoomEnv):
+    """
+    In this scenario, the agent is located in a very long rectangular corridor. The surface of the area is divided into
+    squares, which there are 7 of in each row. At the beginning of an episode, each of those sections have a 30% chance
+    of being turned into a pit by lowering the height of the floor in the given area. The floor layout is randomized
+    every episode, so there is no one optimal route to take. Falling into a pit instantly terminates the episode and
+    should be avoided at all cost. Reaching the other end of the corridor also terminates the episode. The agent is
+    tasked to traverse along the corridor as far as possible and potentially reach the other end. Note that there is a
+    ~10^-5 chance that a section of the corridor becomes untraversable due to the stochastic nature of the layout. The
+    agent ought to identify a safe path through the corridor and speedily navigate forwards. The agent can turn left and
+    right, move forward, and accelerate. In the sparse reward case, the agent only acquires a reward for having reached
+    the other end of the corridor. With dense rewards, the agent is proportionally rewarded for how much it has
+    travelled forward in the corridor, and penalized for falling into a pit.
+    """
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
         super().__init__(args, env, task_id, num_tasks)
