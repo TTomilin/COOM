@@ -147,7 +147,7 @@ mjkey.txt
 
 /logs
 checkpoints
-/results
+/coom/results_processing/results
 /wandb
 _vizdoom.ini
 /videos
