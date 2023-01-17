@@ -45,9 +45,10 @@ def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
     # Project is specified by <entity/project-name>
     runs = api.runs(args.project)
+    seq_len = 4 if args.sequence in ['CD4', 'CO4'] else 8
     for run in runs:
         if run.state == "finished":
-            for i in range(4):
+            for i in range(seq_len):
                 if 'CD4' == args.sequence and 'CD4' in run.url:
                     env = CD4[i]
                     metric_name = f'test/stochastic/{i}/run_and_gun-{env}/{args.metric}'
@@ -61,6 +62,7 @@ def main(args: argparse.Namespace) -> None:
                     metric_name = f'test/stochastic/{i}/{env}-default/success'
                     store_data(run, env, metric_name, 'CO4')
                 elif 'CO8' == args.sequence and 'CO8' in run.url:
+                    print(run.url)
                     env = CO8[i]
                     metric_name = f'test/stochastic/{i}/{env}-default/success'
                     store_data(run, env, metric_name, 'CO8')
