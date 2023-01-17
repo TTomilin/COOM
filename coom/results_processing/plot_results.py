@@ -14,11 +14,19 @@ translations = {
     'fine_tuning': 'Fine-tuning',
     'perfect_memory': 'Perfect Memory',
 
+    'pitfall': 'Pitfall',
+    'arms_dealer': 'Arms Dealer',
+    'hide_and_seek': 'Hide and Seek',
+    'floor_is_lava': 'Floor is Lava',
     'chainsaw': 'Chainsaw',
     'raise_the_roof': 'Raise the Roof',
     'run_and_gun': 'Run and Gun',
     'health_gathering': 'Health Gathering',
 
+    'obstacles': 'Obstacles',
+    'green': 'Green',
+    'resized': 'Resized',
+    'invulnerable': 'Invulnerable',
     'default': 'Default',
     'red': 'Red',
     'blue': 'Blue',
@@ -27,9 +35,9 @@ translations = {
 
 seq_envs = {
     'CD4': ['default', 'red', 'blue', 'shadows'],
-    'CD8': ['obstacles', ' green', ' resized', ' invulnerable', 'default', 'red', 'blue', 'shadows'],
+    'CD8': ['obstacles', 'green', 'resized', 'invulnerable', 'default', 'red', 'blue', 'shadows'],
     'CO4': ['chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
-    'CO8': ['pitfall', ' arms_dealer', ' hide_and_seek', ' floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
+    'CO8': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
 }
 
 
