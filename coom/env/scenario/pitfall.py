@@ -5,7 +5,8 @@ from typing import Dict, List
 from vizdoom import DEAD
 
 from coom.env.scenario.scenario import DoomEnv
-from coom.env.utils.wrappers import WrapperHolder, ProportionalVariableRewardWrapper, BooleanVariableRewardWrapper
+from coom.env.utils.wrappers import WrapperHolder, ProportionalVariableRewardWrapper, BooleanVariableRewardWrapper, \
+    GoalRewardWrapper
 
 
 class Pitfall(DoomEnv):
@@ -25,6 +26,7 @@ class Pitfall(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
         super().__init__(args, env, task_id, num_tasks)
+        self.reward_goal = args.reward_platform_reached
         self.reward_scaler = args.reward_scaler_pitfall
         self.penalty_death = args.penalty_death
         self.frames = 0
@@ -41,9 +43,12 @@ class Pitfall(DoomEnv):
     def get_success(self) -> float:
         return self.total_dist
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [WrapperHolder(ProportionalVariableRewardWrapper, self.reward_scaler, 0, True),
                 WrapperHolder(BooleanVariableRewardWrapper, self.penalty_death, DEAD)]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(GoalRewardWrapper, self.reward_goal, self.performance_upper_bound)]
 
     @property
     def performance_upper_bound(self) -> float:

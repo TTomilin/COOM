@@ -151,7 +151,10 @@ class DoomEnv(CommonEnv):
     def get_success(self) -> float:
         raise NotImplementedError
 
-    def reward_wrappers(self) -> List[gym.RewardWrapper]:
+    def reward_wrappers_dense(self) -> List[gym.RewardWrapper]:
+        raise NotImplementedError
+
+    def reward_wrappers_sparse(self) -> List[gym.RewardWrapper]:
         raise NotImplementedError
 
     def get_and_update_user_var(self, game_var: GameVariable) -> int:

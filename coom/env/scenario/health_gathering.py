@@ -20,6 +20,7 @@ class HealthGathering(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
+        self.reward_frame_survived = args.reward_frame_survived
         self.reward_health_kit = args.reward_health_hg
         self.penalty_health_loss = args.penalty_health_hg
         self.distance_buffer = []
@@ -42,11 +43,14 @@ class HealthGathering(DoomEnv):
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.penalty_health_loss),
             WrapperHolder(GameVariableRewardWrapper, self.reward_health_kit, 0),
         ]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:

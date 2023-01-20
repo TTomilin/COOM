@@ -187,7 +187,8 @@ def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, on
       :return DoomEnv: single-task Doom environment
     """
     env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    for wrapper in env.reward_wrappers():
+    reward_wrappers = env.reward_wrappers_sparse() if args.sparse_rewards else env.reward_wrappers_dense()
+    for wrapper in reward_wrappers:
         env = wrapper.wrapper_class(env, *wrapper.args)  # Apply the scenario specific reward wrappers
     env = ResizeWrapper(env, args.frame_height, args.frame_width)
     env = RescaleWrapper(env)

@@ -45,12 +45,15 @@ class RaiseTheRoof(DoomEnv):
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
             WrapperHolder(UserVariableRewardWrapper, self.reward_switch_pressed, GameVariable.USER2),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:

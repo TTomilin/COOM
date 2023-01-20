@@ -21,6 +21,8 @@ def parse_args(args=None):
                         help="Type of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
     parser.add_argument('--gpu', '-g', default=None, type=int, help='Which GPU to use')
+    parser.add_argument("--sparse_rewards", default=False, action='store_true',
+                        help="Whether to use the sparse reward setting")
 
     # Save/Load
     parser.add_argument("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
@@ -119,7 +121,8 @@ def parse_args(args=None):
     parser.add_argument('--frame_stack', type=int, default=4, help='Number of frames to stack')
     parser.add_argument('--frame_skip', type=int, default=4, help='Number of frames to skip')
     parser.add_argument('--acceleration', default=False, action='store_true', help='Grant the acceleration action')
-    parser.add_argument('--resolution', type=int, default=None, choices=[800, 640, 320, 160], help='Screen resolution of the game')
+    parser.add_argument('--resolution', type=int, default=None, choices=[800, 640, 320, 160],
+                        help='Screen resolution of the game')
 
     # WandB
     parser.add_argument('--with_wandb', default=False, action='store_true', help='Enables Weights and Biases')

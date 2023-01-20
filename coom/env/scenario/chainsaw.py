@@ -41,11 +41,14 @@ class Chainsaw(DoomEnv):
     def get_success(self) -> float:
         return self.game_variable_buffer[-1][1] if self.game_variable_buffer else 0.0  # Kills
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1)]
 
     @property
     def performance_upper_bound(self) -> float:

@@ -163,6 +163,23 @@ class PlatformReachedRewardWrapper(RewardWrapper):
         return reward
 
 
+class GoalRewardWrapper(RewardWrapper):
+
+    def __init__(self, env, reward: float, goal: float, var_index: int = 0):
+        super(GoalRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.goal = goal
+        self.var_index = var_index
+
+    def reward(self, reward):
+        vars_cur = self.game_variable_buffer[-1]
+        var_cur = vars_cur[self.var_index]
+
+        if var_cur > self.goal:
+            reward += self.rew
+        return reward
+
+
 class RescaleWrapper(gym.Wrapper):
     """Rescale the observation space to [-1, 1]."""
 

@@ -43,13 +43,16 @@ class ArmsDealer(DoomEnv):
     def get_success(self) -> float:
         return self.user_variables[GameVariable.USER2]  # Arms dealt
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(ConstantRewardWrapper, self.penalty_passivity),
             WrapperHolder(UserVariableRewardWrapper, self.reward_weapon, GameVariable.USER1),
             WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2)]
 
     @property
     def performance_upper_bound(self) -> float:

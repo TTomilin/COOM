@@ -28,7 +28,7 @@ class Parkour(DoomEnv):
     def get_success(self) -> float:
         return self.current_height
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [WrapperHolder(LocationVariableRewardWrapper, 0, 1, 608, 608)]
 
     @property

@@ -6,7 +6,8 @@ from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, GameVariableRewardWrapper
+from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, GameVariableRewardWrapper, \
+    ConstantRewardWrapper
 
 
 class HideAndSeek(DoomEnv):
@@ -24,8 +25,9 @@ class HideAndSeek(DoomEnv):
 
     def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
         super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.reward_health = args.reward_health_has
+        self.reward_frame_survived = args.reward_frame_survived
+        self.reward_scaler_traversal = args.reward_scaler_traversal
         self.penalty_health_loss = args.penalty_health_has
         self.distance_buffer = []
         self.frames_survived = 0
@@ -50,12 +52,15 @@ class HideAndSeek(DoomEnv):
     def get_success(self) -> float:
         return self.frames_survived * self.frame_skip
 
-    def reward_wrappers(self) -> List[WrapperHolder]:
+    def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
             WrapperHolder(GameVariableRewardWrapper, self.reward_health, 0),
             WrapperHolder(GameVariableRewardWrapper, self.penalty_health_loss, 0, True),
             WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
         ]
+
+    def reward_wrappers_sparse(self) -> List[WrapperHolder]:
+        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:
