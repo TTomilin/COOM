@@ -442,41 +442,10 @@ class SAC:
         ):
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
-    # def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
-    #     start_time = time.time()
-    #     mode = "deterministic" if deterministic else "stochastic"
-    #     key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-    #     one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
-    #
-    #     self.on_test_start(seq_idx)
-    #
-    #     for j in range(num_episodes):
-    #         obs, _ = test_env.reset()
-    #         done, episode_return, episode_len = False, 0, 0
-    #         while not done:
-    #             obs, reward, done, _, _ = test_env.step(
-    #                 self.get_action_test(tf.convert_to_tensor(obs),
-    #                                      tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-    #                                      tf.constant(deterministic))
-    #             )
-    #             episode_return += reward
-    #             episode_len += 1
-    #         self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-    #         self.logger.store(test_env.get_statistics(key_prefix))
-    #
-    #     print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
-    #
-    #     self.on_test_end(seq_idx)
-    #
-    #     self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
-    #     self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-    #     for stat in test_env.get_statistics(key_prefix).keys():
-    #         self.logger.log_tabular(stat, average_only=True)
-
     def test_agent(self, deterministic, num_episodes) -> None:
-        start_time = time.time()
         mode = "deterministic" if deterministic else "stochastic"
         for seq_idx, test_env in enumerate(self.test_envs):
+            start_time = time.time()
             key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
             one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
@@ -749,7 +718,6 @@ class SAC:
                 # Test the performance of stochastic and deterministic version of the agent.
                 if self.test:
                     self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
-                    self.test_agent(deterministic=True, num_episodes=self.num_test_eps_deterministic)
                     print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
                 # Determine the current learning rate of the optimizer
