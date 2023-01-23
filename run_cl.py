@@ -29,7 +29,7 @@ def main(args: Namespace):
         print("Using GPU: ", args.gpu)
 
     # Logging
-    init_wandb(args, scenarios)
+    init_wandb(args, [scenario.name.lower() for scenario in scenarios])
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     logger.log(f'Task sequence: {args.sequence}')
     logger.log(f'Scenarios: {[s.name for s in scenarios]}')
