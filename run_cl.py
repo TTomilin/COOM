@@ -8,7 +8,7 @@ from coom.envs import get_cl_env, get_single_envs, ContinualLearningEnv
 from coom.methods.vcl import VclMlpActor
 from coom.sac.models import MlpActor
 from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import BufferType
+from coom.utils.enums import BufferType, Sequence
 from coom.utils.run_utils import get_sac_class
 from coom.utils.utils import get_activation_from_str
 from coom.utils.wandb_utils import init_wandb
@@ -16,7 +16,9 @@ from input_args import parse_args
 
 
 def main(args: Namespace):
-    scenarios = args.test_envs if args.test_only else args.scenarios
+    sequence = Sequence[args.sequence.upper()].value
+    scenarios = args.test_envs if args.test_only else sequence['scenarios']
+    envs = args.test_envs if args.test_only else sequence['envs']
     args.experiment_dir = Path(__file__).parent.resolve()
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.num_tasks = len(scenarios) * len(args.envs)
@@ -29,12 +31,14 @@ def main(args: Namespace):
     # Logging
     init_wandb(args)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
+    logger.log(f'Task sequence: {args.sequence}')
+    logger.log(f'Scenarios: {[s.name for s in scenarios]}')
+    logger.log(f'Environments: {envs}')
 
-    task_sequence = scenarios if len(args.envs) == 1 else args.envs
-    logger.log(f'Task sequence: {task_sequence}')
-
-    test_envs = get_single_envs(args, scenarios, args.envs)
-    train_env = ContinualLearningEnv(np.repeat(test_envs[0], len(args.scenarios)).tolist(), args.steps_per_env) if args.test_only else get_cl_env(args)
+    test_envs = get_single_envs(args, scenarios, envs)
+    train_env = get_cl_env(args, scenarios, envs)
+    if args.test_only:
+        train_env = ContinualLearningEnv(np.repeat(test_envs[0], len(scenarios)).tolist(), args.steps_per_env)
 
     num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(

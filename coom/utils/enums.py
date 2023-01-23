@@ -27,3 +27,17 @@ class DoomScenario(Enum):
     ARMS_DEALER = ArmsDealer
     PARKOUR = Parkour
     PITFALL = Pitfall
+
+
+class Sequence(Enum):
+    CD4 = {'scenarios': [DoomScenario.RUN_AND_GUN], 'envs': ['default', 'red', 'blue', 'shadows']}
+    CD8 = {'scenarios': [DoomScenario.RUN_AND_GUN],
+           'envs': ['obstacles', 'green', 'resized', 'invulnerable', 'default', 'red', 'blue', 'shadows']}
+    CO4 = {'scenarios': [DoomScenario.CHAINSAW, DoomScenario.RAISE_THE_ROOF, DoomScenario.RUN_AND_GUN,
+                         DoomScenario.HEALTH_GATHERING], 'envs': ['default']}
+    CO8 = {'scenarios': [DoomScenario.PITFALL, DoomScenario.ARMS_DEALER, DoomScenario.HIDE_AND_SEEK,
+                         DoomScenario.FLOOR_IS_LAVA, DoomScenario.CHAINSAW, DoomScenario.RAISE_THE_ROOF,
+                         DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['default']}
+    COC = {'scenarios': [DoomScenario.PITFALL, DoomScenario.ARMS_DEALER, DoomScenario.HIDE_AND_SEEK,
+                         DoomScenario.FLOOR_IS_LAVA, DoomScenario.CHAINSAW, DoomScenario.RAISE_THE_ROOF,
+                         DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['default']}

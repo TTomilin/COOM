@@ -17,8 +17,8 @@ def parse_args(args=None):
                         help="Name of the environments in the scenario(s) to run")
     parser.add_argument("--test_envs", type=str, nargs="+", default=[],
                         help="Name of the environments in the scenario(s) to test on")
-    parser.add_argument("--sequence", type=str, default=None, choices=['cross-environment', 'cross-scenario'],
-                        help="Type of the continual learning sequence")
+    parser.add_argument("--sequence", type=str, default=None, choices=['CD4', 'CD8', 'CO4', 'CO8', 'COC'],
+                        help="Name of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
     parser.add_argument('--gpu', '-g', default=None, type=int, help='Which GPU to use')
     parser.add_argument("--sparse_rewards", default=False, action='store_true',

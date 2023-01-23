@@ -80,14 +80,14 @@ class ContinualLearningEnv(CommonEnv):
         return self._get_active_env().clear_episode_statistics()
 
 
-def get_cl_env(args: Namespace) -> ContinualLearningEnv:
+def get_cl_env(args: Namespace, scenarios: List[DoomEnv], envs: List[str]) -> ContinualLearningEnv:
     """Returns a continual learning environment.
     Args:
       args: list of the input arguments
     Returns:
       gym.Env: continual learning environment
     """
-    envs = get_single_envs(args, args.scenarios, args.envs)
+    envs = get_single_envs(args, scenarios, envs)
     cl_env = ContinualLearningEnv(envs, args.steps_per_env)
     return cl_env
 
@@ -165,8 +165,8 @@ def get_mt_env(
     return mt_env
 
 
-def get_single_envs(args, scenarios, envs):
-    envs = [get_single_env(args, DoomScenario[scenario_task[0].upper()].value, scenario_task[1], one_hot_idx=i,
+def get_single_envs(args: Namespace, scenarios: List[DoomEnv], envs: List[str]) -> List[gym.Env]:
+    envs = [get_single_env(args, scenario_task[0].value, scenario_task[1], one_hot_idx=i,
                            one_hot_len=args.num_tasks) for i, scenario_task in
             enumerate(itertools.product(scenarios, envs))]
     return envs
