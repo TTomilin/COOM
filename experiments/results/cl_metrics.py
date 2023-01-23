@@ -248,13 +248,24 @@ def normalize(metric_data, ci):
 
 
 def main(cfg: argparse.Namespace) -> None:
-    performances, forgets = [], []
-    for sequence in cfg.sequences:
-        performance, forget = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length)
-        performances.append(performance)
-        forgets.append(forget)
+    # Collect all results from calc_metrics and calculate averages across methods of different length
+    performances = np.empty((len(SEQUENCES), len(METHODS)))
+    performance_cis = np.empty((len(SEQUENCES), len(METHODS)))
+    forgettings = np.empty((len(SEQUENCES), len(METHODS)))
+    forgetting_cis = np.empty((len(SEQUENCES), len(METHODS)))
+    for i, sequence in enumerate(SEQUENCES):
+        performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length)
+        performances[i] = np.pad(performance, (0, len(METHODS) - len(performance)), 'constant', constant_values=np.nan)
+        performance_cis[i] = np.pad(performance_ci, (0, len(METHODS) - len(performance_ci)), 'constant', constant_values=np.nan)
+        forgettings[i] = np.pad(forgetting, (0, len(METHODS) - len(forgetting)), 'constant', constant_values=np.nan)
+        forgetting_cis[i] = np.pad(forgetting_ci, (0, len(METHODS) - len(forgetting_ci)), 'constant', constant_values=np.nan)
+    performance = np.nanmean(performances, axis=0)
+    performance_ci = np.nanmean(performance_cis, axis=0)
+    forgetting = np.nanmean(forgettings, axis=0)
+    forgetting_ci = np.nanmean(forgetting_cis, axis=0)
     print(f'\n\nAverage')
-    print(f'\n{"Method":<20}{"Performance":<20}{"CI":<20}')
+    print_results(performance, performance_ci, METHODS, "Performance")
+    print_results(forgetting, forgetting_ci, METHODS, "Forgetting")
 
 
 def parse_args() -> argparse.Namespace:
