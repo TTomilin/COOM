@@ -21,7 +21,7 @@ def main(args: Namespace):
     envs = args.test_envs if args.test_only else sequence['envs']
     args.experiment_dir = Path(__file__).parent.resolve()
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.num_tasks = len(scenarios) * len(args.envs)
+    args.num_tasks = len(scenarios) * len(envs)
 
     if args.gpu:
         # Restrict TensorFlow to only use the specified GPU
