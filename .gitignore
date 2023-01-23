@@ -147,7 +147,6 @@ mjkey.txt
 
 /logs
 checkpoints
-/coom/results_processing/results
 /wandb
 _vizdoom.ini
 /videos
@@ -159,3 +158,6 @@ _vizdoom.ini
 /coom/ope/data/
 /coom/ope/logs/
 /coom/ope/wandb/
+
+# Results
+/experiments/results/data/helpful_snippets

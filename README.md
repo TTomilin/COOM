@@ -30,32 +30,51 @@ To see available script arguments, run with `--help` option, e.g.
 
 `python3 run_single.py --help`
 
-## Examples
-
-Below are given example commands that will run experiments with a very limited scale.
-
 ### Single task
 
-`python3 run_single.py --scenario health_gathering --test_envs lava slime`
+#### Quick start  
+`python3 run_single.py --scenario pitfall`
+
+#### Training examples  
+`python3 run_single.py --scenario health_gathering --envs obstacles --test_envs lava slime --seed 0 --steps 2e5 --log_every 250`
 
 ### Continual learning
 
-#### Task sequence CE4 with PackNet
-`python3 run_cl.py --scenarios seek_and_slay --envs default red blue obstacles --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
+#### Quick start  
+`python run_cl.py --sequence CO4 --cl_method packnet`
 
-#### Task sequence CE8 with PackNet
-`python3 run_cl.py --scenarios seek_and_slay --envs default red blue obstacles mixed_enemies shadows invulnerable shadows_obstacles --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
+#### Training examples
+```
+python run_cl.py --sequence CD4 --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05
+python run_cl.py --sequence CO8 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
+python run_cl.py --sequence COC --batch_size 512 --buffer_type reservoir --reset_buffer_on_task_change False --replay_size 2e5
+```
 
-#### Task sequence CO4 with PackNet
-`python3 run_cl.py --scenarios chainsaw raise_the_roof seek_and_slay health_gathering --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
+# Reproducing results
 
-#### Task sequence CO8 with PackNet
-`python3 run_cl.py --scenarios chainsaw raise_the_roof seek_and_slay health_gathering arms_dealer floor_is_lava hide_and_seek parkour --cl_method packnet --packnet_retrain_steps 10000 --clipnorm 2e-05`
+### Running experiments
+The scripts for running all our experiments in the paper can be found [here](https://github.com/TTomilin/COOM/tree/main/experiments/scripts).
+
+### Downloading results
+We recommend using [Weights & Biases](https://wandb.ai/) to log your experiments. 
+Having done so, [download,py](https://github.com/TTomilin/COOM/tree/main/experiments/results/download.py) can be used to download results:  
+`python download.py --project <PROJECT> --sequence <SEQUENCE> --metric <METRIC>`  
+The relevant metrics used in the paper are: `success` and `kills`.
+
+### Plotting results
+
+Figures from the paper can be drawn using the [plotting scripts](https://github.com/TTomilin/COOM/tree/main/experiments/results).  
+`python plot_results_envs.py --sequence <SEQUENCE> --metric <METRIC>`  
+`python plot_results_methods.py --sequence <SEQUENCE> --metric <METRIC>`
+
+### Calculating metrics
+All the numeric results displayed in the paper can be calculated using [cl_metrics.py](https://github.com/TTomilin/COOM/tree/main/experiments/results/cl_metrics.py).  
+`python cl_metrics.py --sequence <SEQUENCE> --metric <METRIC>`
+
 
 # Acknowledgements
 
-COOM heavily relies on [ViZDoom](https://github.com/mwydmuch/ViZDoom).
-
-The implementation of Discrete SAC used in our code comes from [Tianshou](https://github.com/thu-ml/tianshou).
-
-Our experiments were managed using [WandB](https://wandb.ai).
+COOM heavily relies on [ViZDoom](https://github.com/mwydmuch/ViZDoom).  
+The `run_and_gun` scenario and its environment modification were inspired by [LevDoom](https://github.com/TTomilin/LevDoom).  
+The implementation of Discrete SAC used in our code comes from [Tianshou](https://github.com/thu-ml/tianshou).  
+Our experiments were managed using [WandB](https://wandb.ai).  
