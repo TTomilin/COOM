@@ -32,8 +32,11 @@ TRANSLATIONS = {
     'blue': 'Blue',
     'shadows': 'Shadows',
 
-    'success': 'Success Rate',
+    'success': 'Success',
     'kills': 'Kill Count',
+    'ep_length': 'Frames Alive',
+    'arms_dealt': 'Weapons Delivered',
+    'distance': 'Distance',
 }
 
 SEQUENCES = {
@@ -44,7 +47,19 @@ SEQUENCES = {
             'health_gathering'],
 }
 
-PLOT_COLORS = ['#55A868', '#C44E52', '#4C72B0', '#8172B2']
+METRICS = {
+    'pitfall': 'distance',
+    'arms_dealer': 'arms_dealt',
+    'hide_and_seek': 'ep_length',
+    'floor_is_lava': 'ep_length',
+    'chainsaw': 'kills',
+    'raise_the_roof': 'ep_length',
+    'run_and_gun': 'kills',
+    'health_gathering': 'ep_length',
+    'default': 'kills',
+}
+
+PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
 
 
@@ -52,16 +67,20 @@ def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn')
     seeds = ['1', '2', '3']
     cl_data = {}
-    fig, ax = plt.subplots(len(METHODS), 1, sharey=True, sharex=True, figsize=(10, 14))
-    sequence = args.sequence
-    metric = args.metric
-    envs = SEQUENCES[sequence]
-    env_names = [TRANSLATIONS[e] for e in envs]
-    max_steps = -np.inf
-    iterations = 800 if sequence in ['CD4', 'CO4'] else 1600
 
-    for i, method in enumerate(METHODS):
-        for j, env in enumerate(envs):
+    sequence = args.sequence
+    envs = SEQUENCES[sequence]
+    n_envs = len(envs)
+    metric = None
+    figsize = (6, 7) if n_envs == 4 else (7, 13)
+    fig, ax = plt.subplots(n_envs, 1, sharex=True, figsize=figsize)
+    max_steps = -np.inf
+    iterations = 800 if n_envs == 4 else 1600
+    methods = METHODS if n_envs == 4 else METHODS[:-1]
+
+    for i, env in enumerate(envs):
+        for j, method in enumerate(methods):
+            metric = args.metric if args.metric else METRICS[env] if env in METRICS else 'kills'
             seed_data = np.empty((len(seeds), iterations))
             seed_data[:] = np.nan
             for k, seed in enumerate(seeds):
@@ -81,33 +100,33 @@ def main(args: argparse.Namespace) -> None:
             y = gaussian_filter1d(y, sigma=2)
             ci = np.nanstd(seed_data, axis=0)
             ci = gaussian_filter1d(ci, sigma=2)
-            ax[i].plot(y, label=env, color=PLOT_COLORS[j])
+            ax[i].plot(y, label=TRANSLATIONS[method], color=PLOT_COLORS[j])
             ax[i].tick_params(labelbottom=True)
             ax[i].fill_between(np.arange(iterations), y - ci, y + ci, alpha=0.2, color=PLOT_COLORS[j])
             # print(f'{method}_{env} nan count: {np.isnan(y).sum()}')
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
-        ax[i].set_title(TRANSLATIONS[method])
+        ax[i].set_title(TRANSLATIONS[env])
 
-    n_envs = len(envs)
     env_steps = max_steps // n_envs
-    env_name_locations = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
+    task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
 
+    tick_labels = ['Task 1', 'Task 2', 'Task 3', 'Task 4'] if n_envs == 4 \
+        else ['Task 1', 'Task 2', 'Task 3', 'Task 4', 'Task 5', 'Task 6', 'Task 7', 'Task 8']
     ax2 = ax[0].twiny()
     ax2.set_xlim(ax[0].get_xlim())
-    ax2.set_xticks(env_name_locations)
-    ax2.set_xticklabels(env_names)
+    ax2.set_xticks(task_indicators)
+    ax2.set_xticklabels(tick_labels)
     ax2.tick_params(axis='both', which='both', length=0)
 
-    colors = [ax[0].get_lines()[i].get_color() for i in range(n_envs)]
-    for xtick, color in zip(ax2.get_xticklabels(), colors):
-        xtick.set_color(color)
-        xtick.set_fontweight('bold')
-
     ax[-1].set_xlabel("Timesteps (K)")
-    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_envs, fancybox=True, shadow=True)
-    fig.tight_layout()
-    plt.savefig(f'plots/{sequence}_{metric}.png')
+    handles, labels = ax[-1].get_legend_handles_labels()
+    n_cols = 4 if n_envs == 4 else 6
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=n_cols, fancybox=True, shadow=True)
+    bottom_adjust = 0.06 if n_envs == 4 else 0.02
+    plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
+    plot_name = f'{sequence}_envs_{metric}' if args.metric else sequence
+    plt.savefig(f'plots/{plot_name}.png')
     plt.show()
 
 
@@ -115,7 +134,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
                         help="Name of the task sequence")
-    parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
+    parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
     parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
 
