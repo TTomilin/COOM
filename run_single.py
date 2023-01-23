@@ -28,7 +28,7 @@ def main(args: Namespace):
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Logging
-    init_wandb(args)
+    init_wandb(args, args.scenarios)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     # Task

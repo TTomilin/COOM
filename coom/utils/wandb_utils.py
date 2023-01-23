@@ -2,6 +2,7 @@ import logging
 import time
 import wandb
 from argparse import Namespace
+from typing import List
 
 
 def retry(times, exceptions):
@@ -32,7 +33,7 @@ def retry(times, exceptions):
     return decorator
 
 
-def init_wandb(args: Namespace):
+def init_wandb(args: Namespace, scenarios: List[str]) -> None:
     """
     Must call initialization of WandB before summary writer is initialized, otherwise sync_tensorboard does not work.
     """
@@ -42,14 +43,20 @@ def init_wandb(args: Namespace):
         return
 
     if args.wandb_group is None:
-        args.wandb_group = args.scenarios[0] if len(args.scenarios) == 1 else 'Cross-Scenario'
+        args.wandb_group = scenarios[0] if len(scenarios) == 1 else 'Cross-Scenario'
 
-    if 'wandb_unique_id' not in args:
-        if 'scenarios' in args:
-            method = args.cl_method if args.cl_method else 'sac'
-            args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
+    if 'game' in args:
+        args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.ID}_{args.wandb_experiment}_{args.timestamp}'
+    else:
+        if args.cl_method:
+            method = args.cl_method
+        elif len(scenarios) == 1:
+            method = 'sac'
+        elif args.buffer_type == 'reservoir':
+            method = 'perfect_memory'
         else:
-            args.wandb_unique_id = f'{args.game}_{args.experiment_name}_{args.domain}_{args.ID}_{args.wandb_experiment}_{args.timestamp}'
+            method = 'fine_tuning'
+        args.wandb_unique_id = f'{method}_seed_{args.seed}_{args.wandb_group}_{args.wandb_experiment}_{args.timestamp}'
 
     logging.info(
         f'Weights and Biases integration enabled. Project: {args.wandb_project}, user: {args.wandb_entity}, '
