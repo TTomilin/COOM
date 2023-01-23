@@ -70,8 +70,13 @@ def store_data(run: Run, sequence: str, required_metric: str) -> None:
         history = list(iter(run.scan_history(keys=[log_key])))
         if not history:
             print(f'No data for {run.name} {env}')
-            log_key = f'test/stochastic/{env_idx}/seek_and_slay-default/{metric}'
+            env = f'seek_and_slay-{task}' if sequence == 'CO4' else f'seek_and_slay-default'
+            log_key = f'test/stochastic/{env_idx}/seek_and_slay-{task}/{metric}'
             history = list(iter(run.scan_history(keys=[log_key])))
+            if not history:
+                print(f'Still no data for {run.name} {env}')
+                log_key = f'test/stochastic/{env_idx}/seek_and_slay-shadows_obstacles/{metric}'
+                history = list(iter(run.scan_history(keys=[log_key])))
         values = [item[log_key] for item in history]
         method = get_cl_method(run)
         seed = max(run.config["seed"], 1)
