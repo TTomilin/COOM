@@ -4,6 +4,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+from scipy.stats import t
 
 TRANSLATIONS = {
     'packnet': 'PackNet',
@@ -54,16 +55,18 @@ def main(args: argparse.Namespace) -> None:
     colors = COLORS_DEFAULT if args.sequence in ['CO4', 'CO8'] else COLORS_ENVS
     seeds = ['1', '2', '3']
     cl_data = {}
-    methods = METHODS if args.sequence in ['CO4', 'CD4'] else METHODS[:-1]
     sequence = args.sequence
     metric = args.metric
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
+    methods = METHODS if n_envs == 4 else METHODS[:-1]
     figsize = (6, 12) if n_envs == 4 else (9, 13)
     fig, ax = plt.subplots(len(methods), 1, sharey=True, sharex=True, figsize=figsize)
     env_names = [TRANSLATIONS[e] for e in envs]
     max_steps = -np.inf
-    iterations = 800 if sequence in ['CD4', 'CO4'] else 1600
+    iterations = args.task_length * n_envs
+    dof = len(seeds) - 1
+    significance = (1 - args.confidence) / 2
 
     for i, method in enumerate(methods):
         for j, env in enumerate(envs):
@@ -75,22 +78,22 @@ def main(args: argparse.Namespace) -> None:
                     continue
                 with open(path, 'r') as f:
                     data = json.load(f)
-                # max_steps = max(max_steps, len(data))
                 cl_data[f'{method}_{env}'] = data
                 steps = len(data)
                 max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
-                # print(f'{method}_{env}_{seed}: {len(steps)}')
 
-            y = np.nanmean(seed_data, axis=0)
-            y = gaussian_filter1d(y, sigma=2)
-            ci = np.nanstd(seed_data, axis=0)
-            ci = gaussian_filter1d(ci, sigma=2)
-            ax[i].plot(y, label=env, color=colors[j])
-            # ax[i].plot(y, label=env)
+            mean = np.nanmean(seed_data, axis=0)
+            mean = gaussian_filter1d(mean, sigma=2)
+            std = np.nanstd(seed_data, axis=0)
+            std = gaussian_filter1d(std, sigma=2)
+
+            t_crit = np.abs(t.ppf(significance, dof))
+            ci = std * t_crit / np.sqrt(len(seeds))
+
+            ax[i].plot(mean, label=env, color=colors[j])
             ax[i].tick_params(labelbottom=True)
-            ax[i].fill_between(np.arange(iterations), y - ci, y + ci, alpha=0.2, color=colors[j])
-            # print(f'{method}_{env} nan count: {np.isnan(y).sum()}')
+            ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.2, color=colors[j])
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method])
@@ -125,6 +128,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
                         help="Name of the task sequence")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
+    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
+    parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
 

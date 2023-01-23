@@ -4,6 +4,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
+from scipy.stats import t
 
 TRANSLATIONS = {
     'packnet': 'PackNet',
@@ -75,8 +76,10 @@ def main(args: argparse.Namespace) -> None:
     figsize = (6, 7) if n_envs == 4 else (7, 13)
     fig, ax = plt.subplots(n_envs, 1, sharex=True, figsize=figsize)
     max_steps = -np.inf
-    iterations = 800 if n_envs == 4 else 1600
+    iterations = args.task_length * n_envs
     methods = METHODS if n_envs == 4 else METHODS[:-1]
+    dof = len(seeds) - 1
+    significance = (1 - args.confidence) / 2
 
     for i, env in enumerate(envs):
         for j, method in enumerate(methods):
@@ -96,14 +99,17 @@ def main(args: argparse.Namespace) -> None:
                 seed_data[k, np.arange(steps)] = data
                 # print(f'{method}_{env}_{seed}: {len(steps)}')
 
-            y = np.nanmean(seed_data, axis=0)
-            y = gaussian_filter1d(y, sigma=2)
-            ci = np.nanstd(seed_data, axis=0)
-            ci = gaussian_filter1d(ci, sigma=2)
-            ax[i].plot(y, label=TRANSLATIONS[method], color=PLOT_COLORS[j])
+            mean = np.nanmean(seed_data, axis=0)
+            mean = gaussian_filter1d(mean, sigma=2)
+            std = np.nanstd(seed_data, axis=0)
+            std = gaussian_filter1d(std, sigma=2)
+
+            t_crit = np.abs(t.ppf(significance, dof))
+            ci = std * t_crit / np.sqrt(len(seeds))
+
+            ax[i].plot(mean, label=TRANSLATIONS[method], color=PLOT_COLORS[j])
             ax[i].tick_params(labelbottom=True)
-            ax[i].fill_between(np.arange(iterations), y - ci, y + ci, alpha=0.2, color=PLOT_COLORS[j])
-            # print(f'{method}_{env} nan count: {np.isnan(y).sum()}')
+            ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.2, color=PLOT_COLORS[j])
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])
@@ -135,6 +141,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
                         help="Name of the task sequence")
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
+    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
+    parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
 

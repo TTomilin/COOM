@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, List
 
+from scipy.stats import t
 import os
 
 import json
@@ -183,11 +184,14 @@ def calculate_forgetting(data: np.ndarray):
     return data_at_the_end, forgetting
 
 
-def main(args: argparse.Namespace) -> None:
-    seeds = ['1', '2', '3']
-    sequence = args.sequence
-    metric = args.metric
-    task_length = args.task_length
+def calculate_performance(data: np.ndarray):
+    data = data.mean(axis=3)
+    data = np.triu(data)
+    data[data == 0] = np.nan
+    return np.nanmean(data, axis=(-1, -2))
+
+
+def calc_metrics(metric, seeds, sequence, task_length):
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     iterations = n_envs * task_length
@@ -196,6 +200,8 @@ def main(args: argparse.Namespace) -> None:
     ci_data = np.empty((len(methods), n_envs, n_envs, task_length))
     cl_data[:] = np.nan
     ci_data[:] = np.nan
+    dof = len(seeds) - 1
+    significance = (1 - args.confidence) / 2
     for i, method in enumerate(methods):
         for j, env in enumerate(envs):
             seed_data = np.empty((len(seeds), n_envs, task_length))
@@ -210,29 +216,54 @@ def main(args: argparse.Namespace) -> None:
                 data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
                 data_per_task = np.array_split(data, n_envs)
                 seed_data[k] = data_per_task
-                # print(f'{method}_{env}_{seed}: {len(steps)}')
 
-            y = np.nanmean(seed_data, axis=0)
-            ci = np.nanstd(seed_data, axis=0)
-            cl_data[i][j] = y
+            mean = np.nanmean(seed_data, axis=0)
+            std = np.nanstd(seed_data, axis=0)
+            t_crit = np.abs(t.ppf(significance, dof))
+            ci = std * t_crit / np.sqrt(len(seeds))
+            cl_data[i][j] = mean
             ci_data[i][j] = ci
+    performance = calculate_performance(cl_data)
+    performance_ci = calculate_performance(ci_data)
     data_at_the_end, forgetting = calculate_forgetting(cl_data)
-    _, ci_forget = calculate_forgetting(ci_data)
-    # Join mean and std and normalize results
-    joined_results = np.array((forgetting, ci_forget))
-    joined_results = joined_results / np.linalg.norm(joined_results)
-    # Print results
+    _, forgetting_ci = calculate_forgetting(ci_data)
+    # Print performance results
+    print(f'\n\n{sequence}')
+    print_results(performance, performance_ci, methods, "Performance")
+    print_results(forgetting, forgetting_ci, methods, "Forgetting")
+
+    return performance, performance_ci, forgetting, forgetting_ci
+
+
+def print_results(metric_data: np.ndarray, ci: np.ndarray, methods: List[str], metric: str):
+    print(f'\n{"Method":<20}{metric:<20}{"CI":<20}')
     for i, method in enumerate(methods):
-        forget = joined_results[0][i]
-        ci = joined_results[1][i]
-        print(f'{method}: {forget :.2f} ({ci :.2f})')
+        print(f'{method:<20}{metric_data[i]:<20.2f}{ci[i]:.2f}')
+
+
+def normalize(metric_data, ci):
+    joined_results = np.array((metric_data, ci))
+    joined_results = joined_results / np.linalg.norm(joined_results)
+    return joined_results
+
+
+def main(cfg: argparse.Namespace) -> None:
+    performances, forgets = [], []
+    for sequence in cfg.sequences:
+        performance, forget = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length)
+        performances.append(performance)
+        forgets.append(forget)
+    print(f'\n\nAverage')
+    print(f'\n{"Method":<20}{"Performance":<20}{"CI":<20}')
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
-                        help="Name of the task sequence")
+    parser.add_argument("--sequences", type=str, nargs="+", required=True, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
+                        help="Sequences to evaluate")
+    parser.add_argument("--seeds", type=str, nargs="+", default=['1', '2', '3'], help="Seeds to evaluate")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to calculate forgetting")
+    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
