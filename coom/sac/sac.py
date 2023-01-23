@@ -1,7 +1,3 @@
-from threading import Thread
-
-import functools
-
 import math
 import numpy as np
 import os
@@ -158,7 +154,9 @@ class SAC:
         self.experiment_dir = experiment_dir
         self.model_path = model_path
         self.timestamp = timestamp
-        self.test_threads = []
+
+        self.test_threads_deterministic = []
+        self.test_threads_stochastic = []
 
         self.use_popart = critic_cl is PopArtMlpCritic
 
@@ -444,67 +442,36 @@ class SAC:
         ):
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
-    def test_agent(self, seq_idx, test_env, deterministic, num_episodes) -> None:
-        start_time = time.time()
+    def test_agent(self, deterministic, num_episodes) -> None:
         mode = "deterministic" if deterministic else "stochastic"
-        key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-        one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+        for seq_idx, test_env in enumerate(self.test_envs):
+            start_time = time.time()
+            key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
+            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
 
-        self.on_test_start(seq_idx)
+            self.on_test_start(seq_idx)
 
-        for j in range(num_episodes):
-            obs, _ = test_env.reset()
-            done, episode_return, episode_len = False, 0, 0
-            while not done:
-                obs, reward, done, _, _ = test_env.step(
-                    self.get_action_test(tf.convert_to_tensor(obs),
-                                         tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-                                         tf.constant(deterministic))
-                )
-                episode_return += reward
-                episode_len += 1
-            self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-            self.logger.store(test_env.get_statistics(key_prefix))
+            for j in range(num_episodes):
+                obs, _ = test_env.reset()
+                done, episode_return, episode_len = False, 0, 0
+                while not done:
+                    obs, reward, done, _, _ = test_env.step(
+                        self.get_action_test(tf.convert_to_tensor(obs),
+                                             tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                                             tf.constant(deterministic))
+                    )
+                    episode_return += reward
+                    episode_len += 1
+                self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+                self.logger.store(test_env.get_statistics(key_prefix))
 
-        print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
+            self.on_test_end(seq_idx)
+            print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
 
-        self.on_test_end(seq_idx)
-
-        self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
-        self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-        for stat in test_env.get_statistics(key_prefix).keys():
-            self.logger.log_tabular(stat, average_only=True)
-
-    # def test_agent(self, deterministic, num_episodes) -> None:
-    #     start_time = time.time()
-    #     mode = "deterministic" if deterministic else "stochastic"
-    #     for seq_idx, test_env in enumerate(self.test_envs):
-    #         key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-    #         one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
-    #
-    #         self.on_test_start(seq_idx)
-    #
-    #         for j in range(num_episodes):
-    #             obs, _ = test_env.reset()
-    #             done, episode_return, episode_len = False, 0, 0
-    #             while not done:
-    #                 obs, reward, done, _, _ = test_env.step(
-    #                     self.get_action_test(tf.convert_to_tensor(obs),
-    #                                          tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-    #                                          tf.constant(deterministic))
-    #                 )
-    #                 episode_return += reward
-    #                 episode_len += 1
-    #             self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
-    #             self.logger.store(test_env.get_statistics(key_prefix))
-    #
-    #         self.on_test_end(seq_idx)
-    #         print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
-    #
-    #         self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
-    #         self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
-    #         for stat in test_env.get_statistics(key_prefix).keys():
-    #             self.logger.log_tabular(stat, average_only=True)
+            self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
+            self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
+            for stat in test_env.get_statistics(key_prefix).keys():
+                self.logger.log_tabular(stat, average_only=True)
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -727,27 +694,31 @@ class SAC:
 
                 # Test the model on each task in a separate thread
                 test_start_time = time.time()
-                for thread in self.test_threads:
-                    if thread.is_alive():
-                        print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
-                        thread.join()
+                # for thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                #     if thread.is_alive():
+                #         print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
+                #         thread.join()
 
-                print("Creating new testing threads after: ", time.time() - test_start_time)
-
-                # Test the performance of stochastic and deterministic version of the agent.
-                self.test_threads = [
-                    Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
-                                                    self.num_test_eps_stochastic)) for seq_idx, test_env in
-                    enumerate(self.test_envs)]
-
-                for test_thread in self.test_threads:
-                    test_thread.start()
-                print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
+                # print("Creating new testing threads after: ", time.time() - test_start_time)
 
                 # Test the performance of stochastic and deterministic version of the agent.
-                # if self.test:
-                #     self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
-                #     print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
+                # self.test_threads_stochastic = [
+                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
+                #                                     self.num_test_eps_stochastic)) for seq_idx, test_env in
+                #     enumerate(self.test_envs_stoch)]
+                #
+                # self.test_threads_deterministic = [
+                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
+                #                                     self.num_test_eps_deterministic)) for seq_idx, test_env in
+                #     enumerate(self.test_envs_det)]
+                #
+                # for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                #     test_thread.start()
+
+                # Test the performance of stochastic and deterministic version of the agent.
+                if self.test:
+                    self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+                    print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
                 # Determine the current learning rate of the optimizer
                 lr = self.optimizer.lr
