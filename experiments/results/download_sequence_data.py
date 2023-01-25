@@ -1,3 +1,5 @@
+import os
+
 import argparse
 import json
 import wandb
@@ -35,7 +37,23 @@ SEQUENCES = {
         5: 'raise_the_roof',
         6: 'run_and_gun',
         7: 'health_gathering',
+    },
+    'COC': {
+        0: 'pitfall',
+        1: 'arms_dealer',
+        2: 'hide_and_seek',
+        3: 'floor_is_lava',
+        4: 'chainsaw',
+        5: 'raise_the_roof',
+        6: 'run_and_gun',
+        7: 'health_gathering',
     }
+}
+
+ENVS = {
+    'CO4': 'default',
+    'CO8': 'default',
+    'COC': 'hard',
 }
 
 METRICS = {
@@ -57,30 +75,34 @@ def main(args: argparse.Namespace) -> None:
     sequence = args.sequence
     for run in runs:
         if run.state == "finished" and sequence in run.url or any(logs in run.name for logs in args.failed_runs):
-            store_data(run, sequence, args.metric)
+            store_data(run, sequence, args.metric, args.type)
 
 
-def store_data(run: Run, sequence: str, required_metric: str) -> None:
+def store_data(run: Run, sequence: str, required_metric: str, data_type: str) -> None:
     seq_len = 4 if sequence in ['CD4', 'CO4'] else 8
     for env_idx in range(seq_len):
         task = SEQUENCES[sequence][env_idx]
         metric = METRICS[task] if required_metric is None else required_metric
-        env = f'{task}-default' if sequence in ['CO4', 'CO8'] else f'run_and_gun-{task}'
-        log_key = f'test/stochastic/{env_idx}/{env}/{metric}'
+        env = f'run_and_gun-{task}' if sequence in ['CD4', 'CD8'] else f'{task}-{ENVS[sequence]}'
+        log_key = f'test/stochastic/{env_idx}/{env}/{metric}' if data_type == 'test' else f'train/{metric}'
         history = list(iter(run.scan_history(keys=[log_key])))
-        if not history:
+        if not history:  # Legacy
             print(f'No data for {run.name} {env}')
-            env = f'seek_and_slay-{task}' if sequence == 'CO4' else f'seek_and_slay-default'
+            env = f'seek_and_slay-{task}' if sequence in ['CO4'] else f'seek_and_slay-default'
             log_key = f'test/stochastic/{env_idx}/seek_and_slay-{task}/{metric}'
             history = list(iter(run.scan_history(keys=[log_key])))
-            if not history:
+            if not history:  # More legacy
                 print(f'Still no data for {run.name} {env}')
                 log_key = f'test/stochastic/{env_idx}/seek_and_slay-shadows_obstacles/{metric}'
                 history = list(iter(run.scan_history(keys=[log_key])))
         values = [item[log_key] for item in history]
         method = get_cl_method(run)
         seed = max(run.config["seed"], 1)
-        file_name = f'./results/{sequence}/{method}/seed_{seed}/{task}_{metric}.json'
+        path = f'./{sequence}/{method}/seed_{seed}'
+        if not os.path.exists(path):
+            os.makedirs(path)
+            print(f"Created new directory {path}")
+        file_name = f'{path}/{task}_{metric}.json' if data_type == 'test' else f'{path}/train_{metric}.json'
         with open(file_name, 'w') as f:
             json.dump(values, f)
 
@@ -94,10 +116,10 @@ def get_cl_method(run):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
-    parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
-                        help="Name of the task sequence")
+    parser.add_argument("--sequence", type=str, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'], help="Sequence acronym")
     parser.add_argument("--failed_runs", type=str, nargs="+", default=[],
                         help="List of experiment names that don't have a 'finished' status, but ought to be downloaded")
     return parser.parse_args()
