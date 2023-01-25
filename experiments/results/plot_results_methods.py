@@ -54,7 +54,6 @@ def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn')
     colors = COLORS_DEFAULT if args.sequence in ['CO4', 'CO8'] else COLORS_ENVS
     seeds = ['1', '2', '3']
-    cl_data = {}
     sequence = args.sequence
     metric = args.metric
     envs = SEQUENCES[sequence]
@@ -78,7 +77,6 @@ def main(args: argparse.Namespace) -> None:
                     continue
                 with open(path, 'r') as f:
                     data = json.load(f)
-                cl_data[f'{method}_{env}'] = data
                 steps = len(data)
                 max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
@@ -97,6 +95,7 @@ def main(args: argparse.Namespace) -> None:
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method])
+        ax[i].yaxis.set_label_coords(-0.06, 0.5)
 
     n_envs = len(envs)
     env_steps = max_steps // n_envs
@@ -130,7 +129,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
     parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
-    parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
 
 

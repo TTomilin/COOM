@@ -67,8 +67,6 @@ METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory
 def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn')
     seeds = ['1', '2', '3']
-    cl_data = {}
-
     sequence = args.sequence
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
@@ -92,12 +90,9 @@ def main(args: argparse.Namespace) -> None:
                     continue
                 with open(path, 'r') as f:
                     data = json.load(f)
-                # max_steps = max(max_steps, len(data))
-                cl_data[f'{method}_{env}'] = data
                 steps = len(data)
                 max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
-                # print(f'{method}_{env}_{seed}: {len(steps)}')
 
             mean = np.nanmean(seed_data, axis=0)
             mean = gaussian_filter1d(mean, sigma=2)
@@ -113,6 +108,7 @@ def main(args: argparse.Namespace) -> None:
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])
+        ax[i].yaxis.set_label_coords(-0.06, 0.5)
 
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
@@ -143,7 +139,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
     parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
-    parser.add_argument("--output_path", type=str, default="results")
     return parser.parse_args()
 
 
