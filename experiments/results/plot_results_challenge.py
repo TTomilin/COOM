@@ -57,17 +57,17 @@ def main(args: argparse.Namespace) -> None:
     sequences = args.sequences
     n_envs = len(SCENARIOS)
     metric = None
-    n_cols = 2
-    n_rows = int(np.ceil(n_envs / n_cols))
-    fig, ax = plt.subplots(n_rows, n_cols, sharex=True, figsize=(5, 8))
+    n_rows = 2
+    n_cols = int(np.ceil(n_envs / n_rows))
+    fig, ax = plt.subplots(n_rows, n_cols, sharex=True, figsize=(8, 4))
     max_steps = -np.inf
     task_length = args.task_length
     dof = len(seeds) - 1
     significance = (1 - args.confidence) / 2
 
     for i, env in enumerate(SCENARIOS):
-        col = i // n_cols
         row = i % n_cols
+        col = i // n_cols
         for sequence in sequences:
             method = 'sac' if sequence == 'single' else 'packnet'
             metric = args.metric if args.metric else METRICS[env]
@@ -98,7 +98,7 @@ def main(args: argparse.Namespace) -> None:
 
         ax[col, row].set_ylabel(TRANSLATIONS[metric])
         ax[col, row].set_title(TRANSLATIONS[env])
-        ax[col, row].yaxis.set_label_coords(-0.225, 0.5)
+        ax[col, row].yaxis.set_label_coords(-0.25, 0.5)
 
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
