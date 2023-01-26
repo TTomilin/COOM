@@ -129,7 +129,7 @@ def main(args: argparse.Namespace) -> None:
         handles, labels = ax[-1].get_legend_handles_labels()
         n_cols = 4 if n_envs == 4 else 6
         fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=n_cols, fancybox=True, shadow=True, fontsize=11)
-        bottom_adjust = 0.06 if n_envs == 4 else 0.02
+        bottom_adjust = 0.07 if n_envs == 4 else 0.02
         plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
     else:
         plt.tight_layout()
