@@ -22,17 +22,23 @@ def main(args: argparse.Namespace) -> None:
     runs = api.runs(args.project)
     for run in runs:
         if run.id in args.run_ids:
-            store_data(run, args.metric)
+            store_data(run, args.metric, args.seed)
 
 
-def store_data(run: Run, required_metric: str) -> None:
+def store_data(run: Run, required_metric: str, seed: str) -> None:
     scenarios = METRICS.keys()
-    task = [scenario for scenario in scenarios if scenario in run.name][0]
+    task = [scenario for scenario in scenarios if scenario in run.name]
+    if not task:
+        print(f"Could not find task for run {run.name}")
+        task = 'run_and_gun'
+    else:
+        task = task[0]
     metric = METRICS[task] if required_metric is None else required_metric
     log_key = f'train/{metric}'
     history = list(iter(run.scan_history(keys=[log_key])))
     values = [item[log_key] for item in history][:200]
-    file_name = f'./single/{task}_{metric}.json'
+    file_name = f'./single/sac/seed_{seed}/{task}_{metric}.json'
+    print(f'Saving {file_name}')
     with open(file_name, 'w') as f:
         json.dump(values, f)
 
@@ -41,6 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
+    parser.add_argument("--seed", type=str, required=True, choices=['1', '2', '3'], help="Seed of the run")
     parser.add_argument("--run_ids", type=str, nargs="+", default=[], help="List of experiment names to downloaded")
     return parser.parse_args()
 

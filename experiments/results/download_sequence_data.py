@@ -1,7 +1,6 @@
-import os
-
 import argparse
 import json
+import os
 import wandb
 from wandb.apis.public import Run
 
@@ -88,7 +87,7 @@ def store_data(run: Run, sequence: str, required_metric: str, data_type: str) ->
         history = list(iter(run.scan_history(keys=[log_key])))
         if not history:  # Legacy
             print(f'No data for {run.name} {env}')
-            env = f'seek_and_slay-{task}' if sequence in ['CO4'] else f'seek_and_slay-default'
+            env = f'seek_and_slay-default' if sequence in ['CO4'] else f'seek_and_slay-{task}'
             log_key = f'test/stochastic/{env_idx}/seek_and_slay-{task}/{metric}'
             history = list(iter(run.scan_history(keys=[log_key])))
             if not history:  # More legacy

@@ -27,7 +27,7 @@ TRANSLATIONS = {
     'obstacles': 'Obstacles',
     'green': 'Green',
     'resized': 'Resized',
-    'invulnerable': 'Invulnerable',
+    'invulnerable': 'Monsters',
     'default': 'Default',
     'red': 'Red',
     'blue': 'Blue',
@@ -45,27 +45,33 @@ SEQUENCES = {
             'health_gathering'],
 }
 
-COLORS_ENVS = ['#55A868', '#C44E52', '#4C72B0', '#8172B2']
-COLORS_DEFAULT = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
+COLORS = {
+    'CD4': ['#55A868', '#C44E52', '#4C72B0', '#8172B2'],
+    'CO4': ['#4C72B0', '#55A868', '#C44E52', '#8172B2'],
+    'CD8': ['#64B5CD', '#55A868', '#777777', '#8172B2', '#CCB974', '#C44E52', '#4C72B0', '#917113'],
+    'CO8': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113'],
+    'COC': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
+}
+
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
 
 
-def main(args: argparse.Namespace) -> None:
+def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn')
-    colors = COLORS_DEFAULT if args.sequence in ['CO4', 'CO8'] else COLORS_ENVS
+    colors = COLORS[cfg.sequence]
     seeds = ['1', '2', '3']
-    sequence = args.sequence
-    metric = args.metric
+    sequence = cfg.sequence
+    metric = cfg.metric
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     methods = METHODS if n_envs == 4 else METHODS[:-1]
-    figsize = (6, 12) if n_envs == 4 else (9, 13)
-    fig, ax = plt.subplots(len(methods), 1, sharey=True, sharex=True, figsize=figsize)
+    # figsize = (6, 12) if n_envs == 4 else (9, 13)
+    fig, ax = plt.subplots(len(methods), 1, sharey=True, sharex=True, figsize=(9, 14))
     env_names = [TRANSLATIONS[e] for e in envs]
     max_steps = -np.inf
-    iterations = args.task_length * n_envs
+    iterations = cfg.task_length * n_envs
     dof = len(seeds) - 1
-    significance = (1 - args.confidence) / 2
+    significance = (1 - cfg.confidence) / 2
 
     for i, method in enumerate(methods):
         for j, env in enumerate(envs):
@@ -89,13 +95,12 @@ def main(args: argparse.Namespace) -> None:
             t_crit = np.abs(t.ppf(significance, dof))
             ci = std * t_crit / np.sqrt(len(seeds))
 
-            ax[i].plot(mean, label=env, color=colors[j])
+            ax[i].plot(mean, label=TRANSLATIONS[env], color=colors[j])
             ax[i].tick_params(labelbottom=True)
             ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.2, color=colors[j])
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method])
-        ax[i].yaxis.set_label_coords(-0.06, 0.5)
 
     n_envs = len(envs)
     env_steps = max_steps // n_envs
@@ -115,9 +120,8 @@ def main(args: argparse.Namespace) -> None:
 
     n_cols = n_envs if n_envs == 4 else n_envs // 2
     ax[-1].set_xlabel("Timesteps (K)")
-    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.8), ncol=n_cols, fancybox=True, shadow=True)
-    bottom_adjust = -0.01 if n_envs == 4 else 0.00
-    plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
+    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_cols, fancybox=True, shadow=True)
+    plt.tight_layout()
     plt.savefig(f'plots/{sequence}_methods_{metric}.png')
     plt.show()
 

@@ -1,13 +1,9 @@
-from typing import Dict, List
-
-from scipy.stats import t
-import os
-
-import json
-
 import argparse
+import json
 import numpy as np
-
+import os
+from scipy.stats import t
+from typing import List
 
 TRANSLATIONS = {
     'packnet': 'PackNet',
@@ -191,11 +187,13 @@ def calculate_performance(data: np.ndarray):
     return np.nanmean(data, axis=(-1, -2))
 
 
-def calc_metrics(metric, seeds, sequence, task_length):
+def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int, second_half: bool):
     envs = SEQUENCES[sequence]
+    if second_half:
+        envs = envs[len(envs) // 2:]
     n_envs = len(envs)
     iterations = n_envs * task_length
-    methods = METHODS if n_envs == 4 else METHODS[:-1]  # Omit Perfect Memory for 8 env sequences
+    methods = METHODS if n_envs == 4 or second_half else METHODS[:-1]  # Omit Perfect Memory for 8 env sequences
     cl_data = np.empty((len(methods), n_envs, n_envs, task_length))
     ci_data = np.empty((len(methods), n_envs, n_envs, task_length))
     cl_data[:] = np.nan
@@ -212,6 +210,8 @@ def calc_metrics(metric, seeds, sequence, task_length):
                     continue
                 with open(path, 'r') as f:
                     data = json.load(f)
+                if second_half:
+                    data = data[len(data) // 2:]
                 steps = len(data)
                 data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
                 data_per_task = np.array_split(data, n_envs)
@@ -248,13 +248,16 @@ def normalize(metric_data, ci):
 
 
 def main(cfg: argparse.Namespace) -> None:
-    # Collect all results from calc_metrics and calculate averages across methods of different length
-    performances = np.empty((len(SEQUENCES), len(METHODS)))
-    performance_cis = np.empty((len(SEQUENCES), len(METHODS)))
-    forgettings = np.empty((len(SEQUENCES), len(METHODS)))
-    forgetting_cis = np.empty((len(SEQUENCES), len(METHODS)))
-    for i, sequence in enumerate(SEQUENCES):
-        performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length)
+    sequences = cfg.sequences
+
+    calculate_forward_transfer()
+
+    performances = np.empty((len(sequences), len(METHODS)))
+    performance_cis = np.empty((len(sequences), len(METHODS)))
+    forgettings = np.empty((len(sequences), len(METHODS)))
+    forgetting_cis = np.empty((len(sequences), len(METHODS)))
+    for i, sequence in enumerate(sequences):
+        performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length, cfg.second_half)
         performances[i] = np.pad(performance, (0, len(METHODS) - len(performance)), 'constant', constant_values=np.nan)
         performance_cis[i] = np.pad(performance_ci, (0, len(METHODS) - len(performance_ci)), 'constant', constant_values=np.nan)
         forgettings[i] = np.pad(forgetting, (0, len(METHODS) - len(forgetting)), 'constant', constant_values=np.nan)
@@ -276,7 +279,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to calculate forgetting")
     parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
-    parser.add_argument("--output_path", type=str, default="results")
+    parser.add_argument("--second_half", default=False, action='store_true', help="Only regard sequence 2nd half")
     return parser.parse_args()
 
 

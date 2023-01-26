@@ -4,7 +4,6 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
-from scipy.stats import t
 
 TRANSLATIONS = {
     'packnet': 'PackNet',
@@ -14,6 +13,7 @@ TRANSLATIONS = {
     'vcl': 'VCL',
     'fine_tuning': 'Fine-tuning',
     'perfect_memory': 'Perfect Memory',
+    'sac': 'SAC',
 
     'pitfall': 'Pitfall',
     'arms_dealer': 'Arms Dealer',
@@ -50,6 +50,8 @@ METRICS = {
     'default': 'kills',
 }
 
+COLORS = ['#C44E52', '#55A868']
+
 
 def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn')
@@ -57,19 +59,18 @@ def main(args: argparse.Namespace) -> None:
     sequences = args.sequences
     n_envs = len(SCENARIOS)
     metric = None
-    n_cols = 2
-    n_rows = int(np.ceil(n_envs / n_cols))
-    fig, ax = plt.subplots(n_rows, n_cols, sharex=True, figsize=(5, 8))
-    max_steps = -np.inf
+    n_rows = 2
+    n_cols = int(np.ceil(n_envs / n_rows))
+    # fig, ax = plt.subplots(n_rows, n_cols, sharex=True, figsize=(5, 8))
+    fig, ax = plt.subplots(n_rows, n_cols, sharex=True, figsize=(8, 4))
     task_length = args.task_length
-    dof = len(seeds) - 1
-    significance = (1 - args.confidence) / 2
 
     for i, env in enumerate(SCENARIOS):
-        col = i // n_cols
         row = i % n_cols
-        for sequence in sequences:
-            method = 'sac' if sequence == 'single' else 'packnet'
+        col = i // n_cols
+        reference = None
+        for j, sequence in enumerate(sequences):
+            method = 'sac' if sequence == 'single' else args.method
             metric = args.metric if args.metric else METRICS[env]
             seed_data = np.empty((len(seeds), task_length))
             seed_data[:] = np.nan
@@ -81,24 +82,23 @@ def main(args: argparse.Namespace) -> None:
                     task_start = 0 if sequence == 'single' else i * task_length
                     data = json.load(f)[task_start: task_start + task_length]
                 steps = len(data)
-                max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
 
             mean = np.nanmean(seed_data, axis=0)
             mean = gaussian_filter1d(mean, sigma=2)
-            std = np.nanstd(seed_data, axis=0)
-            std = gaussian_filter1d(std, sigma=2)
 
-            t_crit = np.abs(t.ppf(significance, dof))
-            ci = std * t_crit / np.sqrt(len(seeds))
-
-            ax[col, row].plot(mean, label=TRANSLATIONS[sequence])
+            ax[col, row].plot(mean, label=TRANSLATIONS[method], color=COLORS[j])
             ax[col, row].tick_params(labelbottom=True)
-            ax[col, row].fill_between(np.arange(task_length), mean - ci, mean + ci, alpha=0.2)
+            ax[col, row].ticklabel_format(style='sci', axis='y', scilimits=(0, 4))
+            if reference is None:
+                reference = mean
+            else:
+                ax[col, row].fill_between(np.arange(task_length), mean, reference, where=(mean < reference), alpha=0.2, color=COLORS[0], interpolate=True)
+                ax[col, row].fill_between(np.arange(task_length), mean, reference, where=(mean >= reference), alpha=0.2, color=COLORS[1], interpolate=True)
 
-        ax[col, row].set_ylabel(TRANSLATIONS[metric])
-        ax[col, row].set_title(TRANSLATIONS[env])
-        ax[col, row].yaxis.set_label_coords(-0.225, 0.5)
+        ax[col, row].set_ylabel(TRANSLATIONS[metric], fontsize=11)
+        ax[col, row].set_title(TRANSLATIONS[env], fontsize=11)
+        ax[col, row].yaxis.set_label_coords(-0.26, 0.5)
 
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
@@ -109,15 +109,15 @@ def main(args: argparse.Namespace) -> None:
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=3, fancybox=True, shadow=True)
     fig.tight_layout()
-    plt.savefig('plots/COC.png')
+    plt.savefig(f'plots/transfer_{method}.png')
     plt.show()
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequences", type=str, nargs="+", default=['COC', 'CO8'])
+    parser.add_argument("--sequences", type=str, nargs="+", default=['single', 'CO8'])
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
-    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
+    parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser.parse_args()
 

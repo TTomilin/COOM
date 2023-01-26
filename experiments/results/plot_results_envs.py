@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from scipy.stats import t
 
+from coom.utils.utils import str2bool
+
 TRANSLATIONS = {
     'packnet': 'PackNet',
     'mas': 'MAS',
@@ -27,7 +29,7 @@ TRANSLATIONS = {
     'obstacles': 'Obstacles',
     'green': 'Green',
     'resized': 'Resized',
-    'invulnerable': 'Invulnerable',
+    'invulnerable': 'Monsters',
     'default': 'Default',
     'red': 'Red',
     'blue': 'Blue',
@@ -71,8 +73,9 @@ def main(args: argparse.Namespace) -> None:
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     metric = None
-    figsize = (6, 7) if n_envs == 4 else (7, 13)
-    fig, ax = plt.subplots(n_envs, 1, sharex=True, figsize=figsize)
+    figsize = (6, 6) if n_envs == 4 else (7, 13)
+    share_y = sequence in ['CD4', 'CD8']
+    fig, ax = plt.subplots(n_envs, 1, sharex=True, sharey=share_y, figsize=figsize)
     max_steps = -np.inf
     iterations = args.task_length * n_envs
     methods = METHODS if n_envs == 4 else METHODS[:-1]
@@ -108,7 +111,7 @@ def main(args: argparse.Namespace) -> None:
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])
-        ax[i].yaxis.set_label_coords(-0.06, 0.5)
+        ax[i].yaxis.set_label_coords(-0.07, 0.5)
 
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
@@ -122,11 +125,14 @@ def main(args: argparse.Namespace) -> None:
     ax2.tick_params(axis='both', which='both', length=0)
 
     ax[-1].set_xlabel("Timesteps (K)")
-    handles, labels = ax[-1].get_legend_handles_labels()
-    n_cols = 4 if n_envs == 4 else 6
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=n_cols, fancybox=True, shadow=True)
-    bottom_adjust = 0.06 if n_envs == 4 else 0.02
-    plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
+    if args.plot_legend:
+        handles, labels = ax[-1].get_legend_handles_labels()
+        n_cols = 4 if n_envs == 4 else 6
+        fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=n_cols, fancybox=True, shadow=True, fontsize=11)
+        bottom_adjust = 0.06 if n_envs == 4 else 0.02
+        plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
+    else:
+        plt.tight_layout()
     plot_name = f'{sequence}_envs_{metric}' if args.metric else sequence
     plt.savefig(f'plots/{plot_name}.png')
     plt.show()
@@ -139,6 +145,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
     parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
+    parser.add_argument("--plot_legend", type=str2bool, default=True, help="Whether to plot the legend")
     return parser.parse_args()
 
 
