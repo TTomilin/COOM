@@ -47,129 +47,6 @@ SEQUENCES = {
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
 
 
-def calculate_forward_transfer(data, baseline_data, normalize=True):
-    data = data.copy()
-
-    task_num_to_name = get_task_num_to_name(data)
-    steps_per_task = int(data.steps_per_task.unique())
-
-    long_baseline = []
-    for env in sorted(data["train/active_env"].unique()):
-        #         if np.isnan(env): continue
-        env = int(env)
-        env_name = task_num_to_name[env]
-
-        # baseline
-        current_baseline = baseline_data[baseline_data["task"] == env_name].copy()
-        current_baseline["current_success"] = current_baseline[
-            f"test/stochastic/0/{env_name}/success"
-        ]
-        current_baseline["x"] += env * steps_per_task
-        current_baseline["train/active_env"] = env
-        long_baseline += [current_baseline]
-
-        # current task: update data with 'current_succes' column
-        env_indices = data["train/active_env"] == env
-        current_col = data.columns[
-            data.columns.str.contains(f"test/stochastic/{env}/.*/success", regex=True)
-        ][0]
-        data.loc[env_indices, "current_success"] = data.loc[env_indices, current_col]
-
-    long_baseline = pd.concat(long_baseline)
-
-    # correct for double seeds
-    #     unique_exps = data.groupby(['experiment_id', 'seed'], as_index=False).size()
-    #     target_size = 500 if cw10 else 1000
-    #     unique_exps = unique_exps[unique_exps['size'] == target_size].drop_duplicates(subset='seed', keep="last")['experiment_id']
-    #     data = data[data['experiment_id'].isin(unique_exps)].reset_index()
-    # display(data.groupby(['experiment_id', 'seed'], as_index=False).size())
-
-    data = (
-        data.drop("x", axis=1)
-        .groupby(["train/active_env", "experiment_id"])["current_success"]
-        .mean()
-        .reset_index()
-    )
-    long_baseline = (
-        long_baseline.drop("x", axis=1)
-        .groupby(["train/active_env", "experiment_id"])["current_success"]
-        .mean()
-        .reset_index()
-    )
-
-    # ugly
-    X = data.pivot(
-        index="experiment_id", columns="train/active_env", values="current_success"
-    ).to_numpy()
-    Y = long_baseline.pivot(
-        index="experiment_id", columns="train/active_env", values="current_success"
-    ).reset_index(drop=True)
-    Y = pd.DataFrame({c: Y[c].dropna().values for c in Y.columns}).to_numpy()
-
-    T = X.shape[1]
-
-    ranges = {f"[{i}]": range(i, i + 1) for i in range(T)}
-    ranges.update(
-        {
-            f"[{0}:{T // 2}]": range(0, T // 2),
-            f"[{T // 2}:{T}]": range(T // 2, T),
-            f"[{0}:{T}]": range(0, T),
-        }
-    )
-
-    BCI = BootstrapCI(
-        X=X, Y=Y, num_bootstrap=4000, confidence=0.9, statistics=statistics, ranges=ranges, seed=0
-    )
-    CIs = BCI.ci()
-
-    ci_result = defaultdict(list)
-
-    for env in sorted(data["train/active_env"].unique()):
-        ci_result["train/active_env"].append(env)
-
-        for name in statistics.keys():
-            lb, ub = CIs[name][f"[{int(env)}]"]
-            m = BCI.original_data_metrics[name][f"[{int(env)}]"]
-
-            ci_result[f"lower_bound_{name}"].append(lb)
-            ci_result[f"upper_bound_{name}"].append(ub)
-            ci_result[f"CI_{name}"].append(f"{m:.2f} [{lb:.2f}, {ub:.2f}]")
-
-            lbfh, ubfh = CIs[name][f"[{0}:{T // 2}]"]
-            lbsh, ubsh = CIs[name][f"[{T // 2}:{T}]"]
-            lbt, ubt = CIs[name][f"[{0}:{T}]"]
-            mfh = BCI.original_data_metrics[name][f"[{0}:{T // 2}]"]
-            msh = BCI.original_data_metrics[name][f"[{T // 2}:{T}]"]
-            mt = BCI.original_data_metrics[name][f"[{0}:{T}]"]
-
-            ci_result[f"lb_first_half_{name}"].append(lbfh)
-            ci_result[f"ub_first_half_{name}"].append(ubfh)
-            ci_result[f"CI_first_half_{name}"].append(f"{mfh:.2f} [{lbfh:.2f}, {ubfh:.2f}]")
-
-            ci_result[f"lb_second_half_{name}"].append(lbsh)
-            ci_result[f"ub_second_half_{name}"].append(ubsh)
-            ci_result[f"CI_second_half_{name}"].append(f"{msh:.2f} [{lbsh:.2f}, {ubsh:.2f}]")
-
-            ci_result[f"lb_total_{name}"].append(lbt)
-            ci_result[f"ub_total_{name}"].append(ubt)
-            ci_result[f"CI_total_{name}"].append(f"{mt:.2f} [{lbt:.2f}, {ubt:.2f}]")
-            ci_result[f"total_{name}"].append(mt)
-
-    ci_result = pd.DataFrame(ci_result)
-
-    # We have all the data inside - best place for confidence interval analysis :)
-    data = data.merge(long_baseline, on="train/active_env", suffixes=("", "_baseline"))
-    data = data.groupby("train/active_env").mean()
-    data = data.merge(ci_result, on="train/active_env")
-
-    data["ft"] = data["current_success"] - data["current_success_baseline"]
-    data["normalized_ft"] = data["ft"] / (1 - data["current_success_baseline"])
-    #     for name in statistics.keys():
-    #         data[f'{name}_CI'] = data[f'{name}'].map('{:.2f}'.format) + " " + data[f'CI_{name}']
-
-    return data
-
-
 def calculate_data_at_the_end(data):
     return data[:, :, :, -10:].mean(axis=3)
 
@@ -247,10 +124,36 @@ def normalize(metric_data, ci):
     return joined_results
 
 
+def calc_forward_transfer(performances, performance_ci, baseline):
+    methods = METHODS[:-1]
+    transfer = np.empty((len(methods), len(methods)))
+    transfer_ci = np.empty((len(methods), len(methods)))
+
+    # TODO calculate forward transfer
+
+    print_results(transfer, transfer_ci, methods, "Transfer")
+    return []
+
+
+def get_baseline_data(seeds: List[str], task_length: int, sequence: str = 'CO8', set_metric: str = None) -> np.ndarray:
+    scenarios = SEQUENCES[sequence]
+    seed_data = np.empty((len(seeds), task_length * len(scenarios)))
+    seed_data[:] = np.nan
+    metric = 'success'
+    for i, env in enumerate(scenarios):
+        for k, seed in enumerate(seeds):
+            path = f'{os.getcwd()}/single/sac/seed_{seed}/{env}_{metric}.json'
+            with open(path, 'r') as f:
+                data = json.load(f)[0: task_length]
+            steps = len(data)
+            start = i * task_length
+            seed_data[k, np.arange(start, start + steps)] = data
+    baseline_data = np.nanmean(seed_data, axis=0)
+    return baseline_data
+
+
 def main(cfg: argparse.Namespace) -> None:
     sequences = cfg.sequences
-
-    calculate_forward_transfer()
 
     performances = np.empty((len(sequences), len(METHODS)))
     performance_cis = np.empty((len(sequences), len(METHODS)))
@@ -266,9 +169,16 @@ def main(cfg: argparse.Namespace) -> None:
     performance_ci = np.nanmean(performance_cis, axis=0)
     forgetting = np.nanmean(forgettings, axis=0)
     forgetting_ci = np.nanmean(forgetting_cis, axis=0)
+
+
+    # TODO calculate forward transfer for CO8 sequence
+    baseline_data = get_baseline_data(cfg.seeds, cfg.task_length)
+    transfer, transfer_ci = calc_forward_transfer(performances, performance_ci, baseline_data)
+
     print(f'\n\nAverage')
     print_results(performance, performance_ci, METHODS, "Performance")
     print_results(forgetting, forgetting_ci, METHODS, "Forgetting")
+    print_results(transfer, transfer_ci, METHODS, "Performance")
 
 
 def parse_args() -> argparse.Namespace:
