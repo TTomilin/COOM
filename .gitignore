@@ -162,3 +162,5 @@ _vizdoom.ini
 # Results
 /experiments/results/data/helpful_snippets
 /experiments/results/data/calc_4vs8.py
+/experiments/results/fix_data.py
+/experiments/results/data/CD8_backup/
