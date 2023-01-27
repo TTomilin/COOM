@@ -1,6 +1,7 @@
 # COOM
 
-COOM is a benchmark for continual reinforcement learning. It is based on tasks created in the [ViZDoom](https://github.com/mwydmuch/ViZDoom) platform.
+COOM is a Continual Learning benchmark for embodied pixel-based RL, consisting of multiple task sequences in visually 
+distinct 3D environments with diverse objectives. It is based on the [ViZDoom](https://github.com/mwydmuch/ViZDoom) platform.
 
 [//]: # (The core of our benchmark is CW20 sequence, in which 20 tasks are run, each with budget of 1M steps.)
 
@@ -20,6 +21,49 @@ $ cd COOM
 ```bash 
 $ python install setup.py
 ```
+
+## Environments
+The benchmark consists of 8 scenarios:
+
+| Scenario      | Success Metric    | Enemies | Weapon  | Items   | Max Steps | Execute | Stochasticity                              | 
+|---------------|-------------------|---------|---------|---------|-----------|---------|--------------------------------------------|    
+| Pitfall       | Distance Covered  | &cross; | &cross; | &cross; | 1000      | JUMP    | Pitfall tile locations                     | 
+| Arms Dealer   | Weapons Delivered | &cross; | &check; | &check; | 1000      | SPEED   | Weapon spawn locations, delivery locations | 
+| Hide and Seek | Frames Alive      | &check; | &cross; | &check; | 2500      | SPEED   | Enemy behaviour, item spawn locations      | 
+| Floor is Lava | Frames Alive      | &cross; | &cross; | &cross; | 2500      | SPEED   | Platform locations                         | 
+| Chainsaw      | Kill Count        | &check; | &check; | &cross; | 2500      | ATTACK  | Enemy and agent spawn locations            | 
+| Raise the Roof | Frames Alive      | &cross; | &cross; | &cross; | 2500      | USE     | Agent spawn location                       | 
+| Run and Gun   | Kill Count        | &check; | &check; | &cross; | 2500      | ATTACK  | Enemy and agent spawn locations            | 
+| Health Gathering | Frames Alive      | &cross; | &cross; | &check; | 2500      | SPEED   | Health kit spawn locations                 | 
+
+
+
+## Task Sequences for CL
+There are two lengths of Continual Learning task sequences in our benchmark: the primary 8 task sequence, and a shorter 
+4 task version, which is comprised of the 2<sup>nd</sup> half of the original one. The task sequences are further 
+distinguished by the altering type: cross-domain and cross-objective. 
+
+### Cross-Domain
+In the cross-domain setting, the agent is sequentially trained on modified versions of the same ViZDoom scenario. 
+`Run and Gun` is selected as basis for this CL sequence, since out of the 8 scenarios in the benchmark, it best resembles 
+the actual Doom game, requiring the agent to navigate the map and eliminate enemies by firing a weapon. The objective and
+the layout of the map remain the same across tasks, whereas we modify the environment in the following ways: 
+1) Changing the textures of the surrounding walls, ceiling and floor 
+2) Varying the size, shape and type of enemies 
+3) Randomizing the view height of the agent, and 
+4) Adding objects to the environment which act as obstacles, blocking the agent’s movement.
+
+#### Depiction of the tasks in the CD8 sequence in order
+![Default](assets/images/sequences/CD8_sequence.png)
+### Cross-Objective
+Cross-objective task sequences employ a different scenario with a novel objective for each consecutive task, apart from 
+only changing the visuals and dynamics of a single scenario. This presents a diverse challenge, as the goal might 
+drastically change from locating and eliminating enemies (`Run and Gun` and `Chainsaw`) to running away and hiding 
+from them (`Hide and Seek`). In a similar fashion, the scenario `Floor is Lava` often requires the agent to remain at a 
+bounded location for optimal performance, whereas scenarios `Pitfall`, `Arms Dealer`, `Raise the Roof`, and `Health 
+Gathering` endorse constant movement.
+#### Depiction of the tasks in the CO8 sequence in order
+![Default](assets/images/sequences/CO8_sequence.png)
 
 # Running
 
@@ -50,13 +94,30 @@ python run_cl.py --sequence CO8 --cl_method agem --regularize_critic True --epis
 python run_cl.py --sequence COC --batch_size 512 --buffer_type reservoir --reset_buffer_on_task_change False --replay_size 2e5
 ```
 
-# Reproducing results
+## Results
+
+### Average Performance
+The performance (success rate) averaged over tasks is a typical metric for the CL setting. The agent is continually
+evaluated on each of the tasks in the sequence even before it has been trained on it.
+
+![Default](experiments/results/data/plots/CO8_methods_success.png)
+
+### Forward Transfer
+The COOM benchmark can also be used to evaluate forward transfer, which enables faster learning and/or better final 
+performance owing to already learned tasks. We compare the training performance each  CL method with a SAC baseline, 
+which is trained directly on the same from scratch without any CL-specific modifications. The red areas between the 
+curves represent negative forward transfer and other colors represent positive forward transfer. We depict the results
+of forward transfer for the CO8 sequence, which is the most challenging one in the benchmark.
+
+![Default](experiments/results/data/plots/transfer.png)
+
+## Reproducing results
 
 ### Running experiments
 The scripts for running all our experiments in the paper can be found [here](https://github.com/TTomilin/COOM/tree/main/experiments/scripts).
 
 ### Downloading results
-We recommend using [Weights & Biases](https://wandb.ai/) to log your experiments. 
+We recommend using [Weights | Biases](https://wandb.ai/) to log your experiments. 
 Having done so, [download,py](https://github.com/TTomilin/COOM/tree/main/experiments/results/download.py) can be used to download results:  
 `python download.py --project <PROJECT> --sequence <SEQUENCE> --metric <METRIC>`  
 The relevant metrics used in the paper are: `success` and `kills`.
