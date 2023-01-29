@@ -534,7 +534,7 @@ class SAC:
 
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
-        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.env.task}'
+        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.env.name}'
         print(f"Saving models to {model_dir}")
         dir_prefixes = []
         if current_task_idx == -1:
@@ -613,7 +613,7 @@ class SAC:
 
             # Until start_steps have elapsed, randomly sample actions from a uniform
             # distribution for better exploration. Afterwards, use the learned policy.
-            if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0):
+            if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
                 action = self.get_action(tf.convert_to_tensor(obs),
                                          tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
