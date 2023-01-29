@@ -8,7 +8,7 @@ from coom.envs import get_cl_env, get_single_envs, ContinualLearningEnv
 from coom.methods.vcl import VclMlpActor
 from coom.sac.models import MlpActor
 from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import BufferType, Sequence
+from coom.utils.enums import BufferType, Sequence, DoomScenario
 from coom.utils.run_utils import get_sac_class
 from coom.utils.utils import get_activation_from_str
 from coom.utils.wandb_utils import init_wandb
@@ -17,8 +17,10 @@ from input_args import parse_args
 
 def main(args: Namespace):
     sequence = Sequence[args.sequence.upper()].value
-    scenarios = args.test_envs if args.test_only else sequence['scenarios']
-    envs = args.test_envs if args.test_only else sequence['envs']
+    scenarios = sequence['scenarios']
+    envs = sequence['envs']
+    test_scenarios = [DoomScenario[scenario.upper()] for scenario in args.scenarios] if args.test_only else scenarios
+    test_envs = args.envs if args.test_only else envs
     args.experiment_dir = Path(__file__).parent.resolve()
     args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.num_tasks = len(scenarios) * len(envs)
@@ -35,10 +37,11 @@ def main(args: Namespace):
     logger.log(f'Scenarios: {[s.name for s in scenarios]}')
     logger.log(f'Environments: {envs}')
 
-    test_envs = get_single_envs(args, scenarios, envs)
-    train_env = get_cl_env(args, scenarios, envs)
+    one_hot_id = scenarios.index(test_scenarios[0]) if args.test_only else None
+    test_envs = get_single_envs(args, test_scenarios, test_envs, one_hot_id)
     if args.test_only:
-        train_env = ContinualLearningEnv(np.repeat(test_envs[0], len(scenarios)).tolist(), args.steps_per_env)
+        args.render = False
+    train_env = get_cl_env(args, scenarios, envs)
 
     num_heads = args.num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
@@ -56,6 +59,7 @@ def main(args: Namespace):
         "test_envs": test_envs,
         "test": args.test,
         "test_only": args.test_only,
+        "num_test_eps_stochastic": args.test_episodes,
         "logger": logger,
         "scenarios": scenarios,
         "cl_method": args.cl_method,

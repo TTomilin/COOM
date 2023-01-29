@@ -39,6 +39,8 @@ def main(args: Namespace):
     scenario_class = DoomScenario[args.scenarios[0].upper()].value
     env = get_single_env(args, scenario_class, args.envs[0], one_hot_idx, one_hot_len)
     test_envs = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_envs]
+    if not test_envs and args.test_only:
+        test_envs = [env]
 
     sac = SAC(
         env,
@@ -68,6 +70,8 @@ def main(args: Namespace):
         experiment_dir=args.experiment_dir,
         model_path=args.model_path,
         timestamp=args.timestamp,
+        test_only=args.test_only,
+        num_test_eps_stochastic=args.test_episodes,
         buffer_type=BufferType(args.buffer_type),
     )
     sac.run()

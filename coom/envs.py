@@ -165,10 +165,10 @@ def get_mt_env(
     return mt_env
 
 
-def get_single_envs(args: Namespace, scenarios: List[DoomEnv], envs: List[str]) -> List[gym.Env]:
-    envs = [get_single_env(args, scenario_task[0].value, scenario_task[1], one_hot_idx=i,
+def get_single_envs(args: Namespace, scenarios: List[DoomEnv], env_names: List[str], one_hot_id: int = None) -> List[gym.Env]:
+    envs = [get_single_env(args, scenario_task[0].value, scenario_task[1], one_hot_idx=one_hot_id if one_hot_id else i,
                            one_hot_len=args.num_tasks) for i, scenario_task in
-            enumerate(itertools.product(scenarios, envs))]
+            enumerate(itertools.product(scenarios, env_names))]
     return envs
 
 
