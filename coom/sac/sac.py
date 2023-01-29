@@ -534,7 +534,7 @@ class SAC:
 
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
-        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}/{self.env.name}'
+        model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}_{self.env.name}'
         print(f"Saving models to {model_dir}")
         dir_prefixes = []
         if current_task_idx == -1:
