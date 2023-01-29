@@ -15,8 +15,6 @@ def parse_args(args=None):
                         default=None, help="If None, the fine-tuning method will be used")
     parser.add_argument("--envs", type=str, nargs="+", default=['default'],
                         help="Name of the environments in the scenario(s) to run")
-    parser.add_argument("--test_envs", type=str, nargs="+", default=[],
-                        help="Name of the environments in the scenario(s) to test on")
     parser.add_argument("--sequence", type=str, default=None, choices=['CD4', 'CD8', 'CO4', 'CO8', 'COC'],
                         help="Name of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
@@ -89,6 +87,7 @@ def parse_args(args=None):
     # Testing
     parser.add_argument("--test", type=str2bool, default=True, help="Whether to test the model")
     parser.add_argument("--test_only", default=False, action='store_true', help="Whether to only test the model")
+    parser.add_argument("--test_episodes", default=3, type=int, help="Number of episodes to test the model")
 
     # Task change
     parser.add_argument("--reset_buffer_on_task_change", type=str2bool, default=True,
@@ -145,7 +144,8 @@ def parse_args(args=None):
     parser.add_argument('--reward_health_has', default=5.0, type=float, help='For picking a health kit')
     parser.add_argument('--reward_weapon_ad', default=15.0, type=float, help='For picking a weapon')
     parser.add_argument('--reward_delivery', default=30.0, type=float, help='For delivering an item')
-    parser.add_argument('--reward_platform_reached', default=3.0, type=float, help='For reaching a platform')
+    parser.add_argument('--reward_platform_reached', default=1.0, type=float, help='For reaching a platform')
+    parser.add_argument('--reward_on_platform', default=0.1, type=float, help='For staying on a platform')
     parser.add_argument('--reward_scaler_pitfall', default=0.1, type=float, help='Reward scaler for traversal')
     parser.add_argument('--reward_scaler_traversal', default=1e-3, type=float, help='Reward scaler for traversal')
 

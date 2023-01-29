@@ -61,6 +61,33 @@ class GameVariableRewardWrapper(RewardWrapper):
         return reward
 
 
+class CumulativeVariableRewardWrapper(RewardWrapper):
+
+    def __init__(self, env, reward: float, var_index: int = 0, decrease: bool = False, maintain: bool = False):
+        super(CumulativeVariableRewardWrapper, self).__init__(env)
+        self.rew = reward
+        self.var_index = var_index
+        self.decrease = decrease
+        self.maintain = maintain
+        self.cum_rew = 0
+
+    def reward(self, reward):
+        if len(self.game_variable_buffer) < 2:
+            return reward
+        vars_cur = self.game_variable_buffer[-1]
+        vars_prev = self.game_variable_buffer[-2]
+
+        var_cur = vars_cur[self.var_index]
+        var_prev = vars_prev[self.var_index]
+
+        if self.maintain and var_cur == var_prev or not self.decrease and var_cur > var_prev or self.decrease and var_cur < var_prev:
+            self.cum_rew += self.rew
+            reward += self.cum_rew
+        else:
+            self.cum_rew = 0
+        return reward
+
+
 class ProportionalVariableRewardWrapper(RewardWrapper):
 
     def __init__(self, env, reward: float, var_index: int = 0, keep_lb: bool = False):
@@ -153,12 +180,12 @@ class PlatformReachedRewardWrapper(RewardWrapper):
         if len(self.game_variable_buffer) < 2:
             return reward
         vars_cur = self.game_variable_buffer[-1]
-        vars_prev = self.game_variable_buffer[-2]
 
-        var_cur = vars_cur[self.z_var_index]
-        var_prev = vars_prev[self.z_var_index]
+        height_cur = vars_cur[self.z_var_index]
+        heights_prev = [game_vars[self.z_var_index] for game_vars in self.game_variable_buffer]
 
-        if var_cur > var_prev:
+        # Check whether the agent was on lava in the last n frames and is now on a platform
+        if height_cur > max(heights_prev[:-1]):
             reward += self.rew
         return reward
 
