@@ -91,6 +91,8 @@ def main(args: Namespace):
         "experiment_dir": args.experiment_dir,
         "model_path": args.model_path,
         "timestamp": args.timestamp,
+        "render": args.render,
+        "render_sleep": args.render_sleep,
     }
 
     sac_class = get_sac_class(args.cl_method)

@@ -462,6 +462,9 @@ class SAC:
                     )
                     episode_return += reward
                     episode_len += 1
+
+                    if self.render:
+                        time.sleep(self.render_sleep)
                 self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
                 self.logger.store(test_env.get_statistics(key_prefix))
 
