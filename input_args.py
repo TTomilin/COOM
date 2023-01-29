@@ -15,6 +15,8 @@ def parse_args(args=None):
                         default=None, help="If None, the fine-tuning method will be used")
     parser.add_argument("--envs", type=str, nargs="+", default=['default'],
                         help="Name of the environments in the scenario(s) to run")
+    parser.add_argument("--test_envs", type=str, nargs="+", default=[],
+                        help="Name of the environments to periodically evaluate the agent on")
     parser.add_argument("--sequence", type=str, default=None, choices=['CD4', 'CD8', 'CO4', 'CO8', 'COC'],
                         help="Name of the continual learning sequence")
     parser.add_argument("--seed", type=int, default=0, help="Seed for randomness")
