@@ -57,7 +57,7 @@ class FloorIsLava(DoomEnv):
 
     @property
     def performance_lower_bound(self) -> float:
-        return 1600  # Frames until the lava scorches the player
+        return 700  # Frames until the lava scorches the player
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         return {f'{mode}/movement': np.mean(self.distance_buffer).round(3)}
