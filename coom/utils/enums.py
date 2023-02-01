@@ -40,4 +40,4 @@ class Sequence(Enum):
                          DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['default']}
     COC = {'scenarios': [DoomScenario.PITFALL, DoomScenario.ARMS_DEALER, DoomScenario.HIDE_AND_SEEK,
                          DoomScenario.FLOOR_IS_LAVA, DoomScenario.CHAINSAW, DoomScenario.RAISE_THE_ROOF,
-                         DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['default']}
+                         DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['hard']}
