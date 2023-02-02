@@ -1,18 +1,34 @@
-import numpy as np
 import tensorflow as tf
 from argparse import Namespace
 from datetime import datetime
+from enum import Enum
 from pathlib import Path
 
-from coom.envs import get_cl_env, get_single_envs, ContinualLearningEnv
+from coom.envs import get_cl_env, get_single_envs
+from coom.methods.agem import AGEM_SAC
+from coom.methods.ewc import EWC_SAC
+from coom.methods.l2 import L2_SAC
+from coom.methods.mas import MAS_SAC
+from coom.methods.packnet import PackNet_SAC
+from coom.methods.vcl import VCL_SAC
 from coom.methods.vcl import VclMlpActor
 from coom.sac.models import MlpActor
+from coom.sac.sac import SAC
 from coom.sac.utils.logx import EpochLogger
 from coom.utils.enums import BufferType, Sequence, DoomScenario
-from coom.utils.run_utils import get_sac_class
 from coom.utils.utils import get_activation_from_str
 from coom.utils.wandb_utils import init_wandb
 from input_args import parse_args
+
+
+class CLMethod(Enum):
+    SAC = (SAC, [])
+    L2 = (L2_SAC, ['cl_reg_coef', 'regularize_critic'])
+    EWC = (EWC_SAC, ['cl_reg_coef', 'regularize_critic'])
+    MAS = (MAS_SAC, ['cl_reg_coef', 'regularize_critic'])
+    VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
+    PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
+    AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
 
 
 def main(args: Namespace):
@@ -52,7 +68,8 @@ def main(args: Namespace):
         hide_task_id=args.hide_task_id,
     )
 
-    actor_cl = VclMlpActor if args.cl_method == "vcl" else MlpActor
+    cl_method = args.cl_method if args.cl_method is not None else 'sac'
+    actor_cl = VclMlpActor if cl_method == "vcl" else MlpActor
 
     vanilla_sac_kwargs = {
         "env": train_env,
@@ -62,7 +79,7 @@ def main(args: Namespace):
         "num_test_eps_stochastic": args.test_episodes,
         "logger": logger,
         "scenarios": scenarios,
-        "cl_method": args.cl_method,
+        "cl_method": cl_method,
         "seed": args.seed,
         "steps_per_env": args.steps_per_env,
         "start_steps": args.start_steps,
@@ -95,35 +112,9 @@ def main(args: Namespace):
         "render_sleep": args.render_sleep,
     }
 
-    sac_class = get_sac_class(args.cl_method)
-
-    if args.cl_method is None:
-        sac = sac_class(**vanilla_sac_kwargs)
-    elif args.cl_method in ["l2", "ewc", "mas"]:
-        sac = sac_class(
-            **vanilla_sac_kwargs, cl_reg_coef=args.cl_reg_coef, regularize_critic=args.regularize_critic
-        )
-    elif args.cl_method == "vcl":
-        sac = sac_class(
-            **vanilla_sac_kwargs,
-            cl_reg_coef=args.cl_reg_coef,
-            regularize_critic=args.regularize_critic,
-            first_task_kl=args.vcl_first_task_kl
-        )
-    elif args.cl_method == "packnet":
-        sac = sac_class(
-            **vanilla_sac_kwargs,
-            regularize_critic=args.regularize_critic,
-            retrain_steps=args.packnet_retrain_steps
-        )
-    elif args.cl_method == "agem":
-        sac = sac_class(
-            **vanilla_sac_kwargs,
-            episodic_mem_per_task=args.episodic_mem_per_task,
-            episodic_batch_size=args.episodic_batch_size
-        )
-    else:
-        raise NotImplementedError("This method is not implemented")
+    sac_class, sac_arg_names = CLMethod[cl_method.upper()].value
+    sac_args = [vars(args)[arg] for arg in sac_arg_names]
+    sac = sac_class(*sac_args, **vanilla_sac_kwargs)
     sac.run()
 
 

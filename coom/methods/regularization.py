@@ -1,6 +1,5 @@
-from typing import List
-
 import tensorflow as tf
+from typing import List
 
 from coom.sac.replay_buffers import ReplayBuffer
 from coom.sac.sac import SAC
@@ -59,7 +58,7 @@ class Regularization_SAC(SAC):
             old_weight.assign(new_weight)
 
     def _update_reg_weights(
-        self, replay_buffer: ReplayBuffer, batches_num: int = 10, batch_size: int = 256
+            self, replay_buffer: ReplayBuffer, batches_num: int = 10, batch_size: int = 256
     ) -> None:
         """Calculate importance weights representing how important each weight is for the current
         task."""
@@ -78,9 +77,9 @@ class Regularization_SAC(SAC):
         """Calculate the regularization loss based on previous parameters and parameter weights."""
         reg_loss = tf.zeros([])
         for new_param, old_param, weight in zip(
-            self.all_common_variables, old_params, self.reg_weights
+                self.all_common_variables, old_params, self.reg_weights
         ):
-            diffs = (new_param - old_param) ** 2
+            diffs = (new_param - old_param)**2
             weighted_diffs = weight * diffs
             reg_loss += tf.reduce_sum(weighted_diffs)
         return reg_loss
