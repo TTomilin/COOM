@@ -1,12 +1,13 @@
 import argparse
 
-from coom.utils.enums import BufferType
-from coom.utils.utils import float_or_str, sci2int, str2bool
+from cl.sac.replay_buffers import BufferType
+from cl.utils.run_utils import str2bool, sci2int, float_or_str
 
 
 def parse_args(args=None):
     parser = argparse.ArgumentParser(description="Continual World")
 
+    # Core
     parser.add_argument('--scenarios', type=str, nargs="+", default=None,
                         choices=['defend_the_center', 'health_gathering', 'run_and_gun', 'dodge_projectiles',
                                  'chainsaw', 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer',
@@ -160,10 +161,5 @@ def parse_args(args=None):
     parser.add_argument('--penalty_health_has', default=-5.0, type=float, help='Negative reward for losing health')
     parser.add_argument('--penalty_lava', default=-0.1, type=float, help='Penalty for stepping on lava')
     parser.add_argument('--penalty_ammo_used', default=-0.1, type=float, help='Negative reward for using ammo')
-
-    # Multi-task
-    parser.add_argument("--use_popart", type=str2bool, default=True, help="Whether use PopArt normalization")
-    parser.add_argument("--popart_beta", type=float, default=3e-4,
-                        help="Beta parameter for updating statistics in PopArt")
 
     return parser.parse_args(args=args)

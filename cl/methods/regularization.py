@@ -1,8 +1,8 @@
 import tensorflow as tf
 from typing import List
 
-from coom.sac.replay_buffers import ReplayBuffer
-from coom.sac.sac import SAC
+from cl.sac.replay_buffers import ReplayBuffer
+from cl.sac.sac import SAC
 
 
 class Regularization_SAC(SAC):

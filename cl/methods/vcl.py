@@ -8,8 +8,8 @@ from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.initializers.initializers_v2 import GlorotUniform
 from tensorflow.python.keras.layers import Conv2D, Flatten, Concatenate, Activation, Layer
 
-from coom.sac.models import _choose_head
-from coom.sac.sac import SAC
+from cl.sac.models import _choose_head
+from cl.sac.sac import SAC
 
 
 class VCL_SAC(SAC):

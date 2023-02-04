@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple
 
 import tensorflow as tf
 
-from coom.sac.sac import SAC
-from coom.utils.utils import reset_optimizer
+from cl.sac.sac import SAC
+from cl.utils.run_utils import reset_optimizer
 
 
 class PackNet_SAC(SAC):

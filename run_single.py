@@ -3,12 +3,13 @@ from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 
+from cl.sac.replay_buffers import BufferType
 from coom.envs import get_single_env
-from coom.sac.sac import SAC
-from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import DoomScenario, BufferType
-from coom.utils.utils import get_activation_from_str
-from coom.utils.wandb_utils import init_wandb
+from cl.sac.sac import SAC
+from cl.utils.logx import EpochLogger
+from coom.utils.enums import DoomScenario
+from cl.utils.run_utils import get_activation_from_str
+from cl.utils.wandb_utils import init_wandb
 from input_args import parse_args
 
 

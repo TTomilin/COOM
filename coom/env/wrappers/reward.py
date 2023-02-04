@@ -1,18 +1,14 @@
-import cv2
-import gym
 import numpy as np
-import tensorflow as tf
 from gym import RewardWrapper
-from gym.spaces import Box
-from typing import Dict, Any, Tuple, Callable
+from typing import Callable
 from vizdoom import GameVariable
 
 
 class WrapperHolder:
 
-    def __init__(self, wrapper_class, *args):
+    def __init__(self, wrapper_class, **kwargs):
         self.wrapper_class = wrapper_class
-        self.args = args
+        self.kwargs = kwargs
 
 
 class ConstantRewardWrapper(RewardWrapper):
@@ -90,9 +86,9 @@ class CumulativeVariableRewardWrapper(RewardWrapper):
 
 class ProportionalVariableRewardWrapper(RewardWrapper):
 
-    def __init__(self, env, reward: float, var_index: int = 0, keep_lb: bool = False):
+    def __init__(self, env, scaler: float, var_index: int = 0, keep_lb: bool = False):
         super(ProportionalVariableRewardWrapper, self).__init__(env)
-        self.rew = reward
+        self.scaler = scaler
         self.var_index = var_index
         self.keep_lb = keep_lb
         self.lower_bound = -np.inf
@@ -106,7 +102,7 @@ class ProportionalVariableRewardWrapper(RewardWrapper):
         var_prev = self.game_variable_buffer[-2][self.var_index]
 
         if not self.keep_lb or self.keep_lb and var_cur > self.lower_bound:
-            reward = self.rew * (var_cur - var_prev)
+            reward = self.scaler * (var_cur - var_prev)
         self.lower_bound = max(var_cur, self.lower_bound) if self.keep_lb else 0
         return reward
 
@@ -131,15 +127,15 @@ class UserVariableRewardWrapper(RewardWrapper):
 
 
 class MovementRewardWrapper(RewardWrapper):
-    def __init__(self, env, reward: float):
+    def __init__(self, env, scaler: float):
         super(MovementRewardWrapper, self).__init__(env)
-        self.rew = reward
+        self.scaler = scaler
 
     def reward(self, reward):
         if len(self.distance_buffer) < 2:
             return reward
         distance = self.distance_buffer[-1]
-        reward += distance * self.rew  # Increase the reward for movement linearly
+        reward += distance * self.scaler  # Increase the reward for movement linearly
         return reward
 
 
@@ -205,84 +201,3 @@ class GoalRewardWrapper(RewardWrapper):
         if var_cur > self.goal:
             reward += self.rew
         return reward
-
-
-class RescaleWrapper(gym.Wrapper):
-    """Rescale the observation space to [-1, 1]."""
-
-    def __init__(self, env):
-        gym.Wrapper.__init__(self, env)
-
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        state, info = self.env.reset()
-        return state / 255. * 2 - 1, info
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        state, reward, done, truncated, info = self.env.step(action)
-        return state / 255. * 2 - 1, reward, done, truncated, info
-
-
-class NormalizeWrapper(gym.Wrapper):
-    """Normalize the observation space."""
-
-    def __init__(self, env, eps=1e-6):
-        gym.Wrapper.__init__(self, env)
-        self.eps = eps
-
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        state, info = self.env.reset()
-        mean = self.states.mean()
-        std = self.states.std() + self.eps
-        state = (state - mean) / std
-        return state / 255. * 2 - 1, info
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        state, reward, done, truncated, info = self.env.step(action)
-        mean = self.states.mean()
-        std = self.states.std() + self.eps
-        state = (state - mean) / std
-        return state, reward, done, truncated, info
-
-
-class ResizeWrapper(gym.Wrapper):
-    """Resize the observation space."""
-
-    def __init__(self, env, height=84, width=84):
-        gym.Wrapper.__init__(self, env)
-        self.shape = (height, width)
-
-        obs_shape = self.shape + self.observation_space.shape[2:]
-        self.observation_space = Box(low=0, high=255, shape=obs_shape, dtype=np.uint8)
-
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        state, info = self.env.reset()
-        return cv2.resize(state, self.shape), info
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        state, reward, done, truncated, info = self.env.step(action)
-        return cv2.resize(state, self.shape), reward, done, truncated, info
-
-
-class RGBStack(gym.Wrapper):
-    """Combine the stacked frames with RGB colours. [n_stack, h, w, 3] -> [h, w, n_stack * 3]"""
-
-    def __init__(self, env):
-        super(RGBStack, self).__init__(env)
-        obs_shape = self.observation_space.shape
-        self.observation_space = Box(
-            low=0, high=255, shape=(obs_shape[1], obs_shape[2], obs_shape[0] * obs_shape[3]), dtype=np.uint8
-        )
-
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        state, info = self.env.reset()
-        state = combine_frames(state)
-        return state, info
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        state, reward, done, truncated, info = self.env.step(action)
-        state = combine_frames(state)
-        return state, reward, done, truncated, info
-
-
-def combine_frames(obs):
-    return tf.reshape(obs, [obs.shape[1], obs.shape[2], obs.shape[0] * obs.shape[3]])

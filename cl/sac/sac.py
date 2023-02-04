@@ -9,13 +9,12 @@ from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import Learning
 from tensorflow_probability.python.distributions import Categorical
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
+from cl.utils.logx import EpochLogger
 from coom.env.scenario.common import CommonEnv
-from coom.sac import models
-from coom.sac.models import PopArtMlpCritic
-from coom.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer
-from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import BufferType
-from coom.utils.utils import reset_optimizer, reset_weights, set_seed
+from cl.sac import models
+from cl.sac.models import PopArtMlpCritic
+from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType
+from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed
 
 
 class SAC:

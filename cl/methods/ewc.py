@@ -3,7 +3,7 @@ from typing import List, Tuple
 import numpy as np
 import tensorflow as tf
 
-from coom.methods.regularization import Regularization_SAC
+from cl.methods.regularization import Regularization_SAC
 
 
 class EWC_SAC(Regularization_SAC):

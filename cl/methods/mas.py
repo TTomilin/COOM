@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import tensorflow as tf
 
-from coom.methods.regularization import Regularization_SAC
+from cl.methods.regularization import Regularization_SAC
 
 
 class MAS_SAC(Regularization_SAC):

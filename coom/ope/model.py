@@ -14,7 +14,7 @@ from chainer.training import extensions
 from datetime import datetime
 from pathlib import Path
 
-from coom.utils.wandb_utils import init_wandb
+from cl.utils.wandb_utils import init_wandb
 from lib.data import ModelDataset
 from lib.summary import SummaryReport
 from lib.utils import log, mkdir, save_images_collage, post_process_image_tensor

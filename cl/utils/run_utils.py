@@ -1,21 +1,36 @@
-import argparse
-import random
-import string
-from datetime import datetime
-from typing import Callable, Dict, Optional, Type, Union
-
 import gym
 import numpy as np
+import string
+
+import random
+
+from datetime import datetime
+
+import argparse
 import tensorflow as tf
 from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 
+from typing import Union, Callable, Type, Dict, Optional
 
-def set_seed(seed: int, env: Optional[gym.Env] = None) -> None:
-    random.seed(seed)
-    tf.random.set_seed(seed)
-    np.random.seed(seed)
-    if env:
-        env.action_space.seed(seed)
+
+def str2bool(v: Union[bool, str]) -> bool:
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
+
+def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer) -> None:
+    print(f"Resetting the optimizer")
+    # Decide whether learning rate decay has been applied
+    start_index = 0 if isinstance(optimizer.lr, LearningRateSchedule) else 1
+    # The first variable is the step count which resets the learning rate decay
+    for var in optimizer.variables()[start_index:]:
+        var.assign(tf.zeros_like(var))
 
 
 def get_activation_from_str(name: str) -> Callable:
@@ -30,21 +45,8 @@ def get_activation_from_str(name: str) -> Callable:
     assert False, "Bad activation function name!"
 
 
-# https://stackoverflow.com/a/43357954/6365092
-def str2bool(v: Union[bool, str]) -> bool:
-    if isinstance(v, bool):
-        return v
-    if v.lower() in ("yes", "true", "t", "y", "1"):
-        return True
-    elif v.lower() in ("no", "false", "f", "n", "0"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError("Boolean value expected.")
-
-
 def sci2int(v: str) -> int:
-    # Scientific Notation cannot be converted directly to int,
-    # so here's a workaround
+    # Convert scientific numerical notation directly to int,
     return int(float(v))
 
 
@@ -57,19 +59,10 @@ def float_or_str(v: Union[float, str]) -> Union[float, str]:
         return v
 
 
-def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer) -> None:
-    print(f"Resetting the optimizer")
-    # Decide whether learning rate decay has been applied
-    start_index = 0 if isinstance(optimizer.lr, LearningRateSchedule) else 1
-    # The first variable is the step count which resets the learning rate decay
-    for var in optimizer.variables()[start_index:]:
-        var.assign(tf.zeros_like(var))
-
-
 def reset_weights(
     model: tf.keras.Model, model_cl: Type[tf.keras.Model], model_kwargs: Dict
 ) -> None:
-    """Re-initialize randomly weights of the model.
+    """ Re-initialize random weights of the model.
 
     Args:
         model: model to re-initialize weights
@@ -89,3 +82,11 @@ def get_random_string(n: int = 6) -> str:
         random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
         for _ in range(n)
     )
+
+
+def set_seed(seed: int, env: Optional[gym.Env] = None) -> None:
+    random.seed(seed)
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
+    if env:
+        env.action_space.seed(seed)

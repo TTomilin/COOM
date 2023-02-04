@@ -11,12 +11,6 @@ from coom.env.scenario.raise_the_roof import RaiseTheRoof
 from coom.env.scenario.run_and_gun import RunAndGun
 
 
-class BufferType(Enum):
-    FIFO = "fifo"
-    RESERVOIR = "reservoir"
-    PRIORITIZED = "prioritized"
-
-
 class DoomScenario(Enum):
     HEALTH_GATHERING = HealthGathering
     RUN_AND_GUN = RunAndGun

@@ -5,7 +5,7 @@ import os
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 
-from coom.utils.utils import str2bool
+from cl.utils.run_utils import str2bool
 
 translations = {
     'packnet': 'PackNet',

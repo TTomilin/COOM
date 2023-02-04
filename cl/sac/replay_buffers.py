@@ -1,7 +1,15 @@
+from enum import Enum
+
 import numpy as np
 import random
 import tensorflow as tf
 from typing import Dict, Iterable
+
+
+class BufferType(Enum):
+    FIFO = "fifo"
+    RESERVOIR = "reservoir"
+    PRIORITIZED = "prioritized"
 
 
 class ReplayBuffer:

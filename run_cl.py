@@ -4,20 +4,20 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
+from cl.methods.agem import AGEM_SAC
+from cl.methods.ewc import EWC_SAC
+from cl.methods.l2 import L2_SAC
+from cl.methods.mas import MAS_SAC
+from cl.methods.packnet import PackNet_SAC
+from cl.methods.vcl import VCL_SAC, VclMlpActor
+from cl.sac.replay_buffers import BufferType
 from coom.envs import get_cl_env, get_single_envs
-from coom.methods.agem import AGEM_SAC
-from coom.methods.ewc import EWC_SAC
-from coom.methods.l2 import L2_SAC
-from coom.methods.mas import MAS_SAC
-from coom.methods.packnet import PackNet_SAC
-from coom.methods.vcl import VCL_SAC
-from coom.methods.vcl import VclMlpActor
-from coom.sac.models import MlpActor
-from coom.sac.sac import SAC
-from coom.sac.utils.logx import EpochLogger
-from coom.utils.enums import BufferType, Sequence, DoomScenario
-from coom.utils.utils import get_activation_from_str
-from coom.utils.wandb_utils import init_wandb
+from cl.sac.models import MlpActor
+from cl.sac.sac import SAC
+from cl.utils.logx import EpochLogger
+from coom.utils.enums import Sequence, DoomScenario
+from cl.utils.run_utils import get_activation_from_str
+from cl.utils.wandb_utils import init_wandb
 from input_args import parse_args
 
 

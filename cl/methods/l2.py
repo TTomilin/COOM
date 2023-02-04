@@ -1,7 +1,7 @@
 import tensorflow as tf
 
-from coom.methods.regularization import Regularization_SAC
-from coom.sac.replay_buffers import ReplayBuffer
+from cl.methods.regularization import Regularization_SAC
+from cl.sac.replay_buffers import ReplayBuffer
 
 
 class L2_SAC(Regularization_SAC):
