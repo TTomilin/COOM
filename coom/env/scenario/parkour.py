@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import WrapperHolder, LocationVariableRewardWrapper
+from coom.env.wrappers.reward import WrapperHolder, LocationVariableRewardWrapper
 
 
 class Parkour(DoomEnv):
@@ -29,7 +29,7 @@ class Parkour(DoomEnv):
         return self.current_height
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
-        return [WrapperHolder(LocationVariableRewardWrapper, 0, 1, 608, 608)]
+        return [WrapperHolder(LocationVariableRewardWrapper,  x_index=0, y_index=1, x_start=608, y_start=608)]
 
     @property
     def performance_upper_bound(self) -> float:

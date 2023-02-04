@@ -6,7 +6,7 @@ from typing import Dict, List
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, MovementRewardWrapper
+from coom.env.wrappers.reward import WrapperHolder, GameVariableRewardWrapper, MovementRewardWrapper
 
 
 class Chainsaw(DoomEnv):
@@ -43,12 +43,12 @@ class Chainsaw(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1),
-            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
+            WrapperHolder(GameVariableRewardWrapper, reward=self.reward_kill, var_index=1),
+            WrapperHolder(MovementRewardWrapper, scaler=self.reward_scaler_traversal),
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1)]
+        return [WrapperHolder(GameVariableRewardWrapper, reward=self.reward_kill, var_index=1)]
 
     @property
     def performance_upper_bound(self) -> float:

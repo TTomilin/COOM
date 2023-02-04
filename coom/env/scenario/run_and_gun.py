@@ -6,7 +6,7 @@ from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import GameVariableRewardWrapper, MovementRewardWrapper, WrapperHolder
+from coom.env.wrappers.reward import GameVariableRewardWrapper, MovementRewardWrapper, WrapperHolder
 
 
 class RunAndGun(DoomEnv):
@@ -46,12 +46,12 @@ class RunAndGun(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1),
-            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
+            WrapperHolder(GameVariableRewardWrapper, reward=self.reward_kill, var_index=1),
+            WrapperHolder(MovementRewardWrapper, scaler=self.reward_scaler_traversal),
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(GameVariableRewardWrapper, self.reward_kill, 1)]
+        return [WrapperHolder(GameVariableRewardWrapper, reward=self.reward_kill, var_index=1)]
 
     @property
     def performance_upper_bound(self) -> float:

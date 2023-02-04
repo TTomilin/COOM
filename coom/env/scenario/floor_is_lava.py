@@ -6,7 +6,7 @@ from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import WrapperHolder, GameVariableRewardWrapper, \
+from coom.env.wrappers.reward import WrapperHolder, GameVariableRewardWrapper, \
     PlatformReachedRewardWrapper, ConstantRewardWrapper, CumulativeVariableRewardWrapper
 
 
@@ -43,13 +43,13 @@ class FloorIsLava(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(PlatformReachedRewardWrapper, self.reward_platform_reached, 3),
-            WrapperHolder(CumulativeVariableRewardWrapper, self.reward_on_platform, 0, False, True),
-            WrapperHolder(GameVariableRewardWrapper, self.penalty_lava, 0, True)
+            WrapperHolder(PlatformReachedRewardWrapper, reward=self.reward_platform_reached, z_var_index=3),
+            WrapperHolder(CumulativeVariableRewardWrapper, reward=self.reward_on_platform, var_index=0, maintain=True),
+            WrapperHolder(GameVariableRewardWrapper, reward=self.penalty_lava, var_index=0, decrease=True)
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
+        return [WrapperHolder(ConstantRewardWrapper, reward=self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:

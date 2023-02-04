@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, GameVariableRewardWrapper
+from coom.env.wrappers.reward import WrapperHolder, ConstantRewardWrapper, GameVariableRewardWrapper
 
 
 class HealthGathering(DoomEnv):
@@ -45,12 +45,12 @@ class HealthGathering(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(ConstantRewardWrapper, self.penalty_health_loss),
-            WrapperHolder(GameVariableRewardWrapper, self.reward_health_kit, 0),
+            WrapperHolder(ConstantRewardWrapper, reward=self.penalty_health_loss),
+            WrapperHolder(GameVariableRewardWrapper, reward=self.reward_health_kit, var_index=0),
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
+        return [WrapperHolder(ConstantRewardWrapper, reward=self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:

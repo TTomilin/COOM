@@ -7,7 +7,7 @@ from vizdoom import GameVariable
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import MovementRewardWrapper, WrapperHolder, ConstantRewardWrapper, \
+from coom.env.wrappers.reward import MovementRewardWrapper, WrapperHolder, ConstantRewardWrapper, \
     UserVariableRewardWrapper
 
 
@@ -47,13 +47,13 @@ class RaiseTheRoof(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived),
-            WrapperHolder(UserVariableRewardWrapper, self.reward_switch_pressed, GameVariable.USER2),
-            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
+            WrapperHolder(ConstantRewardWrapper, reward=self.reward_frame_survived),
+            WrapperHolder(UserVariableRewardWrapper, reward=self.reward_switch_pressed, game_var=GameVariable.USER2),
+            WrapperHolder(MovementRewardWrapper, scaler=self.reward_scaler_traversal),
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(ConstantRewardWrapper, self.reward_frame_survived)]
+        return [WrapperHolder(ConstantRewardWrapper, reward=self.reward_frame_survived)]
 
     @property
     def performance_upper_bound(self) -> float:

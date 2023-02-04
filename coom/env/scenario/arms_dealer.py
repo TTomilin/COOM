@@ -7,7 +7,7 @@ from vizdoom import GameVariable
 
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.utils.utils import distance_traversed
-from coom.env.utils.wrappers import WrapperHolder, ConstantRewardWrapper, MovementRewardWrapper, \
+from coom.env.wrappers.reward import WrapperHolder, ConstantRewardWrapper, MovementRewardWrapper, \
     UserVariableRewardWrapper
 
 
@@ -45,14 +45,14 @@ class ArmsDealer(DoomEnv):
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
         return [
-            WrapperHolder(ConstantRewardWrapper, self.penalty_passivity),
-            WrapperHolder(UserVariableRewardWrapper, self.reward_weapon, GameVariable.USER1),
-            WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2),
-            WrapperHolder(MovementRewardWrapper, self.reward_scaler_traversal),
+            WrapperHolder(ConstantRewardWrapper, reward=self.penalty_passivity),
+            WrapperHolder(UserVariableRewardWrapper, reward=self.reward_weapon, game_var=GameVariable.USER1),
+            WrapperHolder(UserVariableRewardWrapper, reward=self.reward_delivery, game_var=GameVariable.USER2),
+            WrapperHolder(MovementRewardWrapper, scaler=self.reward_scaler_traversal),
         ]
 
     def reward_wrappers_sparse(self) -> List[WrapperHolder]:
-        return [WrapperHolder(UserVariableRewardWrapper, self.reward_delivery, GameVariable.USER2)]
+        return [WrapperHolder(UserVariableRewardWrapper, reward=self.reward_delivery, game_var=GameVariable.USER2)]
 
     @property
     def performance_upper_bound(self) -> float:
