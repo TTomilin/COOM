@@ -23,12 +23,26 @@ class ArmsDealer(DoomEnv):
     agent moves in the environment. Finally, the agent is penalized for being idle.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.penalty_passivity = args.penalty_passivity
-        self.reward_weapon = args.reward_weapon_ad
-        self.reward_delivery = args.reward_delivery
+    @classmethod
+    def add_cli_args(cls, parser):
+        def arg(*args, **kwargs):
+            parser.add_argument(*args, **kwargs)
+
+        super().add_cli_args(parser)
+        arg('--experiment_summaries_interval', default=20, type=int,
+            help='How often in seconds we write avg. statistics about the experiment (reward, episode length, extra stats...)')
+
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_scaler_traversal: float = 1e-3,
+                 reward_weapon_ad: float = 15,
+                 reward_delivery: float = 30,
+                 penalty_passivity: float = -0.1):
+        super().__init__(**doom_kwargs)
+        self.reward_scaler_traversal = reward_scaler_traversal
+        self.penalty_passivity = penalty_passivity
+        self.reward_weapon = reward_weapon_ad
+        self.reward_delivery = reward_delivery
         self.distance_buffer = []
 
     @property

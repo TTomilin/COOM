@@ -19,10 +19,13 @@ class Chainsaw(DoomEnv):
     and use the chainsaw. The agent is granted a reward for moving in the environment and each enemy killed.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_kill = args.reward_kill_chain
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_scaler_traversal: float = 1e-3,
+                 reward_kill_chain: float = 5.0):
+        super().__init__(**doom_kwargs)
+        self.reward_scaler_traversal = reward_scaler_traversal
+        self.reward_kill = reward_kill_chain
         self.distance_buffer = []
         self.hits_taken = 0
 

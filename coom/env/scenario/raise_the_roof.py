@@ -1,7 +1,6 @@
 from collections import deque
 
 import numpy as np
-from argparse import Namespace
 from typing import List, Dict
 from vizdoom import GameVariable
 
@@ -24,11 +23,15 @@ class RaiseTheRoof(DoomEnv):
     surviving for a frames.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_frame_survived = args.reward_frame_survived
-        self.reward_switch_pressed = args.reward_switch_pressed
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_scaler_traversal: float = 0.001,
+                 reward_frame_survived: float = 0.01,
+                 reward_switch_pressed: float = 15.0):
+        super().__init__(**doom_kwargs)
+        self.reward_scaler_traversal = reward_scaler_traversal
+        self.reward_frame_survived = reward_frame_survived
+        self.reward_switch_pressed = reward_switch_pressed
         self.distance_buffer = []
         self.frames_survived = 0
 

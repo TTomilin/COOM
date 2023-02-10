@@ -11,9 +11,9 @@ from coom.env.wrappers.reward import WrapperHolder, LocationVariableRewardWrappe
 
 class Parkour(DoomEnv):
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_scaler_traversal = args.reward_scaler_traversal
+    def __init__(self, doom_kwargs: Dict[str, any], reward_scaler_traversal: float = 1e-3):
+        super().__init__(**doom_kwargs)
+        self.reward_scaler_traversal = reward_scaler_traversal
         self.frames = 0
         self.current_height = 0
         self.distance_buffer = []
@@ -29,7 +29,7 @@ class Parkour(DoomEnv):
         return self.current_height
 
     def reward_wrappers_dense(self) -> List[WrapperHolder]:
-        return [WrapperHolder(LocationVariableRewardWrapper,  x_index=0, y_index=1, x_start=608, y_start=608)]
+        return [WrapperHolder(LocationVariableRewardWrapper, x_index=0, y_index=1, x_start=608, y_start=608)]
 
     @property
     def performance_upper_bound(self) -> float:

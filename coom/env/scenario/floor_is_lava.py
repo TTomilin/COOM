@@ -22,13 +22,19 @@ class FloorIsLava(DoomEnv):
     in lava, and penalized for standing in lava.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.penalty_lava = args.penalty_lava
-        self.reward_on_platform = args.reward_on_platform
-        self.reward_frame_survived = args.reward_frame_survived
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.reward_platform_reached = args.reward_platform_reached
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_on_platform: float = 0.1,
+                 reward_scaler_traversal: float = 1e-3,
+                 reward_platform_reached: float = 1.0,
+                 reward_frame_survived: float = 0.01,
+                 penalty_lava: float = -0.1):
+        super().__init__(**doom_kwargs)
+        self.penalty_lava = penalty_lava
+        self.reward_on_platform = reward_on_platform
+        self.reward_frame_survived = reward_frame_survived
+        self.reward_scaler_traversal = reward_scaler_traversal
+        self.reward_platform_reached = reward_platform_reached
         self.distance_buffer = []
         self.frames_survived = 0
 

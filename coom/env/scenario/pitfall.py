@@ -1,6 +1,5 @@
 from collections import deque
 
-from argparse import Namespace
 from typing import Dict, List
 from vizdoom import DEAD
 
@@ -24,11 +23,15 @@ class Pitfall(DoomEnv):
     travelled forward in the corridor, and penalized for falling into a pit.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int = 1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_goal = args.reward_platform_reached
-        self.reward_scaler = args.reward_scaler_pitfall
-        self.penalty_death = args.penalty_death
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_platform_reached: float = 1.0,
+                 reward_scaler_pitfall: float = 0.1,
+                 penalty_death: float = -1.0):
+        super().__init__(**doom_kwargs)
+        self.reward_goal = reward_platform_reached
+        self.reward_scaler = reward_scaler_pitfall
+        self.penalty_death = penalty_death
         self.frames = 0
         self.total_dist = 0
         self.current_dist = 0

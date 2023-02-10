@@ -1,5 +1,5 @@
+import argparse
 import tensorflow as tf
-from argparse import Namespace
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -10,14 +10,14 @@ from cl.methods.l2 import L2_SAC
 from cl.methods.mas import MAS_SAC
 from cl.methods.packnet import PackNet_SAC
 from cl.methods.vcl import VCL_SAC, VclMlpActor
-from cl.sac.replay_buffers import BufferType
-from coom.envs import get_cl_env, get_single_envs
 from cl.sac.models import MlpActor
+from cl.sac.replay_buffers import BufferType
 from cl.sac.sac import SAC
 from cl.utils.logx import EpochLogger
-from coom.utils.enums import Sequence, DoomScenario
 from cl.utils.run_utils import get_activation_from_str
-from cl.utils.wandb_utils import init_wandb
+from cl.utils.wandb_utils import WandBLogger
+from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
+from coom.utils.enums import Sequence, DoomScenario
 from input_args import parse_args
 
 
@@ -31,35 +31,65 @@ class CLMethod(Enum):
     AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
 
 
-def main(args: Namespace):
-    sequence = Sequence[args.sequence.upper()].value
-    scenarios = sequence['scenarios']
-    envs = sequence['envs']
+def main(parser: argparse.ArgumentParser):
+    args, _ = parser.parse_known_args()
+    sequence = Sequence[args.sequence.upper()]
+    scenarios = sequence.value['scenarios']
+    envs = sequence.value['envs']
     test_scenarios = [DoomScenario[scenario.upper()] for scenario in args.scenarios] if args.test_only else scenarios
     test_envs = args.envs if args.test_only else envs
-    args.experiment_dir = Path(__file__).parent.resolve()
-    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    args.num_tasks = len(scenarios) * len(envs)
-
-    if args.gpu:
-        # Restrict TensorFlow to only use the specified GPU
-        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
-        print("Using GPU: ", args.gpu)
+    experiment_dir = Path(__file__).parent.resolve()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    num_tasks = len(scenarios) * len(envs)
 
     # Logging
-    init_wandb(args, [scenario.name.lower() for scenario in scenarios])
+    if args.with_wandb:
+        WandBLogger.add_cli_args(parser)
+        WandBLogger(parser, [scenario.name.lower() for scenario in scenarios], timestamp, sequence.name)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     logger.log(f'Task sequence: {args.sequence}')
     logger.log(f'Scenarios: {[s.name for s in scenarios]}')
     logger.log(f'Environments: {envs}')
 
-    one_hot_id = scenarios.index(test_scenarios[0]) if args.test_only else None
-    test_envs = get_single_envs(args, test_scenarios, test_envs, one_hot_id)
+    if args.gpu:
+        # Restrict TensorFlow to only use the specified GPU
+        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
+        logger.log("Using GPU: ", args.gpu)
+
+    for scenario in scenarios:
+        scenario.value['class'].add_cli_args(parser)
+
+    args = parser.parse_args()
+
+    doom_kwargs = dict(
+        num_tasks=num_tasks,
+        frame_skip=args.frame_skip,
+        record_every=args.record_every,
+        seed=args.seed,
+        render=args.render,
+        render_mode=args.render_mode,
+        render_sleep=args.render_sleep,
+        resolution=args.resolution,
+        variable_queue_length=args.variable_queue_length,
+    )
+
+    record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
+    task_idx = scenarios.index(test_scenarios[0]) if args.test_only else None
+    test_envs = get_doom_envs(test_scenarios, test_envs, task_idx=task_idx, doom_kwargs=doom_kwargs)
+    test_envs = [wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
+                          record_dir)
+                 for env in test_envs]
     if args.test_only:
         args.render = False
-    train_env = get_cl_env(args, scenarios, envs)
 
-    num_heads = args.num_tasks if args.multihead_archs else 1
+    scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
+    cl_env = ContinualLearningEnv(sequence, args.steps_per_env, scenario_kwargs, doom_kwargs)
+    cl_env.envs = [
+        wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
+                 record_dir)
+        for env in cl_env.envs]
+
+    num_heads = num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
@@ -71,50 +101,48 @@ def main(args: Namespace):
     cl_method = args.cl_method if args.cl_method is not None else 'sac'
     actor_cl = VclMlpActor if cl_method == "vcl" else MlpActor
 
-    vanilla_sac_kwargs = {
-        "env": train_env,
-        "test_envs": test_envs,
-        "test": args.test,
-        "test_only": args.test_only,
-        "num_test_eps_stochastic": args.test_episodes,
-        "logger": logger,
-        "scenarios": scenarios,
-        "cl_method": cl_method,
-        "seed": args.seed,
-        "steps_per_env": args.steps_per_env,
-        "start_steps": args.start_steps,
-        "log_every": args.log_every,
-        "update_after": args.update_after,
-        "update_every": args.update_every,
-        "n_updates": args.n_updates,
-        "replay_size": args.replay_size,
-        "batch_size": args.batch_size,
-        "actor_cl": actor_cl,
-        "policy_kwargs": policy_kwargs,
-        "buffer_type": BufferType(args.buffer_type),
-        "reset_buffer_on_task_change": args.reset_buffer_on_task_change,
-        "reset_optimizer_on_task_change": args.reset_optimizer_on_task_change,
-        "lr": args.lr,
-        "lr_decay": args.lr_decay,
-        "lr_decay_rate": args.lr_decay_rate,
-        "lr_decay_steps": args.lr_decay_steps,
-        "alpha": args.alpha,
-        "reset_critic_on_task_change": args.reset_critic_on_task_change,
-        "clipnorm": args.clipnorm,
-        "gamma": args.gamma,
-        "target_output_std": args.target_output_std,
-        "agent_policy_exploration": args.agent_policy_exploration,
-        "save_freq_epochs": args.save_freq_epochs,
-        "experiment_dir": args.experiment_dir,
-        "model_path": args.model_path,
-        "timestamp": args.timestamp,
-        "render": args.render,
-        "render_sleep": args.render_sleep,
-    }
+    sac_kwargs = dict(
+        env=cl_env,
+        test_envs=test_envs,
+        test=args.test,
+        test_only=args.test_only,
+        num_test_eps_stochastic=args.test_episodes,
+        logger=logger,
+        scenarios=scenarios,
+        cl_method=cl_method,
+        seed=args.seed,
+        steps_per_env=args.steps_per_env,
+        start_steps=args.start_steps,
+        log_every=args.log_every,
+        update_after=args.update_after,
+        update_every=args.update_every,
+        n_updates=args.n_updates,
+        replay_size=args.replay_size,
+        batch_size=args.batch_size,
+        actor_cl=actor_cl,
+        policy_kwargs=policy_kwargs,
+        buffer_type=BufferType(args.buffer_type),
+        reset_buffer_on_task_change=args.reset_buffer_on_task_change,
+        reset_optimizer_on_task_change=args.reset_optimizer_on_task_change,
+        lr=args.lr,
+        lr_decay=args.lr_decay,
+        lr_decay_rate=args.lr_decay_rate,
+        lr_decay_steps=args.lr_decay_steps,
+        alpha=args.alpha,
+        reset_critic_on_task_change=args.reset_critic_on_task_change,
+        clipnorm=args.clipnorm,
+        gamma=args.gamma,
+        target_output_std=args.target_output_std,
+        agent_policy_exploration=args.agent_policy_exploration,
+        save_freq_epochs=args.save_freq_epochs,
+        experiment_dir=experiment_dir,
+        model_path=args.model_path,
+        timestamp=timestamp,
+    )
 
     sac_class, sac_arg_names = CLMethod[cl_method.upper()].value
-    sac_args = [vars(args)[arg] for arg in sac_arg_names]
-    sac = sac_class(*sac_args, **vanilla_sac_kwargs)
+    cl_args = [vars(args)[arg] for arg in sac_arg_names]
+    sac = sac_class(*cl_args, **sac_kwargs)
     sac.run()
 
 

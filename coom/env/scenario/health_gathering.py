@@ -18,11 +18,15 @@ class HealthGathering(DoomEnv):
     and move forward. A small reward is granted for every frame the agent manages to survive.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_frame_survived = args.reward_frame_survived
-        self.reward_health_kit = args.reward_health_hg
-        self.penalty_health_loss = args.penalty_health_hg
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_health_hg: float = 15.0,
+                 reward_frame_survived: float = 0.01,
+                 penalty_health_hg: float = -0.01):
+        super().__init__(**doom_kwargs)
+        self.reward_frame_survived = reward_frame_survived
+        self.reward_health_kit = reward_health_hg
+        self.penalty_health_loss = penalty_health_hg
         self.distance_buffer = []
         self.frames_survived = 0
         self.kits_obtained = 0

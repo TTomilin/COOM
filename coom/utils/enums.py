@@ -12,15 +12,15 @@ from coom.env.scenario.run_and_gun import RunAndGun
 
 
 class DoomScenario(Enum):
-    HEALTH_GATHERING = HealthGathering
-    RUN_AND_GUN = RunAndGun
-    CHAINSAW = Chainsaw
-    RAISE_THE_ROOF = RaiseTheRoof
-    FLOOR_IS_LAVA = FloorIsLava
-    HIDE_AND_SEEK = HideAndSeek
-    ARMS_DEALER = ArmsDealer
-    PARKOUR = Parkour
-    PITFALL = Pitfall
+    HEALTH_GATHERING = {'class': HealthGathering, 'kwargs': ['reward_frame_survived', 'reward_health_hg', 'penalty_health_hg']}
+    RUN_AND_GUN = {'class': RunAndGun, 'kwargs': ['reward_scaler_traversal', 'reward_kill_rag']}
+    CHAINSAW = {'class': Chainsaw, 'kwargs': ['reward_scaler_traversal', 'reward_kill_chain']}
+    RAISE_THE_ROOF = {'class': RaiseTheRoof, 'kwargs': ['reward_scaler_traversal', 'reward_frame_survived', 'reward_switch_pressed']}
+    FLOOR_IS_LAVA = {'class': FloorIsLava, 'kwargs': ['reward_scaler_traversal', 'reward_on_platform', 'reward_platform_reached', 'reward_frame_survived', 'penalty_lava']}
+    HIDE_AND_SEEK = {'class': HideAndSeek, 'kwargs': ['reward_scaler_traversal', 'reward_health_has', 'reward_frame_survived', 'penalty_health_has']}
+    ARMS_DEALER = {'class': ArmsDealer, 'kwargs': ['reward_scaler_traversal', 'reward_weapon_ad', 'reward_delivery', 'penalty_passivity']}
+    PARKOUR = {'class': Parkour, 'kwargs': ['reward_scaler_traversal']}
+    PITFALL = {'class': Pitfall, 'kwargs': ['reward_platform_reached', 'reward_scaler_pitfall', 'penalty_death']}
 
 
 class Sequence(Enum):

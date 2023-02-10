@@ -3,13 +3,25 @@ from collections import deque
 from scipy import spatial
 from vizdoom import ScreenResolution
 
-resolutions = {800: ScreenResolution.RES_800X600,
-               640: ScreenResolution.RES_640X480,
-               320: ScreenResolution.RES_320X240,
-               160: ScreenResolution.RES_160X120}
+resolutions = {'800x600': ScreenResolution.RES_800X600,
+               '640x480': ScreenResolution.RES_640X480,
+               '320x240': ScreenResolution.RES_320X240,
+               '160x120': ScreenResolution.RES_160X120}
 
 
-def get_screen_resolution(resolution: int) -> ScreenResolution:
+def default_action_space():
+    actions = []
+    t_left_right = [[False, False], [False, True], [True, False]]
+    m_forward = [[False], [True]]
+    execute = [[False], [True]]
+    for t in t_left_right:
+        for m in m_forward:
+            for e in execute:
+                actions.append(t + m + e)
+    return actions
+
+
+def get_screen_resolution(resolution: str) -> ScreenResolution:
     if resolution not in resolutions:
         raise ValueError(f'Invalid resolution: {resolution}')
     return resolutions[resolution]

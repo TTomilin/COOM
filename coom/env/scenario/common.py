@@ -1,7 +1,6 @@
-from typing import Dict, Any, Tuple
-
 import gym
 import numpy as np
+from typing import Dict, Any, Tuple
 
 
 class CommonEnv(gym.Env):
@@ -29,6 +28,14 @@ class CommonEnv(gym.Env):
 
     @property
     def num_tasks(self) -> int:
+        raise NotImplementedError
+
+    @property
+    def action_space(self) -> gym.spaces.Discrete:
+        raise NotImplementedError
+
+    @property
+    def observation_space(self) -> gym.Space:
         raise NotImplementedError
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:

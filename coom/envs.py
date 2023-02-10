@@ -1,26 +1,22 @@
 import gym
 import itertools
 import numpy as np
-from argparse import Namespace
-from copy import deepcopy
 from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
 from typing import Any, Dict, List, Tuple, Type
 
 from coom.env.scenario.common import CommonEnv
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.wrappers.observation import RescaleWrapper, ResizeWrapper, RGBStack
+from coom.utils.enums import Sequence
 
 
 class ContinualLearningEnv(CommonEnv):
 
-    def __init__(self, envs: List[DoomEnv], steps_per_env: int) -> None:
-        for i in range(len(envs)):
-            assert envs[0].action_space == envs[i].action_space
-        self.action_space = envs[0].action_space
-        self.observation_space = deepcopy(envs[0].observation_space)
-        self.envs = envs
-        self.n_tasks = len(envs)
+    def __init__(self, sequence: Sequence, steps_per_env: int = 2e5, scenario_kwargs: List[Dict[str, any]] = None,
+                 doom_kwargs: Dict[str, any] = None):
         self.steps_per_env = steps_per_env
+        self._envs = get_doom_envs(sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs, doom_kwargs)
+        self._num_tasks = len(self._envs)
         self.steps = steps_per_env * self.num_tasks
         self.cur_step = 0
         self.cur_seq_idx = 0
@@ -46,7 +42,23 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def num_tasks(self) -> int:
-        return self.n_tasks
+        return self._num_tasks
+
+    @property
+    def action_space(self) -> gym.spaces.Discrete:
+        return self.envs[0].action_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        return self.envs[0].observation_space
+
+    @property
+    def envs(self):
+        return self._envs
+
+    @envs.setter
+    def envs(self, envs):
+        self._envs = envs
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         self._check_steps_bound()
@@ -79,51 +91,51 @@ class ContinualLearningEnv(CommonEnv):
         return self._get_active_env().clear_episode_statistics()
 
 
-def get_cl_env(args: Namespace, scenarios: List[DoomEnv], envs: List[str]) -> ContinualLearningEnv:
-    """Returns a continual learning environment.
-    Args:
-      args: list of the input arguments
-    Returns:
-      gym.Env: continual learning environment
+def get_doom_envs(scenarios: List[Type[DoomEnv]], env_names: List[str], scenario_kwargs: List[Dict[str, any]] = None,
+                  doom_kwargs: Dict[str, any] = None, task_idx: int = None) -> List[DoomEnv]:
     """
-    envs = get_single_envs(args, scenarios, envs)
-    cl_env = ContinualLearningEnv(envs, args.steps_per_env)
-    return cl_env
-
-
-def get_single_envs(args: Namespace, scenarios: List[DoomEnv], env_names: List[str], one_hot_id: int = None) -> List[gym.Env]:
-    envs = [get_single_env(args, scenario_task[0].value, scenario_task[1], one_hot_idx=one_hot_id if one_hot_id else i,
-                           one_hot_len=args.num_tasks) for i, scenario_task in
-            enumerate(itertools.product(scenarios, env_names))]
+    Returns a list of doom environments.
+    :param scenarios: list of doom scenarios
+    :param env_names: list of doom environment names
+    :param scenario_kwargs: scenario specific kwargs
+    :param doom_kwargs: doom game specific kwargs
+    :param task_idx: task index
+    :return: list of doom environments
+    """
+    scenario_kwargs = scenario_kwargs or [{} for _ in range(len(scenarios))]
+    doom_kwargs = doom_kwargs or {}
+    envs = []
+    for i, pair in enumerate(itertools.product(zip(scenarios, scenario_kwargs), env_names)):
+        # If task_idx is specified, use that otherwise use the current index.
+        task_idx = task_idx if task_idx is not None else i
+        doom_scenario = pair[0]
+        task = pair[1]
+        scenario_class = doom_scenario[0].value['class']
+        scenario_kwargs = doom_scenario[1]
+        env = get_single_env(scenario_class, task, task_idx, scenario_kwargs, doom_kwargs)
+        envs.append(env)
     return envs
 
 
-def get_single_env(args: Namespace, scenario_class: Type[DoomEnv], task: str, one_hot_idx: int,
-                   one_hot_len: int) -> gym.Env:
-    """Returns a single task environment.
+def get_single_env(scenario: Type[DoomEnv], task: str = 'default', task_idx: int = 0,
+                   scenario_kwargs: Dict[str, any] = None, doom_kwargs: Dict[str, any] = None) -> DoomEnv:
+    scenario_kwargs = scenario_kwargs or {}
+    doom_kwargs = doom_kwargs or {}
+    doom_kwargs['env'] = task
+    doom_kwargs['task_idx'] = task_idx
+    return scenario(doom_kwargs, **scenario_kwargs)
 
-    Args:
-      :param args: Dictionary of input arguments
-      :param scenario_class: Class of the Doom scenario
-      :param task: task name
-      :param one_hot_idx: one-hot identifier (indicates order among different tasks that we consider)
-      :param one_hot_len: length of the one-hot encoding, number of tasks that we consider
 
-    Returns:
-      :return DoomEnv: single-task Doom environment
-    """
-    env = scenario_class(args, task, one_hot_idx, one_hot_len)
-    reward_wrappers = env.reward_wrappers_sparse() if args.sparse_rewards else env.reward_wrappers_dense()
+def wrap_env(env: DoomEnv, sparse_rewards: bool = False, frame_height: int = 84, frame_width: int = 84,
+             frame_stack: int = 4, record: bool = False, record_dir: str = 'videos') -> gym.Env:
+    reward_wrappers = env.reward_wrappers_sparse() if sparse_rewards else env.reward_wrappers_dense()
     for wrapper in reward_wrappers:
         env = wrapper.wrapper_class(env, **wrapper.kwargs)  # Apply the scenario specific reward wrappers
-    env = ResizeWrapper(env, args.frame_height, args.frame_width)
+    env = ResizeWrapper(env, frame_height, frame_width)
     env = RescaleWrapper(env)
-    if args.normalize:
-        env = NormalizeObservation(env)
-    env = FrameStack(env, args.frame_stack)
+    env = NormalizeObservation(env)
+    env = FrameStack(env, frame_stack)
     env = RGBStack(env)
-    if args.record:
-        method = args.cl_method if args.cl_method else 'sac'
-        env = RecordVideo(env, f"{args.experiment_dir}/{args.video_folder}/{method}/{args.timestamp}",
-                          episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
+    if record:
+        env = RecordVideo(env, record_dir, episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env

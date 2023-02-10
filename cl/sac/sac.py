@@ -1,3 +1,4 @@
+import gym
 import math
 import numpy as np
 import os
@@ -20,7 +21,7 @@ from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed
 class SAC:
     def __init__(
             self,
-            env: CommonEnv,
+            env: gym.Env,
             test_envs: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
@@ -56,8 +57,6 @@ class SAC:
             clipnorm: float = None,
             target_output_std: float = None,
             agent_policy_exploration: bool = False,
-            render: bool = False,
-            render_sleep: float = 0.03,
             experiment_dir: Path = None,
             model_path: str = None,
             timestamp: str = None,
@@ -148,8 +147,6 @@ class SAC:
         self.reset_critic_on_task_change = reset_critic_on_task_change
         self.clipnorm = clipnorm
         self.agent_policy_exploration = agent_policy_exploration
-        self.render = render
-        self.render_sleep = render_sleep
         self.experiment_dir = experiment_dir
         self.model_path = model_path
         self.timestamp = timestamp
@@ -461,9 +458,7 @@ class SAC:
                     )
                     episode_return += reward
                     episode_len += 1
-
-                    if self.render:
-                        time.sleep(self.render_sleep)
+                    test_env.render()
                 self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
                 self.logger.store(test_env.get_statistics(key_prefix))
 
@@ -626,9 +621,6 @@ class SAC:
             next_obs, reward, done, _, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
-
-            if self.render:
-                time.sleep(self.render_sleep)
 
             # Extract task ids from the info dict
             one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)

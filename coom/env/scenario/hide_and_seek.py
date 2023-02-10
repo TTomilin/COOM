@@ -23,12 +23,17 @@ class HideAndSeek(DoomEnv):
     enemies.
     """
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks=1):
-        super().__init__(args, env, task_id, num_tasks)
-        self.reward_health = args.reward_health_has
-        self.reward_frame_survived = args.reward_frame_survived
-        self.reward_scaler_traversal = args.reward_scaler_traversal
-        self.penalty_health_loss = args.penalty_health_has
+    def __init__(self,
+                 doom_kwargs: Dict[str, any],
+                 reward_health_has: float = 5.0,
+                 reward_frame_survived: float = 0.01,
+                 reward_scaler_traversal: float = 1e-3,
+                 penalty_health_has: float = -5.0):
+        super().__init__(**doom_kwargs)
+        self.reward_health = reward_health_has
+        self.reward_frame_survived = reward_frame_survived
+        self.reward_scaler_traversal = reward_scaler_traversal
+        self.penalty_health_loss = penalty_health_has
         self.distance_buffer = []
         self.frames_survived = 0
         self.kits_obtained = 0

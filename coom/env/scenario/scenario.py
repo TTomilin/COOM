@@ -1,30 +1,61 @@
+import argparse
 from collections import deque
 
+import cv2
 import gym
 import numpy as np
+import time
 import vizdoom as vzd
-from argparse import Namespace
 from pathlib import Path
 from typing import Dict, Tuple, Any, List
-from vizdoom import ScreenResolution, Button, GameVariable
+from vizdoom import ScreenResolution, GameVariable
 
 from coom.env.scenario.common import CommonEnv
-from coom.env.utils.utils import get_screen_resolution
+from coom.env.utils.utils import get_screen_resolution, default_action_space
 
 
 class DoomEnv(CommonEnv):
 
-    def __init__(self, args: Namespace, env: str, task_id: int, num_tasks: int):
+    @classmethod
+    def add_cli_args(cls, parser: argparse.ArgumentParser):
+        def arg(*args, **kwargs):
+            try:
+                parser.add_argument(*args, **kwargs)
+            except argparse.ArgumentError:
+                pass  # Argument already exists
+
+        arg('--render', default=False, action='store_true', help='Render the environment')
+        arg('--render_mode', type=str, default='rgb_array', help='Mode of rendering')
+        arg('--render_sleep', type=float, default=0.0, help='Sleep time between frames when rendering')
+        arg('--variable_queue_length', type=int, default=5, help='Number of game variables to remember')
+        arg('--frame_skip', type=int, default=4, help='Number of frames to skip')
+        arg('--resolution', type=str, default=None, choices=['800x600', '640x480', '320x240', '160x120'],
+            help='Screen resolution of the game')
+
+    def __init__(self,
+                 env: str = 'default',
+                 task_idx: int = 0,
+                 num_tasks: int = 1,
+                 frame_skip: int = 4,
+                 record_every: int = 100,
+                 seed: int = 0,
+                 render: bool = False,
+                 render_mode: str = 'rgb_array',
+                 render_sleep: float = 0.0,
+                 test_only: bool = False,
+                 resolution: str = None,
+                 variable_queue_length: int = 5):
         super().__init__()
         self.env_name = env
-        self.id = task_id
+        self.task_idx = task_idx
         self.scenario = self.__module__.split('.')[-1]
         self.n_tasks = num_tasks
-        self.frame_skip = args.frame_skip
+        self.frame_skip = frame_skip
 
         # Recording
         self.metadata['render.modes'] = 'rgb_array'
-        self.record_every = args.record_every
+        self.record_every = record_every
+        self.viewer = None
 
         # Determine the directory of the doom scenario
         scenario_dir = f'{Path(__file__).parent.parent.resolve()}/maps/{self.scenario}'
@@ -33,35 +64,30 @@ class DoomEnv(CommonEnv):
         self.game = vzd.DoomGame()
         self.game.load_config(f"{scenario_dir}/conf.cfg")
         self.game.set_doom_scenario_path(f"{scenario_dir}/{env}.wad")
-        self.game.set_window_visible(args.render)
-        self.game.set_seed(args.seed)
-        self.render_mode = args.render_mode
-        if args.render or args.test_only:  # Use a higher resolution for watching gameplay
+        self.game.set_seed(seed)
+        self.render_mode = render_mode
+        self.render_sleep = render_sleep
+        self.render_enabled = render
+        if render or test_only:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
             self.frame_skip = 1
-        elif args.resolution:  # Use a particular predefines resolution
-            self.game.set_screen_resolution(get_screen_resolution(args.resolution))
-        if args.acceleration:  # Add SPEED action to the available in-game actions
-            actions = self.game.get_available_buttons()
-            actions.append(Button.SPEED)
-            self.game.set_available_buttons(actions)
+        elif resolution:  # Use a particular predefined resolution
+            self.game.set_screen_resolution(get_screen_resolution(resolution))
         self.game.init()
 
         # Define the observation space
         self.game_res = (self.game.get_screen_height(), self.game.get_screen_width(), 3)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=self.game_res, dtype=np.uint8)
+        self._observation_space = gym.spaces.Box(low=0, high=255, shape=self.game_res, dtype=np.uint8)
 
         # Define the action space
-        self.acceleration = args.acceleration
-        self.available_actions = self.get_available_actions()
-        self.action_num = len(self.available_actions)
-        self.action_space = gym.spaces.Discrete(self.action_num)
+        self.available_actions = default_action_space()
+        self._action_space = gym.spaces.Discrete(len(self.available_actions))
 
         # Initialize the user variable dictionary
         self.user_variables = {var: 0.0 for var in self.user_vars}
 
         # Initialize the game variable queue
-        self.game_variable_buffer = deque(maxlen=args.variable_queue_len)
+        self.game_variable_buffer = deque(maxlen=variable_queue_length)
 
     @property
     def task(self) -> str:
@@ -73,7 +99,7 @@ class DoomEnv(CommonEnv):
 
     @property
     def task_id(self):
-        return self.id
+        return self.task_idx
 
     @property
     def num_tasks(self) -> int:
@@ -91,10 +117,19 @@ class DoomEnv(CommonEnv):
     def performance_lower_bound(self) -> float:
         raise NotImplementedError
 
+    @property
+    def action_space(self) -> gym.Space:
+        return self._action_space
+
+    @property
+    def observation_space(self) -> gym.Space:
+        return self._observation_space
+
     def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
         try:
             self.game.new_episode()
         except vzd.ViZDoomIsNotRunningException:
+            print('ViZDoom is not running. Restarting...')
             self.game.init()
             self.game.new_episode()
         self.clear_episode_statistics()
@@ -116,25 +151,12 @@ class DoomEnv(CommonEnv):
         observation = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.float32(np.zeros(self.game_res))
         if not done:
             self.game_variable_buffer.append(state.game_variables)
+        if self.render_enabled:
+            self.render()
+            time.sleep(self.render_sleep)
 
         self.store_statistics(self.game_variable_buffer)
         return observation, reward, done, truncated, info
-
-    def get_available_actions(self):
-        actions = []
-        t_left_right = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0]]
-        m_forward = [[0.0], [1.0]]
-        execute = [[0.0], [1.0]]
-        speed = [[0.0], [1.0]]
-        for t in t_left_right:
-            for m in m_forward:
-                for e in execute:
-                    if self.acceleration and m == [1.0]:
-                        for s in speed:
-                            actions.append(t + m + e + s)
-                    else:
-                        actions.append(t + m + e)
-        return actions
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
         metrics = self.extra_statistics(mode)
@@ -163,9 +185,27 @@ class DoomEnv(CommonEnv):
         self.user_variables[game_var] = self.game.get_game_variable(game_var)
         return prev_var
 
-    def render(self, mode="rgb_array"):
+    def render(self, mode="human"):
+        if not self.render_enabled:
+            return
         state = self.game.get_state()
-        return np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.uint8(np.zeros(self.game_res))
+        img = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.uint8(np.zeros(self.game_res))
+        if mode == 'human':
+            try:
+                h, w = img.shape[:2]
+                render_w = 1280
+
+                if w < render_w:
+                    render_h = int(render_w * h / w)
+                    img = cv2.resize(img, (render_w, render_h))
+
+                # Render the image to the screen with swapped red and blue channels
+                cv2.imshow('COOM', img[:, :, [2, 1, 0]])
+                cv2.waitKey(1)
+            except Exception as e:
+                print('Screen rendering unsuccessful', e)
+                return np.zeros(img.shape)
+        return img
 
     def video_schedule(self, episode_id):
         return not episode_id % self.record_every

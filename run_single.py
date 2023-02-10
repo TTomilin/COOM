@@ -1,47 +1,76 @@
+import argparse
 import tensorflow as tf
-from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
 
 from cl.sac.replay_buffers import BufferType
-from coom.envs import get_single_env
 from cl.sac.sac import SAC
 from cl.utils.logx import EpochLogger
-from coom.utils.enums import DoomScenario
 from cl.utils.run_utils import get_activation_from_str
-from cl.utils.wandb_utils import init_wandb
+from cl.utils.wandb_utils import WandBLogger
+from coom.envs import get_single_env, wrap_env
+from coom.utils.enums import DoomScenario
 from input_args import parse_args
 
 
-def main(args: Namespace):
-    policy_kwargs = dict(
-        hidden_sizes=args.hidden_sizes,
-        activation=get_activation_from_str(args.activation),
-        use_layer_norm=args.use_layer_norm,
-    )
+def main(parser: argparse.ArgumentParser):
+    args, _ = parser.parse_known_args()
 
     if args.gpu:
         # Restrict TensorFlow to only use the specified GPU
         tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
         print("Using GPU: ", args.gpu)
 
-    args.experiment_dir = Path(__file__).parent.resolve()
-    args.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Logging
-    init_wandb(args, args.scenarios)
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
+    experiment_dir = Path(__file__).parent.resolve()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Task
-    one_hot_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
-    one_hot_len = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
+    task_idx = 0  # one-hot identifier (indicates order among different tasks that we consider)
+    num_tasks = 1  # number of tasks, i.e., length of the one-hot encoding, number of tasks that we consider
 
     # Environment
-    scenario_class = DoomScenario[args.scenarios[0].upper()].value
-    env = get_single_env(args, scenario_class, args.envs[0], one_hot_idx, one_hot_len)
-    test_envs = [get_single_env(args, scenario_class, task, one_hot_idx, one_hot_len) for task in args.test_envs]
+    scenario = args.scenarios[0]
+    scenario_enum = DoomScenario[scenario.upper()].value
+    scenario_class = scenario_enum['class']
+    scenario_kwargs = {key: vars(args)[key] for key in scenario_enum['kwargs']}
+    scenario_class.add_cli_args(parser)
+    args = parser.parse_args()
+
+    # Logging
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
+    if args.with_wandb:
+        WandBLogger.add_cli_args(parser)
+        WandBLogger(parser, [scenario], timestamp)
+
+    doom_kwargs = dict(
+        num_tasks=num_tasks,
+        frame_skip=args.frame_skip,
+        record_every=args.record_every,
+        seed=args.seed,
+        render=args.render,
+        render_mode=args.render_mode,
+        render_sleep=args.render_sleep,
+        resolution=args.resolution,
+        variable_queue_length=args.variable_queue_length,
+    )
+
+    # Create the environment
+    record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
+    env = get_single_env(scenario_class, args.envs[0], task_idx, scenario_kwargs, doom_kwargs)
+    env = wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
+                   record_dir)
+    test_envs = [
+        wrap_env(get_single_env(scenario_class, task, task_idx, scenario_kwargs, doom_kwargs), args.sparse_rewards,
+                 args.frame_height, args.frame_width, args.frame_stack, args.record, record_dir) for task in
+        args.test_envs]
     if not test_envs and args.test_only:
         test_envs = [env]
+
+    policy_kwargs = dict(
+        hidden_sizes=args.hidden_sizes,
+        activation=get_activation_from_str(args.activation),
+        use_layer_norm=args.use_layer_norm,
+    )
 
     sac = SAC(
         env,
@@ -65,12 +94,10 @@ def main(args: Namespace):
         alpha=args.alpha,
         gamma=args.gamma,
         target_output_std=args.target_output_std,
-        render=args.render,
-        render_sleep=args.render_sleep,
         save_freq_epochs=args.save_freq_epochs,
-        experiment_dir=args.experiment_dir,
+        experiment_dir=experiment_dir,
         model_path=args.model_path,
-        timestamp=args.timestamp,
+        timestamp=timestamp,
         test_only=args.test_only,
         num_test_eps_stochastic=args.test_episodes,
         buffer_type=BufferType(args.buffer_type),
