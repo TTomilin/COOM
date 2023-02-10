@@ -84,10 +84,10 @@ def main(parser: argparse.ArgumentParser):
 
     scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
     cl_env = ContinualLearningEnv(sequence, args.steps_per_env, scenario_kwargs, doom_kwargs)
-    cl_env.envs = [
+    cl_env.tasks = [
         wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
                  record_dir)
-        for env in cl_env.envs]
+        for env in cl_env.tasks]
 
     num_heads = num_tasks if args.multihead_archs else 1
     policy_kwargs = dict(

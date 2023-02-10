@@ -23,7 +23,7 @@ def run(args: Namespace) -> None:
     for sequence in args.sequences:
         print('\nRunning sequence:', sequence.name)
         cl_env = ContinualLearningEnv(sequence, doom_kwargs=doom_kwargs)
-        for env in cl_env._envs:
+        for env in cl_env.tasks:
             env.reset()
             steps = 0
             rewards = []

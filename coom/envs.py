@@ -26,7 +26,7 @@ class ContinualLearningEnv(CommonEnv):
             raise RuntimeError("Steps limit exceeded for ContinualLearningEnv!")
 
     def _get_active_env(self) -> DoomEnv:
-        return self.envs[self.cur_seq_idx]
+        return self.tasks[self.cur_seq_idx]
 
     @property
     def name(self) -> str:
@@ -46,18 +46,18 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def action_space(self) -> gym.spaces.Discrete:
-        return self.envs[0].action_space
+        return self.tasks[0].action_space
 
     @property
     def observation_space(self) -> gym.Space:
-        return self.envs[0].observation_space
+        return self.tasks[0].observation_space
 
     @property
-    def envs(self):
+    def tasks(self):
         return self._envs
 
-    @envs.setter
-    def envs(self, envs):
+    @tasks.setter
+    def tasks(self, envs):
         self._envs = envs
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
