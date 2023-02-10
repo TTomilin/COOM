@@ -77,7 +77,8 @@ for env in cl_env.tasks:
     env.reset()
     done = False
     while not done:
-        state, reward, done, truncated, info = env.step(env.action_space.sample())
+        action = env.action_space.sample()
+        state, reward, done, truncated, info = env.step(action)
         env.render()
         if done:
             break
