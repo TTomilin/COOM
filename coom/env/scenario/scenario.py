@@ -118,7 +118,7 @@ class DoomEnv(CommonEnv):
         raise NotImplementedError
 
     @property
-    def action_space(self) -> gym.Space:
+    def action_space(self) -> gym.spaces.Discrete:
         return self._action_space
 
     @property
