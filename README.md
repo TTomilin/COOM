@@ -67,12 +67,26 @@ Gathering` endorse constant movement.
 
 # Running
 
-You can run single task, continual learning or multi-task learning experiments with `run_single.py`, `run_cl.py`
-, `run_mt.py` scripts, respectively.
+## Basic Usage
+```
+from coom.envs import ContinualLearningEnv
+from coom.utils.enums import Sequence
 
-To see available script arguments, run with `--help` option, e.g.
+cl_env = ContinualLearningEnv(Sequence.CO8)
+for env in cl_env.tasks:
+    env.reset()
+    done = False
+    while not done:
+        state, reward, done, truncated, info = env.step(env.action_space.sample())
+        env.render()
+        if done:
+            break
+    env.close()
+```
 
-`python3 run_single.py --help`
+You can run single task or continual learning experiments with `run_single.py` and `run_cl.py` scripts, respectively.
+
+To see available script arguments, run with `--help` option, e.g. `python3 run_single.py --help`
 
 ### Single task
 
