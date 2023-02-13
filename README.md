@@ -2,6 +2,7 @@
 
 COOM is a Continual Learning benchmark for embodied pixel-based RL, consisting of multiple task sequences in visually 
 distinct 3D environments with diverse objectives. It is based on the [ViZDoom](https://github.com/mwydmuch/ViZDoom) platform.
+A demo of COOM can be found on [Youtube](https://www.youtube.com/watch?v=FUm2B8MZ6d0&list=PL6nJZHA3y2fxQK73jmuI5teM3n6Mydcf7).
 
 [//]: # (The core of our benchmark is CW20 sequence, in which 20 tasks are run, each with budget of 1M steps.)
 
