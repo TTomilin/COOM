@@ -48,7 +48,6 @@ class SAC:
             update_every: int = 1000,
             n_updates: int = 50,
             num_test_eps_stochastic: int = 3,
-            num_test_eps_deterministic: int = 0,
             save_freq_epochs: int = 25,
             reset_buffer_on_task_change: bool = True,
             buffer_type: BufferType = BufferType.FIFO,
@@ -97,7 +96,6 @@ class SAC:
           update_every: Number of env interactions that should elapse between gradient descent updates.
           n_updates: Number of consecutive policy gradient descent updates to perform.
           num_test_eps_stochastic: Number of episodes to test the stochastic policy in each evaluation.
-          num_test_eps_deterministic: Number of episodes to test the deterministic policy in each evaluation.
           save_freq_epochs: How often, in epochs, to save the current policy and value function.
             (Epoch is defined as time between two subsequent evaluations, lasting log_every steps)
           reset_buffer_on_task_change: If True, replay buffer will be cleared after every task
@@ -139,7 +137,6 @@ class SAC:
         self.update_every = update_every
         self.n_updates = n_updates
         self.num_test_eps_stochastic = num_test_eps_stochastic
-        self.num_test_eps_deterministic = num_test_eps_deterministic
         self.save_freq_epochs = save_freq_epochs
         self.reset_buffer_on_task_change = reset_buffer_on_task_change
         self.buffer_type = buffer_type
@@ -150,12 +147,8 @@ class SAC:
         self.experiment_dir = experiment_dir
         self.model_path = model_path
         self.timestamp = timestamp
-
-        self.test_threads_deterministic = []
-        self.test_threads_stochastic = []
-
+        self.test_threads = []
         self.use_popart = critic_cl is PopArtMlpCritic
-
         self.obs_shape = env.observation_space.shape
         self.act_dim = env.action_space.n
         print("Observations shape:", self.obs_shape)  # should be N_FRAMES x H x W
@@ -688,7 +681,7 @@ class SAC:
 
                 # Test the model on each task in a separate thread
                 test_start_time = time.time()
-                # for thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                # for thread in self.test_threads + self.test_threads_deterministic:
                 #     if thread.is_alive():
                 #         print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
                 #         thread.join()
@@ -696,17 +689,12 @@ class SAC:
                 # print("Creating new testing threads after: ", time.time() - test_start_time)
 
                 # Test the performance of stochastic and deterministic version of the agent.
-                # self.test_threads_stochastic = [
+                # self.test_threads = [
                 #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
                 #                                     self.num_test_eps_stochastic)) for seq_idx, test_env in
                 #     enumerate(self.test_envs_stoch)]
                 #
-                # self.test_threads_deterministic = [
-                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, True,
-                #                                     self.num_test_eps_deterministic)) for seq_idx, test_env in
-                #     enumerate(self.test_envs_det)]
-                #
-                # for test_thread in self.test_threads_stochastic + self.test_threads_deterministic:
+                # for test_thread in self.test_threads + self.test_threads_deterministic:
                 #     test_thread.start()
 
                 # Test the performance of stochastic and deterministic version of the agent.
