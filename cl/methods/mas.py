@@ -40,7 +40,7 @@ class MAS_SAC(Regularization_SAC):
         return actor_gs, q1_gs, q2_gs
 
     def _get_importance_weights(self, **batch) -> List[tf.Tensor]:
-        actor_gs, q1_gs, q2_gs = self._get_grads(**batch)
+        actor_gs, q1_gs, q2_gs = self._get_grads(batch['obs'], batch['one_hot'])
 
         reg_weights = []
         for g in actor_gs:

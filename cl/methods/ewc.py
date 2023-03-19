@@ -18,10 +18,7 @@ class EWC_SAC(Regularization_SAC):
     def _get_grads(
         self,
         obs: tf.Tensor,
-        next_obs: tf.Tensor,
         actions: tf.Tensor,
-        rewards: tf.Tensor,
-        done: tf.Tensor,
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
         with tf.GradientTape(persistent=True) as g:
             # Main outputs from computation graph
@@ -40,7 +37,7 @@ class EWC_SAC(Regularization_SAC):
         return actor_mu_gs, actor_std_gs, q1_gs, q2_gs, std
 
     def _get_importance_weights(self, **batch) -> List[tf.Tensor]:
-        actor_mu_gs, actor_std_gs, q1_gs, q2_gs, std = self._get_grads(**batch)
+        actor_mu_gs, actor_std_gs, q1_gs, q2_gs, std = self._get_grads(batch['obs'], batch['actions'])
 
         reg_weights = []
         for mu_g, std_g in zip(actor_mu_gs, actor_std_gs):
