@@ -7,8 +7,8 @@ from cl.sac.replay_buffers import ReplayBuffer
 class L2_SAC(Regularization_SAC):
     """L2 regularization method."""
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     def _update_reg_weights(
         self, replay_buffer: ReplayBuffer, batches_num: int = 10, batch_size: int = 256

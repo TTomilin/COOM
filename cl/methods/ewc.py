@@ -11,8 +11,8 @@ class EWC_SAC(Regularization_SAC):
 
     https://arxiv.org/abs/1612.00796"""
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     @tf.function
     def _get_grads(

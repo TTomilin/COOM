@@ -10,8 +10,8 @@ class MAS_SAC(Regularization_SAC):
 
     https://arxiv.org/abs/1711.09601"""
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
 
     @tf.function
     def _get_grads(
