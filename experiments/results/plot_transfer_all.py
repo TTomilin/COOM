@@ -25,6 +25,15 @@ TRANSLATIONS = {
     'run_and_gun': 'Run and Gun',
     'health_gathering': 'Health Gathering',
 
+    'obstacles': 'Obstacles',
+    'green': 'Green',
+    'resized': 'Resized',
+    'invulnerable': 'Monsters',
+    'default': 'Default',
+    'red': 'Red',
+    'blue': 'Blue',
+    'shadows': 'Shadows',
+
     'success': 'Success',
     'kills': 'Kill Count',
     'ep_length': 'Frames Alive',
@@ -38,6 +47,15 @@ TRANSLATIONS = {
 
 SCENARIOS = ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
              'health_gathering']
+
+
+SEQUENCES = {
+    'CD4': ['default', 'red', 'blue', 'shadows'],
+    'CD8': ['obstacles', 'green', 'resized', 'invulnerable', 'default', 'red', 'blue', 'shadows'],
+    'CO4': ['chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
+    'CO8': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
+            'health_gathering'],
+}
 
 METRICS = {
     'pitfall': 'distance',
@@ -76,18 +94,20 @@ def get_baseline_data(seeds: List[str], task_length: int, set_metric: str = None
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn')
     seeds = ['1', '2', '3']
-    n_envs = len(SCENARIOS)
+    envs = SEQUENCES[cfg.sequence]
+    n_envs = len(envs)
     n_methods = len(METHODS)
     fig, ax = plt.subplots(n_methods, 1, sharex=True, figsize=(9, 12))
     task_length = cfg.task_length
     iterations = task_length * n_envs
 
     baseline = get_baseline_data(seeds, task_length, cfg.metric)
+    # baseline = baseline[iterations:]
 
     for i, method in enumerate(METHODS):
         seed_data = np.empty((len(seeds), iterations))
         seed_data[:] = np.nan
-        for j, env in enumerate(SCENARIOS):
+        for j, env in enumerate(envs):
             metric = cfg.metric if cfg.metric else METRICS[env]
             for k, seed in enumerate(seeds):
                 path = f'{os.getcwd()}/{cfg.sequence}/{method}/seed_{seed}/{env}_{metric}.json'
@@ -111,7 +131,7 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_ylabel(TRANSLATIONS[metric], fontsize=11)
         ax[i].set_title(TRANSLATIONS[method], fontsize=11)
 
-    env_names = [TRANSLATIONS[e] for e in SCENARIOS]
+    env_names = [TRANSLATIONS[e] for e in envs]
     env_name_locations = np.arange(0 + task_length // 2, iterations + task_length // 2, task_length)
 
     ax2 = ax[0].twiny()
@@ -131,13 +151,13 @@ def main(cfg: argparse.Namespace) -> None:
     ax[-1].set_xlabel("Timesteps (K)")
     ax[-1].legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_methods + 1, fancybox=True, shadow=True)
     fig.tight_layout()
-    plt.savefig(f'plots/transfer.png')
+    plt.savefig(f'plots/{cfg.sequence}_transfer.png')
     plt.show()
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, nargs="+", default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'])
+    parser.add_argument("--sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'])
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser.parse_args()
