@@ -79,7 +79,7 @@ def parse_args():
         help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
     arg("--target_output_std", type=float, default=0.089,
         help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
-    arg("--regularize_critic", type=str2bool, default=False,
+    arg("--regularize_critic", default=False, action='store_true',
         help="If True, both actor and critic are regularized; if False, only actor is")
     arg("--clipnorm", type=float, default=None, help="Value for gradient clipping")
     arg("--agent_policy_exploration", type=str2bool, default=False,

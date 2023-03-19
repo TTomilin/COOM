@@ -5,9 +5,9 @@ python3 run_cl.py --sequence CD4 --seed 3 --cl_method packnet --packnet_retrain_
 python3 run_cl.py --sequence CD4 --seed 1 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CD4 --seed 2 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CD4 --seed 3 --cl_method mas --cl_reg_coef=10000
-python3 run_cl.py --sequence CD4 --seed 1 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CD4 --seed 2 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CD4 --seed 3 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD4 --seed 1 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD4 --seed 2 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD4 --seed 3 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
 python3 run_cl.py --sequence CD4 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD4 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD4 --seed 3 --cl_method l2 --cl_reg_coef=100000
@@ -28,9 +28,9 @@ python3 run_cl.py --sequence CD8 --seed 3 --cl_method packnet --packnet_retrain_
 python3 run_cl.py --sequence CD8 --seed 1 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CD8 --seed 2 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CD8 --seed 3 --cl_method mas --cl_reg_coef=10000
-python3 run_cl.py --sequence CD8 --seed 1 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CD8 --seed 2 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CD8 --seed 3 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD8 --seed 1 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD8 --seed 2 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CD8 --seed 3 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
 python3 run_cl.py --sequence CD8 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD8 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD8 --seed 3 --cl_method l2 --cl_reg_coef=100000
@@ -48,9 +48,9 @@ python3 run_cl.py --sequence CO4 --seed 3 --cl_method packnet --packnet_retrain_
 python3 run_cl.py --sequence CO4 --seed 1 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CO4 --seed 2 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CO4 --seed 3 --cl_method mas --cl_reg_coef=10000
-python3 run_cl.py --sequence CO4 --seed 1 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CO4 --seed 2 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CO4 --seed 3 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO4 --seed 1 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO4 --seed 2 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO4 --seed 3 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
 python3 run_cl.py --sequence CO4 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO4 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO4 --seed 3 --cl_method l2 --cl_reg_coef=100000
@@ -71,9 +71,9 @@ python3 run_cl.py --sequence CO8 --seed 3 --cl_method packnet --packnet_retrain_
 python3 run_cl.py --sequence CO8 --seed 1 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CO8 --seed 2 --cl_method mas --cl_reg_coef=10000
 python3 run_cl.py --sequence CO8 --seed 3 --cl_method mas --cl_reg_coef=10000
-python3 run_cl.py --sequence CO8 --seed 1 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CO8 --seed 2 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
-python3 run_cl.py --sequence CO8 --seed 3 --cl_method agem --regularize_critic True --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO8 --seed 1 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO8 --seed 2 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
+python3 run_cl.py --sequence CO8 --seed 3 --cl_method agem --regularize_critic --episodic_mem_per_task 10000 --episodic_batch_size 128
 python3 run_cl.py --sequence CO8 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO8 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO8 --seed 3 --cl_method l2 --cl_reg_coef=100000
