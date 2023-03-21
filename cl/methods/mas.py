@@ -13,7 +13,7 @@ class MAS_SAC(Regularization_SAC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @tf.function
+    # @tf.function
     def _get_grads(
         self,
         obs: tf.Tensor,
@@ -21,16 +21,17 @@ class MAS_SAC(Regularization_SAC):
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
         with tf.GradientTape(persistent=True) as g:
             # Mean logits from the computation graph
-            mu = self.actor(obs, one_hot)
+            logits = self.actor(obs, one_hot)
 
             # Get squared L2 norm per-example
-            actor_norm = tf.reduce_sum(mu ** 2, -1)
+            actor_norm = tf.reduce_sum(logits ** 2, 1)
 
             q1 = self.critic1(obs, one_hot)
-            critic1_norm = tf.reduce_sum(q1 ** 2, -1)  # TODO Try mean instead of sum if this doesn't work
-
             q2 = self.critic2(obs, one_hot)
-            critic2_norm = tf.reduce_sum(q2 ** 2, -1)  # TODO Try mean instead of sum if this doesn't work
+
+            # Sum over the output dimension
+            critic1_norm = tf.reduce_sum(q1 ** 2, 1)
+            critic2_norm = tf.reduce_sum(q2 ** 2, 1)
 
         # Compute gradients for MAS
         actor_gs = g.jacobian(actor_norm, self.actor_common_variables)
