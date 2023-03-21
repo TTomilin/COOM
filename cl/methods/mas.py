@@ -13,7 +13,7 @@ class MAS_SAC(Regularization_SAC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    # @tf.function
+    @tf.function
     def _get_grads(
         self,
         obs: tf.Tensor,
