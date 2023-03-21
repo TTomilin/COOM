@@ -34,13 +34,14 @@ def main(parser: argparse.ArgumentParser):
     scenario_class = scenario_enum['class']
     scenario_kwargs = {key: vars(args)[key] for key in scenario_enum['kwargs']}
     scenario_class.add_cli_args(parser)
-    args = parser.parse_args()
 
     # Logging
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     if args.with_wandb:
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario], timestamp)
+
+    args = parser.parse_args()
 
     doom_kwargs = dict(
         num_tasks=num_tasks,
