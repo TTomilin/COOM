@@ -107,12 +107,12 @@ def get_doom_envs(scenarios: List[Type[DoomEnv]], env_names: List[str], scenario
     envs = []
     for i, pair in enumerate(itertools.product(zip(scenarios, scenario_kwargs), env_names)):
         # If task_idx is specified, use that otherwise use the current index.
-        task_idx = task_idx if task_idx is not None else i
+        task_id = task_idx if task_idx is not None else i
         doom_scenario = pair[0]
         task = pair[1]
         scenario_class = doom_scenario[0].value['class']
         scenario_kwargs = doom_scenario[1]
-        env = get_single_env(scenario_class, task, task_idx, scenario_kwargs, doom_kwargs)
+        env = get_single_env(scenario_class, task, task_id, scenario_kwargs, doom_kwargs)
         envs.append(env)
     return envs
 

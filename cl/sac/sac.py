@@ -257,7 +257,7 @@ class SAC:
         print(f'Task {current_task_idx}-{self.env.task} started')
 
     def on_task_end(self, current_task_idx: int) -> None:
-        print(f'Task {current_task_idx}-{self.env.task} finished')
+        print(f'Task {current_task_idx} finished')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
