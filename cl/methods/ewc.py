@@ -22,13 +22,13 @@ class EWC_SAC(Regularization_SAC):
         with tf.GradientTape(persistent=True) as g:
             # Main outputs from computation graph
             logits = self.actor(obs, one_hot)
-            logits = tf.reduce_sum(logits, 1)
+            logits = tf.reduce_sum(logits, -1)
 
             q1 = self.critic1(obs, one_hot)
             q2 = self.critic2(obs, one_hot)
 
-            q1 = tf.reduce_sum(q1, 1)
-            q2 = tf.reduce_sum(q2, 1)
+            q1 = tf.reduce_sum(q1, -1)
+            q2 = tf.reduce_sum(q2, -1)
 
         # Compute diagonal of the Fisher matrix
         actor_gs = g.jacobian(logits, self.actor_common_variables)

@@ -24,14 +24,14 @@ class MAS_SAC(Regularization_SAC):
             logits = self.actor(obs, one_hot)
 
             # Get squared L2 norm per-example
-            actor_norm = tf.reduce_sum(logits ** 2, 1)
+            actor_norm = tf.reduce_sum(logits ** 2, -1)
 
             q1 = self.critic1(obs, one_hot)
             q2 = self.critic2(obs, one_hot)
 
             # Sum over the output dimension
-            critic1_norm = tf.reduce_sum(q1 ** 2, 1)
-            critic2_norm = tf.reduce_sum(q2 ** 2, 1)
+            critic1_norm = tf.reduce_sum(q1 ** 2, -1)
+            critic2_norm = tf.reduce_sum(q2 ** 2, -1)
 
         # Compute gradients for MAS
         actor_gs = g.jacobian(actor_norm, self.actor_common_variables)
