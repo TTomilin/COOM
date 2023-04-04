@@ -10,12 +10,12 @@ from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import Learning
 from tensorflow_probability.python.distributions import Categorical
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-from cl.utils.logx import EpochLogger
-from coom.env.scenario.common import CommonEnv
 from cl.sac import models
 from cl.sac.models import PopArtMlpCritic
 from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType
+from cl.utils.logx import EpochLogger
 from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed
+from coom.env.scenario.common import CommonEnv
 
 
 class SAC:
@@ -433,6 +433,8 @@ class SAC:
 
     def test_agent(self, deterministic, num_episodes) -> None:
         mode = "deterministic" if deterministic else "stochastic"
+        num_actions = self.test_envs[0].action_space.n
+        total_action_counts = {i: 0 for i in range(num_actions)}
         for seq_idx, test_env in enumerate(self.test_envs):
             start_time = time.time()
             key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
@@ -443,17 +445,30 @@ class SAC:
             for j in range(num_episodes):
                 obs, _ = test_env.reset()
                 done, episode_return, episode_len = False, 0, 0
+                # Initialize a dictionary to count the number of times each action is selected
+                action_counts = {i: 0 for i in range(num_actions)}
                 while not done:
+                    action = self.get_action_test(tf.convert_to_tensor(obs),
+                                                  tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                                                  tf.constant(deterministic))
                     obs, reward, done, _, _ = test_env.step(
-                        self.get_action_test(tf.convert_to_tensor(obs),
-                                             tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-                                             tf.constant(deterministic))
+                        action
                     )
                     episode_return += reward
                     episode_len += 1
                     test_env.render()
-                self.logger.store({key_prefix + "/return": episode_return, key_prefix + "/ep_length": episode_len})
+
+                    # Increment the count of the selected action
+                    action_counts[action] += 1
+                # Log the number of times each action was selected
+                for i in range(num_actions):
+                    self.logger.log_tabular(key_prefix + "/actions/" + str(i), action_counts[i])
+                self.logger.store({
+                    key_prefix + "/return": episode_return,
+                    key_prefix + "/ep_length": episode_len,
+                })
                 self.logger.store(test_env.get_statistics(key_prefix))
+                total_action_counts = {i: total_action_counts[i] + action_counts[i] for i in range(num_actions)}
 
             self.on_test_end(seq_idx)
             print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
@@ -462,6 +477,10 @@ class SAC:
             self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
             for stat in test_env.get_statistics(key_prefix).keys():
                 self.logger.log_tabular(stat, average_only=True)
+
+        # Log the number of times each action was selected across all episodes and test environments
+        for i in range(num_actions):
+            self.logger.log_tabular(f"test/actions/" + str(i), total_action_counts[i])
 
     def _log_after_update(self, results):
         self.logger.store(
@@ -594,6 +613,9 @@ class SAC:
         self.learn_on_batch = self.get_learn_on_batch(current_task_idx)
         episode_start = time.time()
 
+        num_actions = self.env.action_space.n
+        action_counts = {i: 0 for i in range(num_actions)}
+
         for global_timestep in range(self.steps):
             # On task change
             if current_task_idx != getattr(self.env, "cur_seq_idx", -1):
@@ -603,7 +625,8 @@ class SAC:
 
             # Until start_steps have elapsed, randomly sample actions from a uniform
             # distribution for better exploration. Afterwards, use the learned policy.
-            if current_task_timestep > self.start_steps or (self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
+            if current_task_timestep > self.start_steps or (
+                    self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
                 one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
                 action = self.get_action(tf.convert_to_tensor(obs),
                                          tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
@@ -614,6 +637,7 @@ class SAC:
             next_obs, reward, done, _, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
+            action_counts[action] += 1
 
             # Extract task ids from the info dict
             one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
@@ -678,6 +702,11 @@ class SAC:
                 # Save model
                 if (epoch % self.save_freq_epochs == 0) or (global_timestep + 1 == self.steps):
                     self.save_model(current_task_idx)
+
+                # Log the action counts and reset them
+                for i in range(num_actions):
+                    self.logger.log_tabular("train/actions/" + str(i), action_counts[i])
+                    action_counts[i] = 0
 
                 # Test the model on each task in a separate thread
                 test_start_time = time.time()
