@@ -456,7 +456,7 @@ class SAC:
                     )
                     episode_return += reward
                     episode_len += 1
-                    test_env.render()
+                    test_env.render(mode="human")
 
                     # Increment the count of the selected action
                     action_counts[action] += 1

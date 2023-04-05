@@ -185,12 +185,12 @@ class DoomEnv(CommonEnv):
         self.user_variables[game_var] = self.game.get_game_variable(game_var)
         return prev_var
 
-    def render(self, mode="human"):
-        if not self.render_enabled:
-            return
+    def render(self, mode="rgb_array"):
         state = self.game.get_state()
         img = np.transpose(state.screen_buffer, [1, 2, 0]) if state else np.uint8(np.zeros(self.game_res))
         if mode == 'human':
+            if not self.render_enabled:
+                return [img]
             try:
                 h, w = img.shape[:2]
                 render_w = 1280
@@ -200,12 +200,12 @@ class DoomEnv(CommonEnv):
                     img = cv2.resize(img, (render_w, render_h))
 
                 # Render the image to the screen with swapped red and blue channels
-                cv2.imshow('COOM', img[:, :, [2, 1, 0]])
+                cv2.imshow('DOOM', img[:, :, [2, 1, 0]])
                 cv2.waitKey(1)
             except Exception as e:
                 print('Screen rendering unsuccessful', e)
                 return np.zeros(img.shape)
-        return img
+        return [img]
 
     def video_schedule(self, episode_id):
         return not episode_id % self.record_every
