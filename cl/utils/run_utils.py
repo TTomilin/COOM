@@ -90,3 +90,9 @@ def set_seed(seed: int, env: Optional[gym.Env] = None) -> None:
     np.random.seed(seed)
     if env:
         env.action_space.seed(seed)
+
+
+def create_one_hot_vec(num_tasks, task_id):
+    one_hot_vec = np.zeros(num_tasks)
+    one_hot_vec[task_id] = 1.0
+    return one_hot_vec

@@ -14,7 +14,7 @@ from cl.sac import models
 from cl.sac.models import PopArtMlpCritic
 from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType
 from cl.utils.logx import EpochLogger
-from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed
+from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed, create_one_hot_vec
 from coom.env.scenario.common import CommonEnv
 
 
@@ -461,9 +461,9 @@ class SAC:
                     # Increment the count of the selected action
                     action_counts[action] += 1
                 # Log the number of times each action was selected
-                for i in range(num_actions):
-                    self.logger.log_tabular(key_prefix + "/actions/" + str(i), action_counts[i])
+                actions_dict = {f"{key_prefix}/actions/{i}": action_counts[i] for i in range(num_actions)}
                 self.logger.store({
+                    **actions_dict,
                     key_prefix + "/return": episode_return,
                     key_prefix + "/ep_length": episode_len,
                 })
@@ -477,6 +477,8 @@ class SAC:
             self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
             for stat in test_env.get_statistics(key_prefix).keys():
                 self.logger.log_tabular(stat, average_only=True)
+            for i in range(num_actions):
+                self.logger.log_tabular(f"{key_prefix}/actions/{i}", average_only=True)
 
         # Log the number of times each action was selected across all episodes and test environments
         for i in range(num_actions):
@@ -633,7 +635,7 @@ class SAC:
             else:
                 action = self.env.action_space.sample()
 
-            # Step the env
+            # Environment step
             next_obs, reward, done, _, info = self.env.step(action)
             episode_return += reward
             episode_len += 1
@@ -688,8 +690,7 @@ class SAC:
 
                     self._log_after_update(results)
 
-                time_update_end = time.time()
-                print("Time elapsed for policy update: ", time_update_end - time_update_start)
+                print("Time elapsed for a policy update: ", time.time() - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 episodes = 0
@@ -708,26 +709,9 @@ class SAC:
                     self.logger.log_tabular("train/actions/" + str(i), action_counts[i])
                     action_counts[i] = 0
 
-                # Test the model on each task in a separate thread
-                test_start_time = time.time()
-                # for thread in self.test_threads + self.test_threads_deterministic:
-                #     if thread.is_alive():
-                #         print(f'Thread {thread}({thread._target.args[1].unwrapped.name}) is still alive. Joining it.')
-                #         thread.join()
-
-                # print("Creating new testing threads after: ", time.time() - test_start_time)
-
-                # Test the performance of stochastic and deterministic version of the agent.
-                # self.test_threads = [
-                #     Thread(target=functools.partial(self.test_agent, seq_idx, test_env, False,
-                #                                     self.num_test_eps_stochastic)) for seq_idx, test_env in
-                #     enumerate(self.test_envs_stoch)]
-                #
-                # for test_thread in self.test_threads + self.test_threads_deterministic:
-                #     test_thread.start()
-
                 # Test the performance of stochastic and deterministic version of the agent.
                 if self.test:
+                    test_start_time = time.time()
                     self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
                     print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
 
@@ -743,9 +727,3 @@ class SAC:
             current_task_timestep += 1
             if done:
                 episode_start = time.time()
-
-
-def create_one_hot_vec(num_tasks, task_id):
-    one_hot_vec = np.zeros(num_tasks)
-    one_hot_vec[task_id] = 1.0
-    return one_hot_vec
