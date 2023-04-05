@@ -30,7 +30,7 @@ def parse_args():
     arg("--model_path", type=str, default=None, help="Path to load the model from")
 
     # Recording
-    arg("--record", type=str2bool, default=True, help="Whether to record gameplay videos")
+    arg("--record", type=str2bool, default=False, help="Whether to record gameplay videos")
     arg("--record_every", type=int, default=100, help="Record gameplay video every n episodes")
     arg("--video_folder", type=str, default='videos', help="Path to save the gameplay videos")
 
