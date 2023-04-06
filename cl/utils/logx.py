@@ -114,6 +114,8 @@ class Logger:
 
     def log(self, msg, color="green"):
         """Print a colorized message to stdout."""
+        # Add a formatted date time to the message
+        msg = f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {msg}"
         print(colorize(msg, color, bold=True))
 
     def log_tabular(self, key, val):

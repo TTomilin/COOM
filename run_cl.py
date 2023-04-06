@@ -47,14 +47,14 @@ def main(parser: argparse.ArgumentParser):
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario.name.lower() for scenario in scenarios], timestamp, sequence.name)
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
-    logger.log(f'Task sequence: {args.sequence}')
-    logger.log(f'Scenarios: {[s.name for s in scenarios]}')
-    logger.log(f'Environments: {envs}')
+    logger.log(f'Task sequence: {args.sequence}', color='magenta')
+    logger.log(f'Scenarios: {[s.name for s in scenarios]}', color='magenta')
+    logger.log(f'Environments: {envs}', color='magenta')
 
     if args.gpu:
         # Restrict TensorFlow to only use the specified GPU
         tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
-        logger.log("Using GPU: ", args.gpu)
+        logger.log(f"Using GPU: {args.gpu}", color='magenta')
 
     for scenario in scenarios:
         scenario.value['class'].add_cli_args(parser)
@@ -75,7 +75,7 @@ def main(parser: argparse.ArgumentParser):
 
     record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
     task_idx = scenarios.index(test_scenarios[0]) if args.test_only else None
-    test_envs = get_doom_envs(test_scenarios, test_envs, task_idx=task_idx, doom_kwargs=doom_kwargs)
+    test_envs = get_doom_envs(logger, test_scenarios, test_envs, task_idx=task_idx, doom_kwargs=doom_kwargs)
     test_envs = [wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
                           record_dir)
                  for env in test_envs]
@@ -83,7 +83,7 @@ def main(parser: argparse.ArgumentParser):
         args.render = False
 
     scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
-    cl_env = ContinualLearningEnv(sequence, args.steps_per_env, scenario_kwargs, doom_kwargs)
+    cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, scenario_kwargs, doom_kwargs)
     cl_env.tasks = [
         wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
                  record_dir)

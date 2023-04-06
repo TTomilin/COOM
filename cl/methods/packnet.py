@@ -81,15 +81,17 @@ class PackNet_SAC(SAC):
             prune_perc = num_tasks_left / (num_tasks_left + 1)
             self._prune(prune_perc, current_task_idx)
 
+            self.logger.log(f"Resetting the optimizer", color='cyan')
             reset_optimizer(self.optimizer)
-            print(f"Retraining for {self.retrain_steps} steps")
+            self.logger.log(f"Retraining for {self.retrain_steps} steps", color='cyan')
             time_start = time.time()
 
             for _ in range(self.retrain_steps):
                 batch = self.replay_buffer.sample_batch(self.batch_size)
                 self.learn_on_batch(tf.convert_to_tensor(current_task_idx), batch)
 
-            print(f"Retraining completed in {time.time() - time_start:.2f} seconds")
+            self.logger.log(f"Retraining completed in {time.time() - time_start:.2f} seconds", color='cyan')
+            self.logger.log(f"Resetting the optimizer", color='cyan')
             reset_optimizer(self.optimizer)
 
     @tf.function

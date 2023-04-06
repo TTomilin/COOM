@@ -151,8 +151,8 @@ class SAC:
         self.use_popart = critic_cl is PopArtMlpCritic
         self.obs_shape = env.observation_space.shape
         self.act_dim = env.action_space.n
-        print("Observations shape:", self.obs_shape)  # should be N_FRAMES x H x W
-        print("Actions shape:", self.act_dim)
+        logger.log(f"Observations shape: {self.obs_shape}", color='blue')  # should be N_FRAMES x H x W
+        logger.log(f"Actions shape: {self.act_dim}", color='blue')
 
         # Share environment information with the policy architecture
         policy_kwargs["state_space"] = env.observation_space
@@ -254,10 +254,10 @@ class SAC:
         pass
 
     def on_task_start(self, current_task_idx: int) -> None:
-        print(f'Task {current_task_idx}-{self.env.task} started')
+        self.logger.log(f'Task {current_task_idx}-{self.env.task} started', color='white')
 
     def on_task_end(self, current_task_idx: int) -> None:
-        print(f'Task {current_task_idx} finished')
+        self.logger.log(f'Task {current_task_idx} finished', color='white')
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
@@ -471,7 +471,7 @@ class SAC:
                 total_action_counts = {i: total_action_counts[i] + action_counts[i] for i in range(num_actions)}
 
             self.on_test_end(seq_idx)
-            print(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds")
+            self.logger.log(f"Finished testing {key_prefix} in {time.time() - start_time:.2f} seconds", color='yellow')
 
             self.logger.log_tabular(key_prefix + "/return", with_min_and_max=True)
             self.logger.log_tabular(key_prefix + "/ep_length", average_only=True)
@@ -546,7 +546,7 @@ class SAC:
     def save_model(self, current_task_idx):
         method = self.cl_method if self.cl_method else "sac"
         model_dir = f'{self.experiment_dir}/checkpoints/{method}/{self.timestamp}_{self.env.name}'
-        print(f"Saving models to {model_dir}")
+        self.logger.log(f"Saving models to {model_dir}", color='crimson')
         dir_prefixes = []
         if current_task_idx == -1:
             dir_prefixes.append(model_dir)
@@ -585,6 +585,7 @@ class SAC:
             self.target_critic2.set_weights(self.critic2.get_weights())
 
         if self.reset_optimizer_on_task_change:
+            self.logger.log(f"Resetting the optimizer", color='cyan')
             reset_optimizer(self.optimizer)
 
         # Update variables list and update function in case model changed.
@@ -654,7 +655,7 @@ class SAC:
             if done:
                 episodes += 1
                 buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100
-                print(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
+                self.logger.log(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
                       f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
                                    "train/episodes": episodes, "buffer_capacity": buffer_capacity})
@@ -690,7 +691,7 @@ class SAC:
 
                     self._log_after_update(results)
 
-                print("Time elapsed for a policy update: ", time.time() - time_update_start)
+                self.logger.log("Time elapsed for a policy update: ", time.time() - time_update_start)
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 episodes = 0
@@ -704,16 +705,11 @@ class SAC:
                 if (epoch % self.save_freq_epochs == 0) or (global_timestep + 1 == self.steps):
                     self.save_model(current_task_idx)
 
-                # Log the action counts and reset them
-                for i in range(num_actions):
-                    self.logger.log_tabular("train/actions/" + str(i), action_counts[i])
-                    action_counts[i] = 0
-
                 # Test the performance of stochastic and deterministic version of the agent.
                 if self.test:
                     test_start_time = time.time()
                     self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
-                    print("Time elapsed for the testing procedure: ", time.time() - test_start_time)
+                    self.logger.log(f"Time elapsed for the testing procedure: {time.time() - test_start_time}")
 
                 # Determine the current learning rate of the optimizer
                 lr = self.optimizer.lr
@@ -721,8 +717,13 @@ class SAC:
                     lr = self.optimizer._decayed_lr('float32').numpy()
 
                 log_start_time = time.time()
+                # Log the action counts and reset them
+                for i in range(num_actions):
+                    self.logger.log_tabular("train/actions/" + str(i), action_counts[i])
+                    action_counts[i] = 0
                 self._log_after_epoch(epoch, current_task_timestep, global_timestep, info, lr)
-                print("Time elapsed for logging: ", time.time() - log_start_time)
+                self.logger.log(f"Time elapsed for logging: {time.time() - log_start_time}")
+                episode_start = time.time()
 
             current_task_timestep += 1
             if done:

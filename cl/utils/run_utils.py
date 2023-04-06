@@ -25,7 +25,6 @@ def str2bool(v: Union[bool, str]) -> bool:
 
 
 def reset_optimizer(optimizer: tf.keras.optimizers.Optimizer) -> None:
-    print(f"Resetting the optimizer")
     # Decide whether learning rate decay has been applied
     start_index = 0 if isinstance(optimizer.lr, LearningRateSchedule) else 1
     # The first variable is the step count which resets the learning rate decay

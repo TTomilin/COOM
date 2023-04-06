@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Dict, Tuple, Any, List
 from vizdoom import ScreenResolution, GameVariable
 
+from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
 from coom.env.utils.utils import get_screen_resolution, default_action_space
 
@@ -33,6 +34,7 @@ class DoomEnv(CommonEnv):
             help='Screen resolution of the game')
 
     def __init__(self,
+                 logger: Logger,
                  env: str = 'default',
                  task_idx: int = 0,
                  num_tasks: int = 1,
@@ -46,6 +48,7 @@ class DoomEnv(CommonEnv):
                  resolution: str = None,
                  variable_queue_length: int = 5):
         super().__init__()
+        self.logger = logger
         self.env_name = env
         self.task_idx = task_idx
         self.scenario = self.__module__.split('.')[-1]
@@ -129,7 +132,7 @@ class DoomEnv(CommonEnv):
         try:
             self.game.new_episode()
         except vzd.ViZDoomIsNotRunningException:
-            print('ViZDoom is not running. Restarting...')
+            self.logger.log('ViZDoom is not running. Restarting...')
             self.game.init()
             self.game.new_episode()
         self.clear_episode_statistics()
@@ -203,7 +206,7 @@ class DoomEnv(CommonEnv):
                 cv2.imshow('DOOM', img[:, :, [2, 1, 0]])
                 cv2.waitKey(1)
             except Exception as e:
-                print('Screen rendering unsuccessful', e)
+                self.logger.log(f'Screen rendering unsuccessful: {e}', color='red')
                 return np.zeros(img.shape)
         return [img]
 

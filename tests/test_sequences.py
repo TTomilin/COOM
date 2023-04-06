@@ -2,6 +2,7 @@ import numpy as np
 import time
 from argparse import ArgumentParser, Namespace
 
+from cl.utils.logx import Logger
 from coom.envs import ContinualLearningEnv
 from coom.utils.enums import Sequence
 
@@ -18,11 +19,12 @@ def get_args():
 
 
 def run(args: Namespace) -> None:
-    doom_kwargs = dict(render=args.render, seed=np.random.randint(0, 2 ** 32 - 1))
+    doom_kwargs = dict(render=args.render, seed=np.random.randint(0, 2**32 - 1))
+    logger = Logger('test_logs', config=vars(args), group_id='test')
 
     for sequence in args.sequences:
         print('\nRunning sequence:', sequence.name)
-        cl_env = ContinualLearningEnv(sequence, doom_kwargs=doom_kwargs)
+        cl_env = ContinualLearningEnv(logger, sequence, doom_kwargs=doom_kwargs)
         for env in cl_env.tasks:
             env.reset()
             steps = 0

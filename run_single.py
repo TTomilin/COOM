@@ -16,11 +16,6 @@ from input_args import parse_args
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
 
-    if args.gpu:
-        # Restrict TensorFlow to only use the specified GPU
-        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
-        print("Using GPU: ", args.gpu)
-
     experiment_dir = Path(__file__).parent.resolve()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -40,6 +35,11 @@ def main(parser: argparse.ArgumentParser):
     if args.with_wandb:
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario], timestamp)
+
+    if args.gpu:
+        # Restrict TensorFlow to only use the specified GPU
+        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
+        logger.log(f"Using GPU: {args.gpu}", color='magenta')
 
     args = parser.parse_args()
 

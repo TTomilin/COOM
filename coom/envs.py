@@ -4,6 +4,7 @@ import numpy as np
 from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
 from typing import Any, Dict, List, Tuple, Type
 
+from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.wrappers.observation import RescaleWrapper, ResizeWrapper, RGBStack
@@ -12,10 +13,10 @@ from coom.utils.enums import Sequence
 
 class ContinualLearningEnv(CommonEnv):
 
-    def __init__(self, sequence: Sequence, steps_per_env: int = 2e5, scenario_kwargs: List[Dict[str, any]] = None,
+    def __init__(self, logger: Logger, sequence: Sequence, steps_per_env: int = 2e5, scenario_kwargs: List[Dict[str, any]] = None,
                  doom_kwargs: Dict[str, any] = None):
         self.steps_per_env = steps_per_env
-        self._envs = get_doom_envs(sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs, doom_kwargs)
+        self._envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs, doom_kwargs)
         self._num_tasks = len(self._envs)
         self.steps = steps_per_env * self.num_tasks
         self.cur_step = 0
@@ -91,10 +92,11 @@ class ContinualLearningEnv(CommonEnv):
         return self._get_active_env().clear_episode_statistics()
 
 
-def get_doom_envs(scenarios: List[Type[DoomEnv]], env_names: List[str], scenario_kwargs: List[Dict[str, any]] = None,
+def get_doom_envs(logger: Logger, scenarios: List[Type[DoomEnv]], env_names: List[str], scenario_kwargs: List[Dict[str, any]] = None,
                   doom_kwargs: Dict[str, any] = None, task_idx: int = None) -> List[DoomEnv]:
     """
     Returns a list of doom environments.
+    :param logger: Logger object
     :param scenarios: list of doom scenarios
     :param env_names: list of doom environment names
     :param scenario_kwargs: scenario specific kwargs
@@ -112,15 +114,16 @@ def get_doom_envs(scenarios: List[Type[DoomEnv]], env_names: List[str], scenario
         task = pair[1]
         scenario_class = doom_scenario[0].value['class']
         scenario_kwargs = doom_scenario[1]
-        env = get_single_env(scenario_class, task, task_id, scenario_kwargs, doom_kwargs)
+        env = get_single_env(logger, scenario_class, task, task_id, scenario_kwargs, doom_kwargs)
         envs.append(env)
     return envs
 
 
-def get_single_env(scenario: Type[DoomEnv], task: str = 'default', task_idx: int = 0,
+def get_single_env(logger: Logger, scenario: Type[DoomEnv], task: str = 'default', task_idx: int = 0,
                    scenario_kwargs: Dict[str, any] = None, doom_kwargs: Dict[str, any] = None) -> DoomEnv:
     scenario_kwargs = scenario_kwargs or {}
     doom_kwargs = doom_kwargs or {}
+    doom_kwargs['logger'] = logger
     doom_kwargs['env'] = task
     doom_kwargs['task_idx'] = task_idx
     return scenario(doom_kwargs, **scenario_kwargs)
