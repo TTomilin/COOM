@@ -57,11 +57,11 @@ def main(parser: argparse.ArgumentParser):
 
     # Create the environment
     record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
-    env = get_single_env(scenario_class, args.envs[0], task_idx, scenario_kwargs, doom_kwargs)
+    env = get_single_env(logger, scenario_class, args.envs[0], task_idx, scenario_kwargs, doom_kwargs)
     env = wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
                    record_dir)
     test_envs = [
-        wrap_env(get_single_env(scenario_class, task, task_idx, scenario_kwargs, doom_kwargs), args.sparse_rewards,
+        wrap_env(get_single_env(logger, scenario_class, task, task_idx, scenario_kwargs, doom_kwargs), args.sparse_rewards,
                  args.frame_height, args.frame_width, args.frame_stack, args.record, record_dir) for task in
         args.test_envs]
     if not test_envs and args.test_only:
