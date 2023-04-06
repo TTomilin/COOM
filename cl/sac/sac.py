@@ -691,7 +691,7 @@ class SAC:
 
                     self._log_after_update(results)
 
-                self.logger.log("Time elapsed for a policy update: ", time.time() - time_update_start)
+                self.logger.log(f"Time elapsed for a policy update: {time.time() - time_update_start}")
 
             if self.env.name == "ContinualLearningEnv" and current_task_timestep + 1 == self.env.steps_per_env:
                 episodes = 0
