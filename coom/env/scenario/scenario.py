@@ -155,8 +155,7 @@ class DoomEnv(CommonEnv):
         if not done:
             self.game_variable_buffer.append(state.game_variables)
         if self.render_enabled:
-            self.render()
-            time.sleep(self.render_sleep)
+            self.render('human')
 
         self.store_statistics(self.game_variable_buffer)
         return observation, reward, done, truncated, info
