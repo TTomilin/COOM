@@ -60,7 +60,6 @@ class AGEM_SAC(SAC):
                 critic_gradients, ref_critic_gradients, dot_prod, ref_squared_norm
             )
 
-            self.logger.log(f"AGEM violation: {violation:.3f}", color="cyan")
             metrics["agem_violation"] = violation
 
         return actor_gradients, critic_gradients, alpha_gradient
