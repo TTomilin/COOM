@@ -107,6 +107,7 @@ def store_data(run: Run, sequence: str, required_metric: str, data_type: str) ->
             os.makedirs(path)
             print(f"Created new directory {path}")
         file_name = f'{path}/{task}_{metric}.json' if data_type == 'test' else f'{path}/train_{metric}.json'
+        print(f'Saving {file_name}')
         with open(file_name, 'w') as f:
             json.dump(values, f)
 
