@@ -43,6 +43,8 @@ SEQUENCES = {
     'CO4': ['chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
     'CO8': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
             'health_gathering'],
+    'COC': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
+            'health_gathering'],
 }
 
 COLORS = {
@@ -102,7 +104,6 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method])
 
-    n_envs = len(envs)
     env_steps = max_steps // n_envs
     env_name_locations = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
 
@@ -128,7 +129,7 @@ def main(cfg: argparse.Namespace) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8'],
+    parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Name of the task sequence")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
     parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")

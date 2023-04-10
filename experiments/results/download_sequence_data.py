@@ -73,8 +73,16 @@ def main(args: argparse.Namespace) -> None:
     runs = api.runs(args.project)
     sequence = args.sequence
     for run in runs:
-        if run.state == "finished" and sequence in run.url or any(logs in run.name for logs in args.failed_runs):
+        config = json.loads(run.json_config)
+        if run.state == "finished" and sequence in run.url and valid_COC(args, config) or any(logs in run.name for logs in args.failed_runs):
             store_data(run, sequence, args.metric, args.type)
+
+
+def valid_COC(args: argparse.Namespace, config: dict) -> bool:
+    if args.sequence != 'COC':
+        return True
+    tags = config['wandb_tags']['value']
+    return tags and 'SIMPLIFIED_ENVS' in tags[0]
 
 
 def store_data(run: Run, sequence: str, required_metric: str, data_type: str) -> None:
@@ -106,9 +114,10 @@ def store_data(run: Run, sequence: str, required_metric: str, data_type: str) ->
         if not os.path.exists(path):
             os.makedirs(path)
             print(f"Created new directory {path}")
-        file_name = f'{path}/{task}_{metric}.json' if data_type == 'test' else f'{path}/train_{metric}.json'
-        print(f'Saving {file_name}')
-        with open(file_name, 'w') as f:
+
+        file_name = f'{task}_{metric}.json' if data_type == 'test' else f'train_{metric}.json'
+        print(f'Saving {run.id} --- {file_name}')
+        with open(f'{path}/{file_name}', 'w') as f:
             json.dump(values, f)
 
 
@@ -122,6 +131,7 @@ def get_cl_method(run):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
+    parser.add_argument("--methods", type=str, default='packnet', choices=['packnet', 'mas', 'vcl', 'agem', 'l2', 'fine-tuning'])
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--sequence", type=str, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'], help="Sequence acronym")
