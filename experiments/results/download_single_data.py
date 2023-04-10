@@ -1,3 +1,5 @@
+import os
+
 import argparse
 import json
 import wandb
@@ -11,7 +13,7 @@ METRICS = {
     'chainsaw': 'kills',
     'raise_the_roof': 'ep_length',
     'run_and_gun': 'kills',
-    'seek_and_slay': 'kills',  # Legacy name
+    'seek_and_slay': 'kills',  # Legacy scenario name
     'health_gathering': 'ep_length',
 }
 
@@ -27,17 +29,21 @@ def main(args: argparse.Namespace) -> None:
 
 def store_data(run: Run, required_metric: str, seed: str) -> None:
     scenarios = METRICS.keys()
-    task = [scenario for scenario in scenarios if scenario in run.name]
-    if not task:
+    scenario = [scenario for scenario in scenarios if scenario in run.name]
+    if not scenario:
         print(f"Could not find task for run {run.name}")
-        task = 'run_and_gun'
+        scenario = 'run_and_gun'
     else:
-        task = task[0]
-    metric = METRICS[task] if required_metric is None else required_metric
+        scenario = scenario[0]
+    metric = METRICS[scenario] if required_metric is None else required_metric
     log_key = f'train/{metric}'
     history = list(iter(run.scan_history(keys=[log_key])))
     values = [item[log_key] for item in history][:200]
-    file_name = f'./single/sac/seed_{seed}/{task}_{metric}.json'
+    path = f'./single/sac/seed_{seed}'
+    if not os.path.exists(path):
+        os.makedirs(path)
+        print(f"Created new directory {path}")
+    file_name = f'{path}/{scenario}_{metric}.json'
     print(f'Saving {file_name}')
     with open(file_name, 'w') as f:
         json.dump(values, f)
@@ -46,6 +52,7 @@ def store_data(run: Run, required_metric: str, seed: str) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
+    parser.add_argument("--env", type=str, default='default', help="Name of the Doom environment")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--seed", type=str, required=True, choices=['1', '2', '3'], help="Seed of the run")
     parser.add_argument("--run_ids", type=str, nargs="+", default=[], help="List of experiment names to downloaded")
