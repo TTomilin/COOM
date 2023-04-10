@@ -11,6 +11,16 @@ from experiments.results.cl_metrics import print_results
 SCENARIOS = ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
              'health_gathering']
 
+
+SEQUENCES = {
+    'CD4': ['default', 'red', 'blue', 'shadows'],
+    'CD8': ['obstacles', 'green', 'resized', 'invulnerable', 'default', 'red', 'blue', 'shadows'],
+    'CO4': ['chainsaw', 'raise_the_roof', 'run_and_gun', 'health_gathering'],
+    'CO8': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
+            'health_gathering'],
+}
+
+
 METRICS = {
     'pitfall': 'distance',
     'arms_dealer': 'arms_dealt',
@@ -81,7 +91,7 @@ def main(cfg: argparse.Namespace) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, nargs="+", default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'])
+    parser.add_argument("--sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'])
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser.parse_args()
