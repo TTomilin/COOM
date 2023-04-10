@@ -31,10 +31,10 @@ def main(parser: argparse.ArgumentParser):
     scenario_class.add_cli_args(parser)
 
     # Logging
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     if args.with_wandb:
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario], timestamp)
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     if args.gpu:
         # Restrict TensorFlow to only use the specified GPU
