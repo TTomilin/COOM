@@ -49,9 +49,9 @@ def store_data(run: Run, required_metric: str, seed: str) -> None:
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Created new directory {path}")
-    file_name = f'{path}/{scenario}_{metric}.json'
-    print(f'Saving {file_name}')
-    with open(file_name, 'w') as f:
+    file_name = f'{scenario}_{metric}.json'
+    print(f'Saving {run.id} --- {file_name}')
+    with open(f'{path}/{file_name}', 'w') as f:
         json.dump(values, f)
 
 
@@ -61,7 +61,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--env", type=str, default='default', help="Name of the Doom environment")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--seed", type=str, required=True, choices=['1', '2', '3'], help="Seed of the run")
-    parser.add_argument("--run_ids", type=str, nargs="+", default=[], help="List of experiment names to downloaded")
     return parser.parse_args()
 
 
