@@ -65,7 +65,7 @@ def main(cfg: argparse.Namespace) -> None:
     seeds = ['1', '2', '3']
     metric = cfg.metric
     n_envs = args.n_envs
-    fig, ax = plt.subplots(len(METHODS), 1, sharey=True, sharex=True, figsize=(12, 7))
+    fig, ax = plt.subplots(len(METHODS), 1, sharey='all', sharex='all', figsize=(12, 8))
     env_names = [TRANSLATIONS[e] for e in SEQUENCES[args.sequences[0]]]
     env_names = env_names[:n_envs]
     max_steps = -np.inf
@@ -100,7 +100,7 @@ def main(cfg: argparse.Namespace) -> None:
                 t_crit = np.abs(t.ppf(significance, dof))
                 ci = std * t_crit / np.sqrt(len(seeds))
 
-                ax[i].plot(mean, label=TRANSLATIONS[env], color=colors[j], linestyle=LINE_STYLES[s])
+                ax[i].plot(mean, label=TRANSLATIONS[env], color=colors[j], linestyle=LINE_STYLES[s], linewidth=1)
                 ax[i].tick_params(labelbottom=True)
                 ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.2, color=colors[j])
 
@@ -134,7 +134,7 @@ def parse_args() -> argparse.Namespace:
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Names of the task sequences")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
-    parser.add_argument("--confidence", type=float, default=0.7, help="Confidence interval")
+    parser.add_argument("--confidence", type=float, default=0.95, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--n_envs", type=int, default=4, help="Number of environments to plot")
     return parser.parse_args()
