@@ -1,3 +1,5 @@
+from typing import List
+
 import argparse
 import json
 import os
@@ -66,6 +68,8 @@ METRICS = {
     'health_gathering': 'ep_length',
 }
 
+SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC']
+
 
 def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
@@ -73,7 +77,7 @@ def main(args: argparse.Namespace) -> None:
     runs = api.runs(args.project)
     for run in runs:
         if suitable_run(run, args):
-            store_data(run, args.sequence, args.metric, args.type)
+            store_data(run, args.sequence, args.metric, args.type, args.wandb_tags)
 
 
 def suitable_run(run, args: argparse.Namespace) -> bool:
@@ -89,18 +93,20 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     if args.sequence not in run.url:
         return False
     # Check whether the run includes one of the provided wandb tags
-    if args.tags:
+    if args.wandb_tags:
         # Tag(s) are provided but not listed in the run
         if 'wandb_tags' not in config:
             return False
         tags = config['wandb_tags']['value']
-        if tags and 'SIMPLIFIED_ENVS' in tags[0]:
+        # Check whether the run includes one of the provided tags in args.tags
+        if not any(tag in tags for tag in args.wandb_tags):
             return False
     # All filters have been passed
     return True
 
 
-def store_data(run: Run, sequence: str, required_metric: str, data_type: str) -> None:
+def store_data(run: Run, sequence: str, required_metric: str, data_type: str, tags: List[str]) -> None:
+    config = json.loads(run.json_config)
     seq_len = 4 if sequence in ['CD4', 'CO4'] else 8
     for env_idx in range(seq_len):
         task = SEQUENCES[sequence][env_idx]
@@ -125,7 +131,8 @@ def store_data(run: Run, sequence: str, required_metric: str, data_type: str) ->
         values = [item[log_key] for item in history]
         method = get_cl_method(run)
         seed = max(run.config["seed"], 1)
-        path = f'./{sequence}/{method}/seed_{seed}'
+        tag = f"{config['wandb_tags']['value'][0].lower()}/" if any(tag in tags for tag in SEPARATE_STORAGE_TAGS) else ''
+        path = f'{tag}{sequence}/{method}/seed_{seed}'
         if not os.path.exists(path):
             os.makedirs(path)
             print(f"Created new directory {path}")
