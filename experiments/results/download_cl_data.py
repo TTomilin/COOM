@@ -71,18 +71,33 @@ def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
     # Project is specified by <entity/project-name>
     runs = api.runs(args.project)
-    sequence = args.sequence
     for run in runs:
-        config = json.loads(run.json_config)
-        if run.state == "finished" and sequence in run.url and valid_COC(args, config) or any(logs in run.name for logs in args.failed_runs):
-            store_data(run, sequence, args.metric, args.type)
+        if suitable_run(run, args):
+            store_data(run, args.sequence, args.metric, args.type)
 
 
-def valid_COC(args: argparse.Namespace, config: dict) -> bool:
-    if args.sequence != 'COC':
+def suitable_run(run, args: argparse.Namespace) -> bool:
+    # Check whether the run shouldn't be filtered out
+    if any(logs in run.name for logs in args.include_runs):
         return True
-    tags = config['wandb_tags']['value']
-    return tags and 'SIMPLIFIED_ENVS' in tags[0]
+    # Check whether the run has successfully finished
+    if run.state != "finished":
+        return False
+    # Load the configuration of the run
+    config = json.loads(run.json_config)
+    # Check whether the provided CL sequence corresponds with the run
+    if args.sequence not in run.url:
+        return False
+    # Check whether the run includes one of the provided wandb tags
+    if args.tags:
+        # Tag(s) are provided but not listed in the run
+        if 'wandb_tags' not in config:
+            return False
+        tags = config['wandb_tags']['value']
+        if tags and 'SIMPLIFIED_ENVS' in tags[0]:
+            return False
+    # All filters have been passed
+    return True
 
 
 def store_data(run: Run, sequence: str, required_metric: str, data_type: str) -> None:
@@ -131,12 +146,15 @@ def get_cl_method(run):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
-    parser.add_argument("--methods", type=str, default='packnet', choices=['packnet', 'mas', 'vcl', 'agem', 'l2', 'fine-tuning'])
+    parser.add_argument("--methods", type=str, default='packnet',
+                        choices=['packnet', 'mas', 'vcl', 'agem', 'l2', 'fine-tuning'])
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
+    parser.add_argument("--folder", type=str, default=None, help="")
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--sequence", type=str, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'], help="Sequence acronym")
-    parser.add_argument("--failed_runs", type=str, nargs="+", default=[],
-                        help="List of experiment names that don't have a 'finished' status, but ought to be downloaded")
+    parser.add_argument("--wandb_tags", type=str, nargs='+', help="WandB tags to filter runs")
+    parser.add_argument("--include_runs", type=str, nargs="+", default=[],
+                        help="List of runs that shouldn't be filtered out")
     return parser.parse_args()
 
 
