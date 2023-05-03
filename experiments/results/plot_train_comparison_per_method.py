@@ -61,7 +61,7 @@ METHODS = ['packnet', 'l2', 'mas']
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn')
+    plt.style.use('seaborn-deep')
     seeds = ['1', '2', '3']
     metric = cfg.metric
     n_envs = args.n_envs
@@ -101,7 +101,7 @@ def main(cfg: argparse.Namespace) -> None:
 
             ax[i].plot(mean, label=sequence, color=colors[s])
             ax[i].tick_params(labelbottom=True)
-            ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.2, color=colors[s])
+            ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.3, color=colors[s])
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method])
@@ -128,7 +128,7 @@ def parse_args() -> argparse.Namespace:
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Names of the task sequences")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
-    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
+    parser.add_argument("--confidence", type=float, default=0.95, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--n_envs", type=int, default=8, help="Number of environments to plot")
     return parser.parse_args()
