@@ -67,8 +67,7 @@ def main(cfg: argparse.Namespace) -> None:
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     methods = METHODS if n_envs == 4 else METHODS[:-1]
-    # figsize = (6, 12) if n_envs == 4 else (9, 13)
-    fig, ax = plt.subplots(len(methods), 1, sharey=True, sharex=True, figsize=(9, 14))
+    fig, ax = plt.subplots(len(methods), 1, sharey=True, sharex=True, figsize=(9, 12))
     env_names = [TRANSLATIONS[e] for e in envs]
     max_steps = -np.inf
     iterations = cfg.task_length * n_envs
@@ -121,7 +120,7 @@ def main(cfg: argparse.Namespace) -> None:
 
     n_cols = n_envs if n_envs == 4 else n_envs // 2
     ax[-1].set_xlabel("Timesteps (K)")
-    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_cols, fancybox=True, shadow=True)
+    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.8), ncol=n_cols, fancybox=True, shadow=True)
     plt.tight_layout()
     plt.savefig(f'plots/{sequence}_methods_{metric}.png')
     plt.show()

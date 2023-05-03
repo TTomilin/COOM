@@ -75,9 +75,9 @@ def main(args: argparse.Namespace) -> None:
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     metric = None
-    figsize = (6, 6) if n_envs == 4 else (7, 13)
+    figsize = (8, 8) if n_envs == 4 else (10, 13)
     share_y = sequence in ['CD4', 'CD8']
-    fig, ax = plt.subplots(n_envs, 1, sharex=True, sharey=share_y, figsize=figsize)
+    fig, ax = plt.subplots(n_envs, 1, sharex='all', sharey=share_y, figsize=figsize)
     max_steps = -np.inf
     iterations = args.task_length * n_envs
     methods = METHODS if n_envs == 4 else METHODS[:-1]
@@ -113,7 +113,7 @@ def main(args: argparse.Namespace) -> None:
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])
-        ax[i].yaxis.set_label_coords(-0.07, 0.5)
+        ax[i].yaxis.set_label_coords(-0.05, 0.5)
 
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
@@ -145,7 +145,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Name of the task sequence")
     parser.add_argument("--metric", type=str, default=None, help="Name of the metric to plot")
-    parser.add_argument("--confidence", type=float, default=0.9, help="Confidence interval")
+    parser.add_argument("--confidence", type=float, default=0.95, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     parser.add_argument("--plot_legend", type=str2bool, default=True, help="Whether to plot the legend")
     return parser.parse_args()
