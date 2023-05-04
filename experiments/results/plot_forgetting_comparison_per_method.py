@@ -61,7 +61,7 @@ METHODS = ['packnet', 'l2', 'mas']
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn')
+    plt.style.use('seaborn-paper')
     seeds = ['1', '2', '3']
     metric = cfg.metric
     n_envs = args.n_envs
