@@ -68,7 +68,7 @@ METRICS = {
     'health_gathering': 'ep_length',
 }
 
-SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC']
+SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
 
 
 def main(args: argparse.Namespace) -> None:

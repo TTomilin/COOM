@@ -25,7 +25,10 @@ TRANSLATIONS = {
     'health_gathering': 'Health Gathering',
 
     'reg_critic': 'Critic Regularization',
-    'no_reg_critic': 'No Critic Regularization'
+    'no_reg_critic': 'No Critic Regularization',
+
+    'single_head': 'Single Head',
+    'multi_head': 'Multi Head',
 }
 
 SEQUENCES = {
@@ -43,9 +46,10 @@ def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
     seeds = args.seeds
-    regs = ['reg_critic', 'no_reg_critic']
+    folders = args.folders
     sequence = cfg.sequence
-    fig, ax = plt.subplots(len(cfg.methods), 1, sharey='all', sharex='all', figsize=(12, 7))
+    fig_size = (12, 7) if len(cfg.methods) < 4 else (12, 10)
+    fig, ax = plt.subplots(len(cfg.methods), 1, sharey='all', sharex='all', figsize=fig_size)
     env_names = [TRANSLATIONS[e] for e in SEQUENCES[sequence]]
     n_envs = len(env_names)
     max_steps = -np.inf
@@ -55,12 +59,12 @@ def main(cfg: argparse.Namespace) -> None:
     significance = (1 - cfg.confidence) / 2
 
     for i, method in enumerate(cfg.methods):
-        for reg in regs:
+        for folder in folders:
             seed_data = np.empty((n_envs, n_seeds, iterations))
             seed_data[:] = np.nan
             for e, env in enumerate(SEQUENCES[sequence]):
                 for k, seed in enumerate(seeds):
-                    path = f'{os.getcwd()}/{reg}/{sequence}/{method}/seed_{seed}/{env}_success.json'
+                    path = f'{os.getcwd()}/{folder}/{sequence}/{method}/seed_{seed}/{env}_success.json'
                     if not os.path.exists(path):
                         print(f'Path {path} does not exist')
                         continue
@@ -79,7 +83,7 @@ def main(cfg: argparse.Namespace) -> None:
             t_crit = np.abs(t.ppf(significance, dof))
             ci = std * t_crit / np.sqrt(n_seeds * n_envs)
 
-            ax[i].plot(mean, label=TRANSLATIONS[reg])
+            ax[i].plot(mean, label=TRANSLATIONS[folder])
             ax[i].tick_params(labelbottom=True)
             ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.25)
 
@@ -95,10 +99,12 @@ def main(cfg: argparse.Namespace) -> None:
     ax2.set_xticklabels(env_names)
     ax2.tick_params(axis='both', which='both', length=0)
 
+    legend_anchor = -0.7 if len(cfg.methods) < 4 else -0.8
+
     ax[-1].set_xlabel("Timesteps (K)", fontsize=13)
-    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=8, fancybox=True, shadow=True)
+    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=len(folders), fancybox=True, shadow=True)
     plt.tight_layout()
-    plt.savefig(f'plots/reg_critic.png')
+    plt.savefig(f'plots/{args.plot_name}.png')
     plt.show()
 
 
@@ -106,7 +112,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Names of the task sequences")
-    parser.add_argument("--methods", type=str, default=['packnet', 'l2', 'agem'], help="Names of the methods")
+    parser.add_argument("--methods", type=str, nargs='+', default=['packnet', 'l2', 'agem'], help="Names of the methods")
+    parser.add_argument("--folders", type=str, required=True, nargs='+', help="Names of the folders")
+    parser.add_argument("--plot_name", type=str, required=True, help="Names of the plot")
     parser.add_argument("--seeds", type=int, default=[1, 2, 3], help="")
     parser.add_argument("--confidence", type=float, default=0.8, help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
