@@ -13,13 +13,13 @@ class MAS_SAC(Regularization_SAC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @tf.function
+    # @tf.function
     def _get_grads(
         self,
         obs: tf.Tensor,
         one_hot: tf.Tensor
     ) -> Tuple[tf.Tensor, tf.Tensor, tf.Tensor]:
-        with tf.GradientTape() as g:
+        with tf.GradientTape(persistent=True) as g:
             # Mean logits from the computation graph
             logits = self.actor(obs, one_hot)
 
