@@ -34,6 +34,7 @@ class MAS_SAC(Regularization_SAC):
             critic2_norm = tf.reduce_sum(q2 ** 2, -1)
 
         # Compute gradients for MAS
+        print(actor_norm)
         actor_gs = g.jacobian(actor_norm, self.actor_common_variables)
         q1_gs = g.jacobian(critic1_norm, self.critic1.common_variables)
         q2_gs = g.jacobian(critic2_norm, self.critic2.common_variables)
