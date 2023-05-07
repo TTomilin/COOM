@@ -64,7 +64,7 @@ def main(cfg: argparse.Namespace) -> None:
             seed_data[:] = np.nan
             for e, env in enumerate(SEQUENCES[sequence]):
                 for k, seed in enumerate(seeds):
-                    path = f'{os.getcwd()}/{folder}/{sequence}/{method}/seed_{seed}/{env}_success.json'
+                    path = f'{os.getcwd()}/data/{folder}/{sequence}/{method}/seed_{seed}/{env}_success.json'
                     if not os.path.exists(path):
                         print(f'Path {path} does not exist')
                         continue

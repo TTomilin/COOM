@@ -94,7 +94,7 @@ def main(args: argparse.Namespace) -> None:
         seed_data = np.empty((len(seeds), iterations, n_actions))
         seed_data[:] = np.nan
         for k, seed in enumerate(seeds):
-            path = os.path.join(os.getcwd(), 'actions', sequence, args.method, folder, f'seed_{seed}.json')
+            path = os.path.join(os.getcwd(), 'data', 'actions', sequence, args.method, folder, f'seed_{seed}.json')
             if not os.path.exists(path):
                 continue
             with open(path, 'r') as f:

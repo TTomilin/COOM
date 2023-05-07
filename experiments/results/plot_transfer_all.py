@@ -80,7 +80,7 @@ def get_baseline_data(seeds: List[str], task_length: int, set_metric: str = None
     for i, env in enumerate(SCENARIOS):
         metric = set_metric if set_metric else METRICS[env]
         for k, seed in enumerate(seeds):
-            path = f'{os.getcwd()}/single/sac/seed_{seed}/{env}_{metric}.json'
+            path = f'{os.getcwd()}/data/single/sac/seed_{seed}/{env}_{metric}.json'
             with open(path, 'r') as f:
                 data = json.load(f)[0: task_length]
             steps = len(data)

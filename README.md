@@ -116,7 +116,7 @@ python run_cl.py --sequence COC --batch_size 512 --buffer_type reservoir --reset
 The performance (success rate) averaged over tasks is a typical metric for the CL setting. The agent is continually
 evaluated on each of the tasks in the sequence even before it has been trained on it.
 
-![Default](experiments/results/data/plots/CO8_methods_success.png)
+![Default](experiments/results/plots/CO8_methods_success.png)
 
 ### Forward Transfer
 The COOM benchmark can also be used to evaluate forward transfer, which enables faster learning and/or better final 
@@ -125,7 +125,7 @@ which is trained directly on the same from scratch without any CL-specific modif
 curves represent negative forward transfer and other colors represent positive forward transfer. We depict the results
 of forward transfer for the CO8 sequence, which is the most challenging one in the benchmark.
 
-![Default](experiments/results/data/plots/transfer.png)
+![Default](experiments/results/plots/transfer.png)
 
 ## Reproducing results
 

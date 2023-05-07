@@ -82,7 +82,7 @@ def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int,
             seed_data = np.empty((len(seeds), n_envs, task_length))
             seed_data[:] = np.nan
             for k, seed in enumerate(seeds):
-                path = os.path.join(os.getcwd(), sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+                path = os.path.join(os.getcwd(), data, sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
                 if not os.path.exists(path):
                     continue
                 with open(path, 'r') as f:

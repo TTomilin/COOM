@@ -58,7 +58,7 @@ def get_cl_data(seeds, task_length, metric: str = 'success', sequence: str = 'CO
     for k, seed in enumerate(seeds):
         for i, method in enumerate(METHODS):
             for j, env in enumerate(SCENARIOS):
-                path = f'{os.getcwd()}/{sequence}/{method}/seed_{seed}/{env}_{metric}.json'
+                path = f'{os.getcwd()}/data/{sequence}/{method}/seed_{seed}/{env}_{metric}.json'
                 if not os.path.exists(path):
                     continue
                 with open(path, 'r') as f:
