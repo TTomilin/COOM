@@ -6,11 +6,10 @@ from matplotlib import pyplot as plt
 from scipy.stats import t
 from typing import List
 
-from experiments.results.cl_metrics import print_results
+from experiments.results.tables.cl_metrics import print_results
 
 SCENARIOS = ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
              'health_gathering']
-
 
 SEQUENCES = {
     'CD4': ['default', 'red', 'blue', 'shadows'],
@@ -19,7 +18,6 @@ SEQUENCES = {
     'CO8': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
             'health_gathering'],
 }
-
 
 METRICS = {
     'pitfall': 'distance',

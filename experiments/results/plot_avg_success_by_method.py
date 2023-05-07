@@ -43,7 +43,7 @@ SEQUENCES = {
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn-deep')
+    plt.style.use('seaborn-paper')
     plt.rcParams['axes.grid'] = True
     seeds = args.seeds
     folders = args.folders
@@ -80,12 +80,16 @@ def main(cfg: argparse.Namespace) -> None:
             std = np.nanstd(seed_data, axis=(0, 1))
             std = gaussian_filter1d(std, sigma=2)
 
+            lb = np.quantile(mean, significance, interpolation="midpoint")
+            ub = np.quantile(mean, 1 - significance, interpolation="midpoint")
+
             t_crit = np.abs(t.ppf(significance, dof))
             ci = std * t_crit / np.sqrt(n_seeds * n_envs)
 
             ax[i].plot(mean, label=TRANSLATIONS[folder])
             ax[i].tick_params(labelbottom=True)
-            ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.25)
+            # ax[i].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=0.25)
+            ax[i].fill_between(np.arange(iterations), lb, ub, alpha=0.25)
 
         ax[i].set_ylabel('Average Success')
         ax[i].set_title(TRANSLATIONS[method])

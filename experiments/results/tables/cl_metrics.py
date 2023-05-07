@@ -53,7 +53,8 @@ def calculate_data_at_the_end(data):
 
 def calculate_forgetting(data: np.ndarray):
     data_at_the_end = calculate_data_at_the_end(data)
-    forgetting = (np.diagonal(data_at_the_end, axis1=1, axis2=2) - data_at_the_end[:, :, -1]).clip(0, np.inf)[:, :-1].mean(axis=1)
+    forgetting = (np.diagonal(data_at_the_end, axis1=1, axis2=2) - data_at_the_end[:, :, -1]).clip(0, np.inf)[:,
+                 :-1].mean(axis=1)
     return data_at_the_end, forgetting
 
 
@@ -160,16 +161,18 @@ def main(cfg: argparse.Namespace) -> None:
     forgettings = np.empty((len(sequences), len(METHODS)))
     forgetting_cis = np.empty((len(sequences), len(METHODS)))
     for i, sequence in enumerate(sequences):
-        performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence, cfg.task_length, cfg.second_half)
+        performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence,
+                                                                              cfg.task_length, cfg.second_half)
         performances[i] = np.pad(performance, (0, len(METHODS) - len(performance)), 'constant', constant_values=np.nan)
-        performance_cis[i] = np.pad(performance_ci, (0, len(METHODS) - len(performance_ci)), 'constant', constant_values=np.nan)
+        performance_cis[i] = np.pad(performance_ci, (0, len(METHODS) - len(performance_ci)), 'constant',
+                                    constant_values=np.nan)
         forgettings[i] = np.pad(forgetting, (0, len(METHODS) - len(forgetting)), 'constant', constant_values=np.nan)
-        forgetting_cis[i] = np.pad(forgetting_ci, (0, len(METHODS) - len(forgetting_ci)), 'constant', constant_values=np.nan)
+        forgetting_cis[i] = np.pad(forgetting_ci, (0, len(METHODS) - len(forgetting_ci)), 'constant',
+                                   constant_values=np.nan)
     performance = np.nanmean(performances, axis=0)
     performance_ci = np.nanmean(performance_cis, axis=0)
     forgetting = np.nanmean(forgettings, axis=0)
     forgetting_ci = np.nanmean(forgetting_cis, axis=0)
-
 
     # TODO calculate forward transfer for CO8 sequence
     baseline_data = get_baseline_data(cfg.seeds, cfg.task_length)

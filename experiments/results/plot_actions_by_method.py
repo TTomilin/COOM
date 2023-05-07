@@ -1,9 +1,8 @@
-import argparse
 import json
-import numpy as np
 import os
 from matplotlib import pyplot as plt
-from scipy.ndimage import gaussian_filter1d
+
+from experiments.results.common import *
 
 TRANSLATIONS = {
     'packnet': 'PackNet',
@@ -119,15 +118,7 @@ def main(args: argparse.Namespace) -> None:
         ax[j].set_title(TRANSLATIONS[method])
         ax[j].set_ylabel("Actions")
 
-    env_steps = max_steps // n_envs
-    task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
-
-    tick_labels = [TRANSLATIONS[env] for env in envs]
-    ax2 = ax[0].twiny()
-    ax2.set_xlim(ax[0].get_xlim())
-    ax2.set_xticks(task_indicators)
-    ax2.set_xticklabels(tick_labels)
-    ax2.tick_params(axis='both', which='both', length=0)
+    add_task_labels(ax, envs, max_steps, n_envs)
 
     ax[-1].set_xlabel("Timesteps (K)")
     handles, labels = ax[-1].get_legend_handles_labels()
@@ -153,8 +144,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--methods", type=str, default=['packnet', 'fine_tuning'],
                         choices=['packnet', 'mas', 'vcl', 'agem', 'l2', 'fine_tuning'])
     parser.add_argument("--test_env", type=int, help="Test environment ID of the actions to plot")
-    parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5],
-                        help="Seed(s) of the run(s) to download")
+    parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser.parse_args()
 
