@@ -1,4 +1,3 @@
-import json
 import os
 import wandb
 from wandb.apis.public import Run
@@ -13,31 +12,6 @@ def main(args: argparse.Namespace) -> None:
     for run in runs:
         if suitable_run(run, args):
             store_data(run, args.sequence, args.metric, args.type, args.wandb_tags)
-
-
-def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the run shouldn't be filtered out
-    if any(logs in run.name for logs in args.include_runs):
-        return True
-    # Check whether the run has successfully finished
-    if run.state != "finished":
-        return False
-    # Load the configuration of the run
-    config = json.loads(run.json_config)
-    # Check whether the provided CL sequence corresponds with the run
-    if args.sequence not in run.url:
-        return False
-    # Check whether the run includes one of the provided wandb tags
-    if args.wandb_tags:
-        # Tag(s) are provided but not listed in the run
-        if 'wandb_tags' not in config:
-            return False
-        tags = config['wandb_tags']['value']
-        # Check whether the run includes one of the provided tags in args.tags
-        if not any(tag in tags for tag in args.wandb_tags):
-            return False
-    # All filters have been passed
-    return True
 
 
 def store_data(run: Run, sequence: str, metric: str, data_type: str, tags: List[str]) -> None:
@@ -66,8 +40,8 @@ def store_data(run: Run, sequence: str, metric: str, data_type: str, tags: List[
         values = [item[log_key] for item in history]
         method = get_cl_method(run)
         seed = max(run.config["seed"], 1)
-        tag = f"{config['wandb_tags']['value'][0].lower()}/" if any(
-            tag in tags for tag in SEPARATE_STORAGE_TAGS) else ''
+        wandb_tags = config['wandb_tags']['value']
+        tag = f"{wandb_tags[0].lower()}/" if tags and any(tag in tags for tag in SEPARATE_STORAGE_TAGS) else ''
         path = f'{tag}{sequence}/{method}/seed_{seed}'
         if not os.path.exists(path):
             os.makedirs(path)
