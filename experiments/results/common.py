@@ -137,21 +137,21 @@ def common_dl_args() -> argparse.ArgumentParser:
     return parser
 
 
-def add_task_labels(ax: np.ndarray, envs: List[str], max_steps: int, n_envs: int):
+def add_task_labels(ax: np.ndarray, envs: List[str], max_steps: int, n_envs: int, idx: int = 0):
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
     fontsize = 10 if n_envs == 4 else 8
     tick_labels = [TRANSLATIONS[env] for env in envs]
-    ax_twin = ax[0].twiny()
-    ax_twin.set_xlim(ax[0].get_xlim())
+    ax_twin = ax[idx].twiny()
+    ax_twin.set_xlim(ax[idx].get_xlim())
     ax_twin.set_xticks(task_indicators)
     ax_twin.set_xticklabels(tick_labels, fontsize=fontsize)
     ax_twin.tick_params(axis='both', which='both', length=0)
     return ax_twin
 
 
-def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max_steps: int, n_envs: int):
-    ax_twin = add_task_labels(ax, envs, max_steps, n_envs)
+def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max_steps: int, n_envs: int, idx: int = 0):
+    ax_twin = add_task_labels(ax, envs, max_steps, n_envs, idx)
     for xtick, color in zip(ax_twin.get_xticklabels(), COLORS[sequence]):
         xtick.set_color(color)
         xtick.set_fontweight('bold')
