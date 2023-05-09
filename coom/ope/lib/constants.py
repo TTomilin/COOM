@@ -1,1 +1,0 @@
-DOOM_GAMES = ['DoomTakeCover']
