@@ -49,15 +49,7 @@ def main(args: argparse.Namespace) -> None:
             ax[j].set_title(sequence)
             ax[j].set_ylabel("Actions")
 
-        env_steps = max_steps // n_envs
-        task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
-
-        tick_labels = [TRANSLATIONS[env] for env in envs]
-        ax2 = ax[0].twiny()
-        ax2.set_xlim(ax[0].get_xlim())
-        ax2.set_xticks(task_indicators)
-        ax2.set_xticklabels(tick_labels)
-        ax2.tick_params(axis='both', which='both', length=0)
+        add_task_labels(ax[0], envs, max_steps, n_envs)
 
         ax[-1].set_xlabel("Timesteps (K)")
         handles, labels = ax[-1].get_legend_handles_labels()
