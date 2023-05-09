@@ -6,6 +6,7 @@ from typing import List
 from experiments.results.plot_actions_by_method import TRANSLATIONS
 
 TRANSLATIONS = {
+    'sac': 'SAC',
     'packnet': 'PackNet',
     'mas': 'MAS',
     'agem': 'AGEM',
@@ -33,10 +34,17 @@ TRANSLATIONS = {
     'shadows': 'Shadows',
 
     'success': 'Success',
-    'kills': 'Score',
+    'kills': 'Kill Count',
     'ep_length': 'Frames Alive',
     'arms_dealt': 'Weapons Delivered',
     'distance': 'Distance',
+
+    'single': 'Single',
+    'CD4': 'CD4',
+    'CD8': 'CD8',
+    'CO4': 'CO4',
+    'CO8': 'CO8',
+    'COC': 'COC',
 }
 
 SEQUENCES = {
@@ -71,6 +79,15 @@ METRICS = {
     'default': 'kills',
 }
 
+ENVS = {
+    'CO4': 'default',
+    'CO8': 'default',
+    'COC': 'hard',
+}
+
+SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
+FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
+
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
 KERNEL_SIGMA = 3
 INTERVAL_INTENSITY = 0.25
@@ -83,12 +100,29 @@ CRITICAL_VALUES = {
 
 def common_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, required=True, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
+    parser.add_argument("--sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         help="Name of the task sequence")
-    parser.add_argument("--metric", type=str, default='success', help="Name of the metric to plot")
-    parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
     parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
+    parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
+    return parser
+
+def common_plot_args() -> argparse.ArgumentParser:
+    parser = common_args()
+    parser.add_argument("--method", type=str, default='packnet', help="CL method name")
+    parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
+    return parser
+
+
+def common_dl_args() -> argparse.ArgumentParser:
+    parser = common_args()
+    parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
+    parser.add_argument("--method", type=str, help="Optional filter by CL method")
+    parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
+    parser.add_argument("--test_envs", type=int, nargs='+', help="Test environment ID of the actions to download")
+    parser.add_argument("--wandb_tags", type=str, nargs='+', help="WandB tags to filter runs")
+    parser.add_argument("--include_runs", type=str, nargs="+", default=[],
+                        help="List of runs that shouldn't be filtered out")
     return parser
 
 
@@ -117,3 +151,18 @@ def plot_curve(ax, confidence: float, color, label: str, plot_idx: int, iteratio
     ax[plot_idx].plot(mean, label=label, color=color)
     ax[plot_idx].tick_params(labelbottom=True)
     ax[plot_idx].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
+
+
+def add_main_ax(fig):
+    main_ax = fig.add_subplot(1, 1, 1, frameon=False)
+    main_ax.get_xaxis().set_ticks([])
+    main_ax.get_yaxis().set_ticks([])
+    main_ax.set_xlabel('Timesteps (K)', fontsize=11)
+    main_ax.xaxis.labelpad = 25
+
+
+def get_cl_method(run):
+    method = run.config["cl_method"]
+    if not method:
+        method = 'perfect_memory' if run.config['buffer_type'] == 'reservoir' else 'fine_tuning'
+    return method

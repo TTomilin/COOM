@@ -5,17 +5,7 @@ import json
 import wandb
 from wandb.apis.public import Run
 
-METRICS = {
-    'pitfall': 'distance',
-    'arms_dealer': 'arms_dealt',
-    'hide_and_seek': 'ep_length',
-    'floor_is_lava': 'ep_length',
-    'chainsaw': 'kills',
-    'raise_the_roof': 'ep_length',
-    'run_and_gun': 'kills',
-    'seek_and_slay': 'kills',  # Legacy scenario name
-    'health_gathering': 'ep_length',
-}
+from experiments.results.common import METRICS
 
 
 def main(args: argparse.Namespace) -> None:
@@ -39,7 +29,7 @@ def store_data(run: Run, required_metric: str, seed: str) -> None:
     log_key = f'train/{metric}'
     history = list(iter(run.scan_history(keys=[log_key])))
     values = [item[log_key] for item in history][:200]
-    path = f'./single/sac/seed_{seed}'
+    path = f'data/single/sac/seed_{seed}'
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Created new directory {path}")
