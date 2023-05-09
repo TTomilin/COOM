@@ -23,7 +23,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def store_data(run: Run, args: argparse.Namespace) -> None:
-    sequence, metric, seed = args.sequence, args.metric, args.seed
+    sequence, metric = args.sequence, args.metric
     envs = SEQUENCES[sequence]
 
     # Load the environment name from the run configuration
@@ -42,6 +42,7 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
             return
 
     metric = METRICS[scenario] if metric is None else metric
+    seed = max(run.config["seed"], 1)
     path = f'data/single/sac/seed_{seed}'
     file_path = f'{path}/{task}_{metric}.json'
     if not args.overwrite and os.path.exists(file_path):
@@ -58,17 +59,6 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
         json.dump(values, f)
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--metric", type=str, default=None, help="Name of the metric to store")
-    parser.add_argument("--env", type=str, default='default', help="Name of the Doom environment")
-    parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
-    parser.add_argument("--seed", type=str, required=True, choices=['1', '2', '3'], help="Seed of the run")
-    parser.add_argument("--run_ids", type=str, nargs="+", default=[], help="List of experiment names to downloaded")
-    return parser.parse_args()
-
-
 if __name__ == "__main__":
     parser = common_dl_args()
-    parser.add_argument("--seed", type=int, default=1, choices=[1, 2, 3, 4, 5], help="Seed of the run")
     main(parser.parse_args())
