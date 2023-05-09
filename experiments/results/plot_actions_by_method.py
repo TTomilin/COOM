@@ -118,7 +118,7 @@ def main(args: argparse.Namespace) -> None:
         ax[j].set_title(TRANSLATIONS[method])
         ax[j].set_ylabel("Actions")
 
-    add_task_labels(ax, envs, max_steps, n_envs)
+    add_coloured_task_labels(ax, envs, max_steps, n_envs)
 
     ax[-1].set_xlabel("Timesteps (K)")
     handles, labels = ax[-1].get_legend_handles_labels()

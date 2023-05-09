@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from scipy.stats import t
 
+from experiments.results.common import add_main_ax
+
 TRANSLATIONS = {
     'packnet': 'PackNet',
     'mas': 'MAS',
@@ -103,11 +105,7 @@ def main(args: argparse.Namespace) -> None:
         ax[col, row].set_title(TRANSLATIONS[env])
         ax[col, row].yaxis.set_label_coords(-0.25, 0.5)
 
-    main_ax = fig.add_subplot(1, 1, 1, frameon=False)
-    main_ax.get_xaxis().set_ticks([])
-    main_ax.get_yaxis().set_ticks([])
-    main_ax.set_xlabel('Timesteps (K)')
-    main_ax.xaxis.labelpad = 25
+    add_main_ax(fig)
 
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=6, fancybox=True, shadow=True)

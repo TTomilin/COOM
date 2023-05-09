@@ -37,7 +37,7 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method], fontsize=12)
 
-    add_task_labels(ax, envs, sequence, max_steps, n_envs)
+    add_coloured_task_labels(ax, envs, sequence, max_steps, n_envs)
 
     n_cols = n_envs if n_envs == 4 else n_envs // 2
     ax[-1].set_xlabel("Timesteps (K)", fontsize=11)

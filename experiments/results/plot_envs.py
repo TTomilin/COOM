@@ -41,7 +41,7 @@ def main(args: argparse.Namespace) -> None:
         ax[i].set_title(TRANSLATIONS[env])
         ax[i].yaxis.set_label_coords(y_label_shift, 0.5)
 
-    add_task_labels(ax, envs, sequence, max_steps, n_envs)
+    add_coloured_task_labels(ax, envs, sequence, max_steps, n_envs)
 
     fontsize = 9 if n_envs == 4 else 12
     legend_anchor = -0.7 if n_envs == 4 else -1
