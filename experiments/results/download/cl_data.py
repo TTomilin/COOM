@@ -11,10 +11,11 @@ def main(args: argparse.Namespace) -> None:
     runs = api.runs(args.project)
     for run in runs:
         if suitable_run(run, args):
-            store_data(run, args.sequence, args.metric, args.type, args.wandb_tags)
+            store_data(run, args)
 
 
-def store_data(run: Run, sequence: str, metric: str, data_type: str, tags: List[str]) -> None:
+def store_data(run: Run, args: argparse.Namespace) -> None:
+    sequence, metric, data_type, tags = args.sequence, args.metric, args.type, args.wandb_tags
     config = json.loads(run.json_config)
     seq_len = 4 if sequence in ['CD4', 'CO4'] else 8
     for env_idx in range(seq_len):
@@ -48,9 +49,11 @@ def store_data(run: Run, sequence: str, metric: str, data_type: str, tags: List[
             print(f"Created new directory {path}")
 
         file_name = f'{task}_{metric}.json' if data_type == 'test' else f'train_{metric}.json'
-        print(f'Saving {run.id} --- {file_name}')
-        with open(f'{path}/{file_name}', 'w') as f:
-            json.dump(values, f)
+        file_path = f'{path}/{file_name}'
+        if args.overwrite or not os.path.exists(file_path):
+            print(f'Saving {run.id} --- {path}/{file_name}')
+            with open(f'{path}/{file_name}', 'w') as f:
+                json.dump(values, f)
 
 
 if __name__ == "__main__":

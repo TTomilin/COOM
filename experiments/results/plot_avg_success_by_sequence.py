@@ -61,7 +61,7 @@ METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
-    seeds = ['1', '2', '3']
+    seeds = cfg.seeds
     sequences = cfg.sequences
     n_sequences = len(sequences)
     metric = cfg.metric

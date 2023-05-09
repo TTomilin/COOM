@@ -2,6 +2,7 @@ import json
 
 import argparse
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from typing import List
 
@@ -40,6 +41,12 @@ TRANSLATIONS = {
     'ep_length': 'Frames Alive',
     'arms_dealt': 'Weapons Delivered',
     'distance': 'Distance',
+
+    'reg_critic': 'Critic Regularization',
+    'no_reg_critic': 'No Critic Regularization',
+
+    'single_head': 'Single Head',
+    'multi_head': 'Multi Head',
 
     'single': 'Single',
     'CD4': 'CD4',
@@ -108,6 +115,7 @@ def common_args() -> argparse.ArgumentParser:
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
     return parser
 
+
 def common_plot_args() -> argparse.ArgumentParser:
     parser = common_args()
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
@@ -123,6 +131,7 @@ def common_dl_args() -> argparse.ArgumentParser:
     parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
     parser.add_argument("--test_envs", type=int, nargs='+', help="Test environment ID of the actions to download")
     parser.add_argument("--wandb_tags", type=str, nargs='+', help="WandB tags to filter runs")
+    parser.add_argument("--overwrite", default=False, action='store_true', help="Overwrite existing files")
     parser.add_argument("--include_runs", type=str, nargs="+", default=[],
                         help="List of runs that shouldn't be filtered out")
     return parser
@@ -149,9 +158,9 @@ def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max
 
 
 def plot_curve(ax, confidence: float, color, label: str, plot_idx: int, iterations: int,
-               seed_data: np.ndarray, n_seeds: int):
-    mean = np.nanmean(seed_data, axis=0)
-    std = np.nanstd(seed_data, axis=0)
+               seed_data: np.ndarray, n_seeds: int, agg_axes=0):
+    mean = np.nanmean(seed_data, axis=agg_axes)
+    std = np.nanstd(seed_data, axis=agg_axes)
     mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
@@ -190,10 +199,11 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     # Check whether the wandb tags are suitable
     if 'wandb_tags' in config:
         tags = config['wandb_tags']['value']
-        if any(tag in tags for tag in FORBIDDEN_TAGS):
-            return False
         # Check whether the run includes one of the provided tags
         if args.wandb_tags and not any(tag in tags for tag in args.wandb_tags):
+            return False
+        # Check whether the run includes one of the forbidden tags which is not in the provided tags
+        if any(tag in tags for tag in FORBIDDEN_TAGS) and not any(tag in tags for tag in args.wandb_tags):
             return False
     # Check whether the run corresponds to one of the provided seeds
     if args.seeds:
@@ -208,3 +218,11 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
             return False
     # All filters have been passed
     return True
+
+
+def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float) -> None:
+    ax.set_xlabel("Timesteps (K)", fontsize=11)
+    ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
+    plt.tight_layout()
+    plt.savefig(f'plots/{plot_name}.png')
+    plt.show()
