@@ -220,8 +220,8 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     return True
 
 
-def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float) -> None:
-    ax.set_xlabel("Timesteps (K)", fontsize=11)
+def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float, fontsize=11) -> None:
+    ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout()
     plt.savefig(f'plots/{plot_name}.png')

@@ -45,12 +45,8 @@ def main(args: argparse.Namespace) -> None:
 
     fontsize = 9 if n_envs == 4 else 12
     legend_anchor = -0.7 if n_envs == 4 else -1
-
-    ax[-1].set_xlabel("Timesteps (K)", fontsize=11)
-    ax[-1].legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=len(methods), fancybox=True, shadow=True, fontsize=fontsize)
-    plt.tight_layout()
-    plt.savefig(f'plots/env/{sequence}_{metric}.png')
-    plt.show()
+    plot_name = f'env/{sequence}_{metric}'
+    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=len(methods), legend_anchor=legend_anchor, fontsize=fontsize)
 
 
 if __name__ == "__main__":
