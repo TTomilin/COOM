@@ -48,5 +48,5 @@ def main(cfg: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = common_args()
+    parser = common_plot_args()
     main(parser.parse_args())
