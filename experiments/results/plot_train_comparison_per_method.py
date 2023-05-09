@@ -2,8 +2,6 @@ import os
 
 from experiments.results.common import *
 
-LINE_STYLES = ['-', '--', ':', '-.']
-
 
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
@@ -43,9 +41,5 @@ def main(cfg: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = common_plot_args()
-    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        nargs="+", help="Name of the task sequences")
-    parser.add_argument("--methods", type=str, nargs="+",
-                        choices=['packnet', 'vcl', 'mas', 'agem', 'l2', 'fine_tuning'])
     parser.add_argument("--n_envs", type=int, default=8, help="Number of environments to plot")
     main(parser.parse_args())

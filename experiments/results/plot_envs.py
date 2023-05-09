@@ -9,6 +9,7 @@ def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn-paper')
     seeds = args.seeds
     sequence = args.sequence
+    colors = COLORS[sequence]
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
     metric = None
@@ -35,7 +36,7 @@ def main(args: argparse.Namespace) -> None:
                 max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
 
-            plot_curve(ax, args.confidence, PLOT_COLORS[j], TRANSLATIONS[method], i, iterations, seed_data, len(seeds))
+            plot_curve(ax[i], args.confidence, colors[j], TRANSLATIONS[method], iterations, seed_data, len(seeds))
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])

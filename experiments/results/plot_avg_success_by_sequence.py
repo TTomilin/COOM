@@ -31,7 +31,7 @@ def main(cfg: argparse.Namespace) -> None:
                     max_steps = max(max_steps, steps)
                     seed_data[j, k, np.arange(steps)] = data
 
-            plot_curve(ax, cfg.confidence, colors[i], TRANSLATIONS[method], l, iterations, seed_data, n_seeds * n_envs,
+            plot_curve(ax[l], cfg.confidence, colors[i], TRANSLATIONS[method], iterations, seed_data, n_seeds * n_envs,
                        agg_axes=(0, 1))
 
         ax[l].set_ylabel('Average Success')
@@ -46,6 +46,4 @@ def main(cfg: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = common_plot_args()
-    parser.add_argument("--sequences", type=str, nargs='+', required=True, choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Name of the task sequences")
     main(parser.parse_args())

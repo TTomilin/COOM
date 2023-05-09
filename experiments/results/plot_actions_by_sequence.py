@@ -70,6 +70,4 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = common_plot_args()
-    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Name of the task sequence")
     main(parser.parse_args())

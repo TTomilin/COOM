@@ -6,8 +6,8 @@ from experiments.results.common import plot_curve
 
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-paper')
-    colors = COLORS[cfg.sequence]
     seeds, metric, sequence = cfg.seeds, cfg.metric, cfg.sequence
+    colors = COLORS[sequence]
     envs = SEQUENCES[sequence]
     n_seeds, n_envs = len(seeds), len(envs)
     methods = METHODS if n_envs == 4 else METHODS[:-1]
@@ -28,7 +28,7 @@ def main(cfg: argparse.Namespace) -> None:
                 steps = len(data)
                 max_steps = max(max_steps, steps)
                 seed_data[k, np.arange(steps)] = data
-            plot_curve(ax, cfg.confidence, colors[j], TRANSLATIONS[env], i, iterations, seed_data, n_seeds)
+            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[env], iterations, seed_data, n_seeds)
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method], fontsize=12)

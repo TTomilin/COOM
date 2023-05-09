@@ -72,6 +72,4 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = common_plot_args()
-    parser.add_argument("--methods", type=str, default=['packnet', 'fine_tuning'],
-                        choices=['packnet', 'mas', 'vcl', 'agem', 'l2', 'fine_tuning'])
     main(parser.parse_args())

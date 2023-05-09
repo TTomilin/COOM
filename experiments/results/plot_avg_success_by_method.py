@@ -32,7 +32,7 @@ def main(cfg: argparse.Namespace) -> None:
                     max_steps = max(max_steps, steps)
                     seed_data[e, k, np.arange(steps)] = data
 
-            plot_curve(ax, cfg.confidence, colors[j], TRANSLATIONS[folder], i, iterations, seed_data, n_seeds * n_envs,
+            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[folder], iterations, seed_data, n_seeds * n_envs,
                        agg_axes=(0, 1))
 
         ax[i].set_ylabel('Average Success')
@@ -47,6 +47,4 @@ if __name__ == "__main__":
     parser.add_argument("--folders", type=str, required=True, nargs='+', help="Names of the folders")
     parser.add_argument("--plot_name", type=str, required=True, help="Names of the plot")
     parser.add_argument("--legend_anchor", type=float, default=0, help="How much to lower the legend")
-    parser.add_argument("--methods", type=str, nargs='+', default=['packnet', 'l2', 'mas', 'agem'],
-                        help="Names of the methods")
     main(parser.parse_args())

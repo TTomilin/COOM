@@ -2,15 +2,13 @@ import os
 
 from experiments.results.common import *
 
-PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
-LINE_STYLES = ['-', '--', ':', '-.']
-
 
 def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn-paper')
     seeds, sequences = args.seeds, args.sequences
-    scenarios = SEQUENCES[sequences[0]]
-    n_envs = len(scenarios)
+    colors = COLORS[sequences[0]]
+    envs = SEQUENCES[sequences[0]]
+    n_envs = len(envs)
     metric = None
     n_rows = 2
     n_cols = int(np.ceil(n_envs / n_rows))
@@ -18,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
     max_steps = -np.inf
     task_length = args.task_length
 
-    for i, env in enumerate(scenarios):
+    for i, env in enumerate(envs):
         row = i % n_cols
         col = i // n_cols
         for j, sequence in enumerate(sequences):
@@ -37,7 +35,7 @@ def main(args: argparse.Namespace) -> None:
                     max_steps = max(max_steps, steps)
                     seed_data[k, np.arange(steps)] = data
                 label = f'{TRANSLATIONS[method]} ({TRANSLATIONS[sequence]})'
-                plot_curve(ax[col, row], args.confidence, PLOT_COLORS[l], label, args.task_length, seed_data,
+                plot_curve(ax[col, row], args.confidence, colors[l], label, args.task_length, seed_data,
                            len(seeds), linestyle=LINE_STYLES[j])
 
         ax[col, row].set_ylabel(TRANSLATIONS[metric])
@@ -55,8 +53,4 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = common_plot_args()
-    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Name of the task sequences")
-    parser.add_argument("--methods", type=str, nargs="+",
-                        choices=['packnet', 'vcl', 'mas', 'agem', 'l2', 'fine_tuning'])
     main(parser.parse_args())

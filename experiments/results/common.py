@@ -106,7 +106,7 @@ ENVS = {
 
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
-
+LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
 KERNEL_SIGMA = 3
 INTERVAL_INTENSITY = 0.25
@@ -132,6 +132,10 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser = common_args()
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
+    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
+                        help="Name of the task sequences")
+    parser.add_argument("--methods", type=str, nargs="+",
+                        choices=['packnet', 'vcl', 'mas', 'agem', 'l2', 'fine_tuning'])
     return parser
 
 
@@ -230,7 +234,7 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     return True
 
 
-def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float, fontsize=11) -> None:
+def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fontsize: int = 11) -> None:
     ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout()
