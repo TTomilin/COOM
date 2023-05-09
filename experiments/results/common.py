@@ -6,8 +6,6 @@ from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from typing import List
 
-from experiments.results.plot_actions_by_method import TRANSLATIONS
-
 TRANSLATIONS = {
     'sac': 'SAC',
     'packnet': 'PackNet',
@@ -54,6 +52,19 @@ TRANSLATIONS = {
     'CO4': 'CO4',
     'CO8': 'CO8',
     'COC': 'COC',
+
+    'Action 0': 'NO-OP',
+    'Action 1': 'EXECUTE',
+    'Action 2': 'MOVE_FORWARD',
+    'Action 3': 'MOVE_FORWARD, EXECUTE',
+    'Action 4': 'TURN_RIGHT',
+    'Action 5': 'TURN_RIGHT, EXECUTE',
+    'Action 6': 'TURN_RIGHT, MOVE_FORWARD',
+    'Action 7': 'TURN_RIGHT, MOVE_FORWARD, EXECUTE',
+    'Action 8': 'TURN_LEFT',
+    'Action 9': 'TURN_LEFT, EXECUTE',
+    'Action 10': 'TURN_LEFT, MOVE_FORWARD',
+    'Action 11': 'TURN_LEFT, MOVE_FORWARD, EXECUTE',
 }
 
 SEQUENCES = {
@@ -114,6 +125,7 @@ def common_args() -> argparse.ArgumentParser:
     parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
+    parser.add_argument("--test_envs", type=int, nargs='+', help="Test environment ID of the actions to download/plot")
     return parser
 
 
@@ -129,7 +141,6 @@ def common_dl_args() -> argparse.ArgumentParser:
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--method", type=str, help="Optional filter by CL method")
     parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
-    parser.add_argument("--test_envs", type=int, nargs='+', help="Test environment ID of the actions to download")
     parser.add_argument("--wandb_tags", type=str, nargs='+', help="WandB tags to filter runs")
     parser.add_argument("--overwrite", default=False, action='store_true', help="Overwrite existing files")
     parser.add_argument("--include_runs", type=str, nargs="+", default=[],
@@ -137,21 +148,21 @@ def common_dl_args() -> argparse.ArgumentParser:
     return parser
 
 
-def add_task_labels(ax: np.ndarray, envs: List[str], max_steps: int, n_envs: int, idx: int = 0):
+def add_task_labels(ax, envs: List[str], max_steps: int, n_envs: int):
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
     fontsize = 10 if n_envs == 4 else 8
     tick_labels = [TRANSLATIONS[env] for env in envs]
-    ax_twin = ax[idx].twiny()
-    ax_twin.set_xlim(ax[idx].get_xlim())
+    ax_twin = ax.twiny()
+    ax_twin.set_xlim(ax.get_xlim())
     ax_twin.set_xticks(task_indicators)
     ax_twin.set_xticklabels(tick_labels, fontsize=fontsize)
     ax_twin.tick_params(axis='both', which='both', length=0)
     return ax_twin
 
 
-def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max_steps: int, n_envs: int, idx: int = 0):
-    ax_twin = add_task_labels(ax, envs, max_steps, n_envs, idx)
+def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max_steps: int, n_envs: int):
+    ax_twin = add_task_labels(ax, envs, max_steps, n_envs)
     for xtick, color in zip(ax_twin.get_xticklabels(), COLORS[sequence]):
         xtick.set_color(color)
         xtick.set_fontweight('bold')

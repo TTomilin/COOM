@@ -38,7 +38,7 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_ylabel('Average Success')
         ax[i].set_title(TRANSLATIONS[method])
 
-    add_task_labels(ax, envs, iterations, n_envs)
+    add_task_labels(ax[0], envs, iterations, n_envs)
     plot_and_save(ax[-1], cfg.plot_name, len(folders), cfg.legend_anchor)
 
 

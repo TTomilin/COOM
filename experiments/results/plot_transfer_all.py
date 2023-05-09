@@ -72,7 +72,7 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_title(TRANSLATIONS[method], fontsize=11)
         ax[i].set_ylim([0, 1])
 
-    add_task_labels(ax, envs, iterations, n_envs)
+    add_task_labels(ax[0], envs, iterations, n_envs)
 
     handles, labels = [], []
     for a in ax:
@@ -87,7 +87,7 @@ def main(cfg: argparse.Namespace) -> None:
     ax[-1].legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_cols, fancybox=True,
                   shadow=True)
     fig.tight_layout()
-    plt.savefig(f'plots/{sequence}_transfer.png')
+    plt.savefig(f'plots/transfer/{sequence}.png')
     plt.show()
 
 
