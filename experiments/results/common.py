@@ -1,6 +1,5 @@
-import json
-
 import argparse
+import json
 import numpy as np
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
@@ -168,16 +167,16 @@ def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max
         xtick.set_fontweight('bold')
 
 
-def plot_curve(ax, confidence: float, color, label: str, plot_idx: int, iterations: int,
-               seed_data: np.ndarray, n_seeds: int, agg_axes=0):
+def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_data: np.ndarray, n_seeds: int,
+               agg_axes=0, linestyle='-'):
     mean = np.nanmean(seed_data, axis=agg_axes)
     std = np.nanstd(seed_data, axis=agg_axes)
     mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
-    ax[plot_idx].plot(mean, label=label, color=color)
-    ax[plot_idx].tick_params(labelbottom=True)
-    ax[plot_idx].fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
+    ax.plot(mean, label=label, color=color, linestyle=linestyle)
+    ax.tick_params(labelbottom=True)
+    ax.fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
 
 def add_main_ax(fig):
