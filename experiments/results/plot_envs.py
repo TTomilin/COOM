@@ -6,7 +6,7 @@ from experiments.results.common import *
 
 
 def main(args: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
     seeds = args.seeds
     sequence = args.sequence
     colors = COLORS[sequence]

@@ -4,13 +4,13 @@ from experiments.results.common import *
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
     colors = COLORS[cfg.sequence]
     methods, seeds, folders, sequence = cfg.methods, cfg.seeds, cfg.folders, cfg.sequence
     envs = SEQUENCES[sequence]
     n_envs, n_seeds, n_methods = len(envs), len(seeds), len(methods)
-    fig_size = (12, 7) if n_methods < 4 else (12, 10)
+    fig_size = (12, 10) if n_methods < 5 else (12, 12)
     fig, ax = plt.subplots(n_methods, 1, sharey='all', sharex='all', figsize=fig_size)
     max_steps = -np.inf
     iterations = cfg.task_length * n_envs

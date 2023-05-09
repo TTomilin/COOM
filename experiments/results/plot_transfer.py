@@ -7,7 +7,8 @@ COLORS = ['#C44E52', '#55A868']
 
 
 def main(args: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
+    plt.rcParams['axes.grid'] = True
     seeds = args.seeds
     sequences = ['single', args.sequence]
     scenarios = SEQUENCES[args.sequence]
@@ -15,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
     metric = None
     n_rows = 2
     n_cols = int(np.ceil(n_envs / n_rows))
-    figsize = (5, 4) if n_envs == 4 else (8, 4)
+    figsize = (5, 4) if n_envs == 4 else (11, 5)
     fig, ax = plt.subplots(n_rows, n_cols, sharex='all', figsize=figsize)
     task_length = args.task_length
 

@@ -133,7 +133,7 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
     parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Name of the task sequences")
+                        nargs='+', help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",
                         choices=['packnet', 'vcl', 'mas', 'agem', 'l2', 'fine_tuning'])
     return parser

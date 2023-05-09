@@ -5,7 +5,7 @@ from experiments.results.common import plot_curve
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
     seeds, metric, sequence = cfg.seeds, cfg.metric, cfg.sequence
     colors = COLORS[sequence]
     envs = SEQUENCES[sequence]

@@ -4,7 +4,7 @@ from experiments.results.common import *
 
 
 def main(cfg: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
     seeds, metric, sequences, methods, n_envs = cfg.seeds, cfg.metric, cfg.sequences, cfg.methods, cfg.n_envs
     fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=(12, 8))
@@ -37,7 +37,7 @@ def main(cfg: argparse.Namespace) -> None:
 
     add_coloured_task_labels(ax[0], envs, sequence, max_steps, n_envs)
     plot_name = f'forgetting_{metric}_{"vs".join(cfg.sequences)}_{n_envs}envs'
-    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=8, legend_anchor=-0.4)
+    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=8, legend_anchor=-0.6)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ from experiments.results.common import *
 
 
 def main(args: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
+    plt.rcParams['axes.grid'] = True
     seeds, sequences = args.seeds, args.sequences
     colors = COLORS[sequences[0]]
     envs = SEQUENCES[sequences[0]]
@@ -45,7 +46,7 @@ def main(args: argparse.Namespace) -> None:
 
     add_main_ax(fig)
     handles, labels = ax[-1, -1].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0.02), ncol=6, fancybox=True, shadow=True)
+    fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=6, fancybox=True, shadow=True)
     fig.tight_layout()
     plt.savefig('plots/COC/train_per_env.png')
     plt.show()

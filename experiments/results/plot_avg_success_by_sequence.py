@@ -35,8 +35,8 @@ def main(cfg: argparse.Namespace) -> None:
                        agg_axes=(0, 1))
 
         ax[l].set_ylabel('Average Success')
-        ax[l].set_title(sequence, fontsize=16)
-        add_task_labels(ax[l], envs, iterations, n_envs, l)
+        ax[l].set_title(sequence, fontsize=14)
+        add_task_labels(ax[l], envs, iterations, n_envs)
 
     folder = 'success'
     os.makedirs(folder, exist_ok=True)

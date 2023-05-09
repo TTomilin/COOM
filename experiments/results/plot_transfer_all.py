@@ -1,6 +1,4 @@
-import json
 import os
-from matplotlib import pyplot as plt
 
 from experiments.results.common import *
 

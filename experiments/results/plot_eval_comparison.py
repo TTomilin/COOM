@@ -6,7 +6,7 @@ LINE_STYLES = ['-', '--', ':', '-.']
 
 
 def main(args: argparse.Namespace) -> None:
-    plt.style.use('seaborn-paper')
+    plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
     seeds, metric, sequences, methods = args.seeds, args.metric, args.sequences, args.methods
     colors = COLORS[sequences[0]]
