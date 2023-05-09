@@ -113,6 +113,7 @@ def common_args() -> argparse.ArgumentParser:
                         help="Name of the task sequence")
     parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
+    parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser
 
 
@@ -120,7 +121,6 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser = common_args()
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
-    parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
     return parser
 
 

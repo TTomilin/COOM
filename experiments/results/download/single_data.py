@@ -1,11 +1,16 @@
 import os
-
-import argparse
-import json
 import wandb
 from wandb.apis.public import Run
 
-from experiments.results.common import METRICS
+from experiments.results.common import *
+
+
+def has_single_tag(run: Run) -> bool:
+    config = json.loads(run.json_config)
+    if 'wandb_tags' in config:
+        tags = config['wandb_tags']['value']
+        return 'SINGLE' in tags
+    return False
 
 
 def main(args: argparse.Namespace) -> None:
@@ -13,29 +18,43 @@ def main(args: argparse.Namespace) -> None:
     # Project is specified by <entity/project-name>
     runs = api.runs(args.project)
     for run in runs:
-        if run.id in args.run_ids:
-            store_data(run, args.metric, args.seed)
+        if has_single_tag(run):
+            store_data(run, args)
 
 
-def store_data(run: Run, required_metric: str, seed: str) -> None:
-    scenarios = METRICS.keys()
-    scenario = [scenario for scenario in scenarios if scenario in run.name]
-    if not scenario:
-        print(f"Could not find task for run {run.name}")
+def store_data(run: Run, args: argparse.Namespace) -> None:
+    sequence, metric, seed = args.sequence, args.metric, args.seed
+    envs = SEQUENCES[sequence]
+
+    # Load the environment name from the run configuration
+    config = json.loads(run.json_config)
+    env = config['envs']['value'][0]
+
+    if sequence in ['CD4', 'CD8']:
         scenario = 'run_and_gun'
+        task = env
+        if scenario not in run.url:
+            return
     else:
-        scenario = scenario[0]
-    metric = METRICS[scenario] if required_metric is None else required_metric
+        scenario = [env for env in envs if env in run.name][0]
+        task = scenario
+        if env != 'default':
+            return
+
+    metric = METRICS[scenario] if metric is None else metric
+    path = f'data/single/sac/seed_{seed}'
+    file_path = f'{path}/{task}_{metric}.json'
+    if not args.overwrite and os.path.exists(file_path):
+        print(f"File {file_path} already exists, skipping")
+        return
     log_key = f'train/{metric}'
     history = list(iter(run.scan_history(keys=[log_key])))
-    values = [item[log_key] for item in history][:200]
-    path = f'data/single/sac/seed_{seed}'
+    values = [item[log_key] for item in history][:args.task_length]
     if not os.path.exists(path):
         os.makedirs(path)
         print(f"Created new directory {path}")
-    file_name = f'{path}/{scenario}_{metric}.json'
-    print(f'Saving {file_name}')
-    with open(file_name, 'w') as f:
+    print(f'Saving {file_path}')
+    with open(file_path, 'w') as f:
         json.dump(values, f)
 
 
@@ -50,5 +69,6 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    arguments = parse_args()
-    main(arguments)
+    parser = common_dl_args()
+    parser.add_argument("--seed", type=int, default=1, choices=[1, 2, 3, 4, 5], help="Seed of the run")
+    main(parser.parse_args())
