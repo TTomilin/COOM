@@ -31,7 +31,7 @@ def main(args: argparse.Namespace) -> None:
             seed_data[:] = np.nan
             for k, seed in enumerate(seeds):
                 data_file = env if sequence == 'single' else 'train'
-                path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{data_file}_{metric}.json')
+                path = os.path.join(os.getcwd(), '../data', sequence, method, f'seed_{seed}', f'{data_file}_{metric}.json')
                 if not os.path.exists(path):
                     continue
                 with open(path, 'r') as f:

@@ -1,30 +1,8 @@
-import os
-
 from experiments.results.common import *
+from experiments.results.common import get_baseline_data
 
 COLOR_SAC = '#C44E52'
 COLORS = ['#1F77B4', '#55A868', '#4C72B0', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
-
-
-def get_baseline_data(sequence: str, scenarios: List[str], seeds: List[str], task_length: int,
-                      set_metric: str = None) -> np.ndarray:
-    seed_data = np.empty((len(seeds), task_length * len(scenarios)))
-    seed_data[:] = np.nan
-    baseline_type = 'single_hard' if sequence == 'COC' else 'single'
-    for i, env in enumerate(scenarios):
-        metric = set_metric if set_metric else METRICS[env]
-        for k, seed in enumerate(seeds):
-            path = f'{os.getcwd()}/data/{baseline_type}/sac/seed_{seed}/{env}_{metric}.json'
-            if not os.path.exists(path):
-                continue
-            with open(path, 'r') as f:
-                data = json.load(f)[0: task_length]
-            steps = len(data)
-            start = i * task_length
-            seed_data[k, np.arange(start, start + steps)] = data
-    baseline_data = np.nanmean(seed_data, axis=0)
-    baseline_data = gaussian_filter1d(baseline_data, sigma=2)
-    return baseline_data
 
 
 def main(cfg: argparse.Namespace) -> None:
@@ -39,6 +17,7 @@ def main(cfg: argparse.Namespace) -> None:
     task_length = cfg.task_length
     iterations = task_length * n_envs
     baseline = get_baseline_data(sequence, envs, seeds, task_length, cfg.metric)
+    baseline = gaussian_filter1d(baseline, sigma=2)
 
     for i, method in enumerate(methods):
         seed_data = np.empty((len(seeds), iterations))

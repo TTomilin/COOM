@@ -25,7 +25,7 @@ def main(args: argparse.Namespace) -> None:
             seed_data = np.empty((len(seeds), iterations, n_actions))
             seed_data[:] = np.nan
             for k, seed in enumerate(seeds):
-                path = os.path.join(os.getcwd(), 'data', 'actions', sequence, method, folder, f'seed_{seed}.json')
+                path = os.path.join(os.getcwd(), '../data', 'actions', sequence, method, folder, f'seed_{seed}.json')
                 if not os.path.exists(path):
                     continue
                 with open(path, 'r') as f:
@@ -64,7 +64,7 @@ def main(args: argparse.Namespace) -> None:
         plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
         bottom_plot.legend(loc='lower center', bbox_to_anchor=(0.5, -0.6), ncol=n_cols, fancybox=True, shadow=True)
 
-        file_path = 'plots/actions'
+        file_path = '../plots/actions'
         os.makedirs(file_path, exist_ok=True)
         plt.savefig(f'{file_path}/{sequence}_{title}.png')
         plt.show()

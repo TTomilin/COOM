@@ -19,7 +19,7 @@ def main(cfg: argparse.Namespace) -> None:
             seed_data = np.empty((len(seeds), iterations))
             seed_data[:] = np.nan
             for k, seed in enumerate(seeds):
-                path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', 'train_success.json')
+                path = os.path.join(os.getcwd(), '../data', sequence, method, f'seed_{seed}', 'train_success.json')
                 if not os.path.exists(path):
                     continue
                 with open(path, 'r') as f:
@@ -35,7 +35,7 @@ def main(cfg: argparse.Namespace) -> None:
         ax[i].set_title(TRANSLATIONS[method])
 
     add_task_labels(ax[0], envs, max_steps, n_envs)
-    plot_name = f'training_{metric}_{"vs".join(cfg.sequences)}_{n_envs}envs'
+    plot_name = f'training/{"vs".join(cfg.sequences)}_{n_envs}envs'
     plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=8, legend_anchor=-0.7)
 
 
