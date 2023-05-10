@@ -1,6 +1,7 @@
 import argparse
 import json
 import numpy as np
+import os
 from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter1d
 from typing import List
@@ -240,3 +241,23 @@ def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fo
     plt.tight_layout()
     plt.savefig(f'plots/{plot_name}.png')
     plt.show()
+
+
+def get_baseline_data(sequence: str, scenarios: List[str], seeds: List[str], task_length: int,
+                      set_metric: str = None) -> np.ndarray:
+    seed_data = np.empty((len(seeds), task_length * len(scenarios)))
+    seed_data[:] = np.nan
+    baseline_type = 'single_hard' if sequence == 'COC' else 'single'
+    for i, env in enumerate(scenarios):
+        metric = set_metric if set_metric else METRICS[env]
+        for k, seed in enumerate(seeds):
+            path = f'{os.getcwd()}/data/{baseline_type}/sac/seed_{seed}/{env}_{metric}.json'
+            if not os.path.exists(path):
+                continue
+            with open(path, 'r') as f:
+                data = json.load(f)[0: task_length]
+            steps = len(data)
+            start = i * task_length
+            seed_data[k, np.arange(start, start + steps)] = data
+    baseline_data = np.nanmean(seed_data, axis=0)
+    return baseline_data
