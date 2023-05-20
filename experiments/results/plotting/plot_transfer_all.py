@@ -7,13 +7,13 @@ COLORS = ['#1F77B4', '#55A868', '#4C72B0', '#8172B2', '#CCB974', '#64B5CD', '#77
 
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
-    seeds = cfg.seeds
-    sequence = cfg.sequence
+    seeds, sequence, methods = cfg.seeds, cfg.sequence, cfg.methods
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
-    methods = METHODS if n_envs == 4 else METHODS[:-1]
+    if n_envs == 8:
+        methods = [method for method in methods if method != 'perfect_memory']
     n_methods = len(methods)
-    fig, ax = plt.subplots(n_methods, 1, sharex='all', sharey='all', figsize=(9, 12))
+    fig, ax = plt.subplots(n_methods, 1, sharex='all', sharey='all', figsize=(9, 4))
     task_length = cfg.task_length
     iterations = task_length * n_envs
     baseline = get_baseline_data(sequence, envs, seeds, task_length, cfg.metric)
@@ -37,19 +37,23 @@ def main(cfg: argparse.Namespace) -> None:
         mean = np.nanmean(seed_data, axis=0)
         mean = gaussian_filter1d(mean, sigma=2)
 
-        ax[i].plot(mean, label=TRANSLATIONS[method], color=COLORS[i])
-        ax[i].plot(baseline, label=TRANSLATIONS['sac'], color=COLOR_SAC)
+        ax[i].plot(mean, label=method, color=COLORS[i])
+        ax[i].plot(baseline, label='sac', color=COLOR_SAC)
         ax[i].tick_params(labelbottom=True)
         ax[i].fill_between(np.arange(iterations), mean, baseline, where=(mean < baseline), alpha=0.3, color=COLOR_SAC,
                            interpolate=True)
         ax[i].fill_between(np.arange(iterations), mean, baseline, where=(mean >= baseline), alpha=0.3, color=COLORS[i],
                            interpolate=True)
 
-        ax[i].set_ylabel(TRANSLATIONS[metric], fontsize=11)
-        ax[i].set_title(TRANSLATIONS[method], fontsize=11)
+        # ax[i].set_ylabel('Current Task Success', fontsize=11)
+        ax[i].set_title(TRANSLATIONS[method], fontsize=13)
+        ax[i].set_xlim([0, iterations])
         ax[i].set_ylim([0, 1])
+        ax[i].grid(True, which='major', axis='x', linestyle='--')
 
     add_task_labels(ax[0], envs, iterations, n_envs)
+    main_ax = add_main_ax(fig)
+    main_ax.set_ylabel('Current Task Success', fontsize=11, labelpad=20)
 
     handles, labels = [], []
     for a in ax:
@@ -57,14 +61,18 @@ def main(cfg: argparse.Namespace) -> None:
             if l not in labels:
                 handles.append(h)
                 labels.append(l)
+    sac_idx = labels.index('sac')
+    handles.append(handles.pop(sac_idx))
+    labels.append(labels.pop(sac_idx))
+    labels = [TRANSLATIONS[label] for label in labels]
 
     legend_anchor = -1.1 if n_envs == 4 else -0.7
     n_cols = n_envs if n_envs == 4 else n_methods + 1
-    ax[-1].set_xlabel("Timesteps (K)")
-    ax[-1].legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_cols, fancybox=True,
+    # ax[-1].set_xlabel("Timesteps (K)", fontsize=11)
+    ax[-1].legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, -0.9), ncol=n_cols, fancybox=True,
                   shadow=True)
-    fig.tight_layout()
-    plt.savefig(f'plots/transfer/{sequence}.png')
+    plt.tight_layout(rect=[0, -0.25, 1, 1])
+    plt.savefig(f'plots/transfer/{sequence}_packnet_l2.png')
     plt.show()
 
 
