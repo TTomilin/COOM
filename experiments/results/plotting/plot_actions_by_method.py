@@ -13,6 +13,7 @@ def main(args: argparse.Namespace) -> None:
     max_steps = -np.inf
     cmap = plt.get_cmap('tab20c')
     iterations = args.task_length * n_envs
+    timesteps = 1000
 
     if not plot_envs:
         plot_envs = ['train']
@@ -39,7 +40,7 @@ def main(args: argparse.Namespace) -> None:
             mean = gaussian_filter1d(mean, sigma=5, axis=0)
 
             # Scale the values to add up to 1000 in each time step
-            mean = mean / np.sum(mean, axis=1, keepdims=True) * 1000
+            mean = mean / np.sum(mean, axis=1, keepdims=True) * timesteps
 
             # Create a percent area stackplot with the values in mean
             sub_plot = ax if n_methods == 1 else ax[j]
@@ -48,7 +49,9 @@ def main(args: argparse.Namespace) -> None:
                          colors=[cmap(i) for i in range(n_actions)])
             sub_plot.tick_params(labelbottom=True)
             sub_plot.set_title(TRANSLATIONS[method])
-            sub_plot.set_ylabel("Actions")
+            sub_plot.set_ylabel("Number of Actions")
+            sub_plot.set_xlim(0, iterations)
+            sub_plot.set_ylim(0, timesteps)
 
         top_plot = ax if n_methods == 1 else ax[0]
         add_task_labels(top_plot, envs, max_steps, n_envs)
@@ -57,14 +60,14 @@ def main(args: argparse.Namespace) -> None:
         fig.suptitle(f'        {sequence} - {title}', fontsize=16)
 
         bottom_plot = ax if n_methods == 1 else ax[-1]
-        bottom_plot.set_xlabel("Timesteps (K)")
+        bottom_plot.set_xlabel("Timesteps (K)", fontsize=11)
         n_cols = 4 if n_envs == 4 else 3
 
         bottom_adjust = 0.07 if n_envs == 4 else 0.13 if n_methods > 1 else 0.2
         plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
         bottom_plot.legend(loc='lower center', bbox_to_anchor=(0.5, -0.6), ncol=n_cols, fancybox=True, shadow=True)
 
-        file_path = '../plots/actions'
+        file_path = 'plots/actions'
         os.makedirs(file_path, exist_ok=True)
         plt.savefig(f'{file_path}/{sequence}_{title}.png')
         plt.show()

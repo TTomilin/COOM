@@ -1,5 +1,3 @@
-import os
-
 from experiments.results.common import *
 
 
@@ -21,7 +19,7 @@ def calculate_performance(data: np.ndarray):
     return np.nanmean(data, axis=(-1, -2))
 
 
-def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int, second_half: bool):
+def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int, confidence: float, second_half: bool):
     envs = SEQUENCES[sequence]
     if second_half:
         envs = envs[len(envs) // 2:]
@@ -51,7 +49,7 @@ def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int,
 
             mean = np.nanmean(seed_data, axis=0)
             std = np.nanstd(seed_data, axis=0)
-            ci = CRITICAL_VALUES[args.confidence] * std / np.sqrt(len(seeds))
+            ci = CRITICAL_VALUES[confidence] * std / np.sqrt(len(seeds))
             cl_data[i][j] = mean
             ci_data[i][j] = ci
     performance = calculate_performance(cl_data)
@@ -88,7 +86,8 @@ def main(cfg: argparse.Namespace) -> None:
     forgetting_cis = np.empty((len(sequences), len(METHODS)))
     for i, sequence in enumerate(sequences):
         performance, performance_ci, forgetting, forgetting_ci = calc_metrics(cfg.metric, cfg.seeds, sequence,
-                                                                              cfg.task_length, cfg.second_half)
+                                                                              cfg.task_length, cfg.confidence,
+                                                                              cfg.second_half)
         performances[i] = np.pad(performance, (0, len(METHODS) - len(performance)), 'constant', constant_values=np.nan)
         performance_cis[i] = np.pad(performance_ci, (0, len(METHODS) - len(performance_ci)), 'constant',
                                     constant_values=np.nan)

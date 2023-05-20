@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d
 from typing import List
 
 TRANSLATIONS = {
-    'sac': 'SAC',
+    'sac': 'SAC (reference)',
     'packnet': 'PackNet',
     'mas': 'MAS',
     'agem': 'AGEM',
@@ -155,7 +155,7 @@ def common_dl_args() -> argparse.ArgumentParser:
 def add_task_labels(ax, envs: List[str], max_steps: int, n_envs: int):
     env_steps = max_steps // n_envs
     task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
-    fontsize = 10 if n_envs == 4 else 8
+    fontsize = 10 if n_envs == 4 else 9
     tick_labels = [TRANSLATIONS[env] for env in envs]
     ax_twin = ax.twiny()
     ax_twin.set_xlim(ax.get_xlim())
@@ -190,6 +190,7 @@ def add_main_ax(fig):
     main_ax.get_yaxis().set_ticks([])
     main_ax.set_xlabel('Timesteps (K)', fontsize=11)
     main_ax.xaxis.labelpad = 25
+    return main_ax
 
 
 def get_cl_method(run):
