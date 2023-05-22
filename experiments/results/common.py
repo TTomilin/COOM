@@ -152,9 +152,9 @@ def common_dl_args() -> argparse.ArgumentParser:
     return parser
 
 
-def add_task_labels(ax, envs: List[str], max_steps: int, n_envs: int):
-    env_steps = max_steps // n_envs
-    task_indicators = np.arange(0 + env_steps // 2, max_steps + env_steps // 2, env_steps)
+def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int):
+    env_steps = iterations // n_envs
+    task_indicators = np.arange(0 + env_steps // 2, iterations + env_steps // 2, env_steps)
     fontsize = 10 if n_envs == 4 else 9
     tick_labels = [TRANSLATIONS[env] for env in envs]
     ax_twin = ax.twiny()
@@ -262,3 +262,21 @@ def get_baseline_data(sequence: str, scenarios: List[str], seeds: List[str], tas
             seed_data[k, np.arange(start, start + steps)] = data
     baseline_data = np.nanmean(seed_data, axis=0)
     return baseline_data
+
+
+def get_action_data(folder: str, iterations: int, method: str, n_actions: int, seeds: List[int], sequence: str,
+                    scale=True, ep_time_steps=1000):
+    data = np.empty((len(seeds), iterations, n_actions))
+    data[:] = np.nan
+    for k, seed in enumerate(seeds):
+        path = os.path.join(os.getcwd(), 'data', 'actions', sequence, method, folder, f'seed_{seed}.json')
+        if not os.path.exists(path):
+            continue
+        with open(path, 'r') as f:
+            seed_data = json.load(f)
+            data[k, np.arange(len(seed_data))] = seed_data
+    mean = np.nanmean(data, axis=0)
+    mean = gaussian_filter1d(mean, sigma=5, axis=0)
+    if scale:
+        mean = mean / np.sum(mean, axis=1, keepdims=True) * ep_time_steps
+    return mean

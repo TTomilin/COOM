@@ -7,30 +7,14 @@ def main(args: argparse.Namespace) -> None:
     seeds, method, sequence = args.seeds, args.method, args.sequence
     envs = SEQUENCES[sequence]
     n_envs = len(envs)
-    max_steps = -np.inf
     cmap = plt.get_cmap('tab20c')
     iterations = args.task_length * n_envs
     timesteps = 1000
 
-    folder = 'train'
-    seed_data = np.empty((len(seeds), iterations, n_actions))
-    seed_data[:] = np.nan
-    for k, seed in enumerate(seeds):
-        path = os.path.join(os.getcwd(), 'data', 'actions', sequence, method, folder, f'seed_{seed}.json')
-        if not os.path.exists(path):
-            continue
-        with open(path, 'r') as f:
-            data = json.load(f)
-        steps = len(data)
-        max_steps = max(max_steps, steps)
-        seed_data[k, np.arange(steps)] = data
-
-    # Find the mean actions over all the seeds
-    mean = np.nanmean(seed_data, axis=0)
-    mean_smooth = gaussian_filter1d(mean, sigma=5, axis=0)
+    data = get_action_data('train', iterations, method, n_actions, seeds, sequence)
 
     # Sum the actions over all the time steps and round to the nearest integer
-    total_actions = np.round(np.sum(mean, axis=0)).astype(int)
+    total_actions = np.round(np.sum(data, axis=0)).astype(int)
 
     # Scale the values of total_actions to add up to 1000 in each bin
     total_actions = total_actions / np.sum(total_actions) * timesteps
@@ -43,14 +27,14 @@ def main(args: argparse.Namespace) -> None:
 
     # STACKPLOT
     stackplot = fig.add_subplot(gs[0])
-    stackplot.stackplot(np.arange(iterations), mean_smooth.T,
+    stackplot.stackplot(np.arange(iterations), data.T,
                         labels=[TRANSLATIONS[f'Action {i}'] for i in range(n_actions)],
                         colors=[cmap(i) for i in range(n_actions)])
     stackplot.set_ylabel(y_label)
     stackplot.set_xlim(0, iterations)
     stackplot.set_ylim(0, timesteps)
 
-    add_task_labels(stackplot, envs, max_steps, n_envs)
+    add_task_labels(stackplot, envs, iterations, n_envs)
 
     stackplot.set_xlabel("Timesteps (K)", fontsize=11)
     n_cols = 4 if n_envs == 4 else 3

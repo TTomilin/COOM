@@ -1,6 +1,5 @@
-import os
-
 from experiments.results.common import *
+from experiments.results.common import get_action_data
 
 
 def main(args: argparse.Namespace) -> None:
@@ -10,10 +9,9 @@ def main(args: argparse.Namespace) -> None:
     envs = SEQUENCES[sequence]
     n_methods, n_envs = len(methods), len(envs)
     figsize = (6, 6) if n_envs == 4 else (12, 8) if n_methods > 1 else (12, 5)
-    max_steps = -np.inf
     cmap = plt.get_cmap('tab20c')
     iterations = args.task_length * n_envs
-    timesteps = 1000
+    ep_time_steps = 1000
 
     if not plot_envs:
         plot_envs = ['train']
@@ -23,38 +21,21 @@ def main(args: argparse.Namespace) -> None:
         folder = env if env == 'train' else f'test_{env}'
 
         for j, method in enumerate(methods):
-            seed_data = np.empty((len(seeds), iterations, n_actions))
-            seed_data[:] = np.nan
-            for k, seed in enumerate(seeds):
-                path = os.path.join(os.getcwd(), '../data', 'actions', sequence, method, folder, f'seed_{seed}.json')
-                if not os.path.exists(path):
-                    continue
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                steps = len(data)
-                max_steps = max(max_steps, steps)
-                seed_data[k, np.arange(steps)] = data
-
-            # Find the mean actions over all the seeds
-            mean = np.nanmean(seed_data, axis=0)
-            mean = gaussian_filter1d(mean, sigma=5, axis=0)
-
-            # Scale the values to add up to 1000 in each time step
-            mean = mean / np.sum(mean, axis=1, keepdims=True) * timesteps
+            data = get_action_data(folder, iterations, method, n_actions, seeds, sequence)
 
             # Create a percent area stackplot with the values in mean
             sub_plot = ax if n_methods == 1 else ax[j]
-            sub_plot.stackplot(np.arange(iterations), mean.T,
+            sub_plot.stackplot(np.arange(iterations), data.T,
                          labels=[TRANSLATIONS[f'Action {i}'] for i in range(n_actions)],
                          colors=[cmap(i) for i in range(n_actions)])
             sub_plot.tick_params(labelbottom=True)
             sub_plot.set_title(TRANSLATIONS[method])
             sub_plot.set_ylabel("Number of Actions")
             sub_plot.set_xlim(0, iterations)
-            sub_plot.set_ylim(0, timesteps)
+            sub_plot.set_ylim(0, ep_time_steps)
 
         top_plot = ax if n_methods == 1 else ax[0]
-        add_task_labels(top_plot, envs, max_steps, n_envs)
+        add_task_labels(top_plot, envs, iterations, n_envs)
 
         title = env.capitalize() if env == 'train' else TRANSLATIONS[SEQUENCES[sequence][env]]
         fig.suptitle(f'        {sequence} - {title}', fontsize=16)
