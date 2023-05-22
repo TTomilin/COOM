@@ -1,5 +1,6 @@
 import argparse
 import json
+import numpy
 import numpy as np
 import os
 from matplotlib import pyplot as plt
@@ -280,3 +281,16 @@ def get_action_data(folder: str, iterations: int, method: str, n_actions: int, s
     if scale:
         mean = mean / np.sum(mean, axis=1, keepdims=True) * ep_time_steps
     return mean
+
+
+def get_data(env, iterations, method, metric, seeds, sequence):
+    data = np.empty((len(seeds), iterations))
+    data[:] = np.nan
+    for k, seed in enumerate(seeds):
+        path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+        if not os.path.exists(path):
+            continue
+        with open(path, 'r') as f:
+            seed_data = json.load(f)
+            data[k, np.arange(len(seed_data))] = seed_data
+    return data
