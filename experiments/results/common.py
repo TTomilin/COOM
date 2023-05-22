@@ -1,6 +1,5 @@
 import argparse
 import json
-import numpy
 import numpy as np
 import os
 from matplotlib import pyplot as plt
@@ -266,7 +265,7 @@ def get_baseline_data(sequence: str, scenarios: List[str], seeds: List[str], tas
 
 
 def get_action_data(folder: str, iterations: int, method: str, n_actions: int, seeds: List[int], sequence: str,
-                    scale=True, ep_time_steps=1000):
+                    scale=True, ep_time_steps=1000, sigma=5):
     data = np.empty((len(seeds), iterations, n_actions))
     data[:] = np.nan
     for k, seed in enumerate(seeds):
@@ -277,13 +276,13 @@ def get_action_data(folder: str, iterations: int, method: str, n_actions: int, s
             seed_data = json.load(f)
             data[k, np.arange(len(seed_data))] = seed_data
     mean = np.nanmean(data, axis=0)
-    mean = gaussian_filter1d(mean, sigma=5, axis=0)
+    mean = gaussian_filter1d(mean, sigma=sigma, axis=0)
     if scale:
         mean = mean / np.sum(mean, axis=1, keepdims=True) * ep_time_steps
     return mean
 
 
-def get_data(env, iterations, method, metric, seeds, sequence):
+def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[int], sequence: str):
     data = np.empty((len(seeds), iterations))
     data[:] = np.nan
     for k, seed in enumerate(seeds):
