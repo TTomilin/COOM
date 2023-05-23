@@ -23,10 +23,11 @@ def main(args: argparse.Namespace) -> None:
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])
+        ax[i].set_xlim([0, iterations])
+        ax[i].set_ylim([0, 1])
         ax[i].yaxis.set_label_coords(y_label_shift, 0.5)
 
-    add_coloured_task_labels(ax[0], envs, sequence, iterations, n_envs)
-
+    add_coloured_task_labels(ax[0], sequence, iterations)
     fontsize = 9 if n_envs == 4 else 12
     legend_anchor = -0.7 if n_envs == 4 else -1
     plot_name = f'env/{sequence}_{metric}'

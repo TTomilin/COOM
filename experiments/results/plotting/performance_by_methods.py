@@ -7,22 +7,33 @@ def main(cfg: argparse.Namespace) -> None:
     colors = COLORS[sequence]
     envs = SEQUENCES[sequence]
     n_seeds, n_envs = len(seeds), len(envs)
-    methods = METHODS if n_envs == 4 else METHODS[:-1]
-    fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=(11, 12))
+    methods = cfg.methods if cfg.methods else METHODS if n_envs == 4 else METHODS[:-1]
+    n_methods = len(methods)
+    figsize = (12, 14) if n_methods > 1 else (9, 3)
+    fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=figsize)
     iterations = cfg.task_length * n_envs
 
     for i, method in enumerate(methods):
+        cur_ax = ax if n_methods == 1 else ax[i]
         for j, env in enumerate(envs):
             data = get_data(env, iterations, method, metric, seeds, sequence)
-            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[env], iterations, data, n_seeds)
+            plot_curve(cur_ax, cfg.confidence, colors[j], TRANSLATIONS[env], iterations, data, n_seeds)
 
-        ax[i].set_ylabel(TRANSLATIONS[metric])
-        ax[i].set_title(TRANSLATIONS[method], fontsize=12)
+        if n_methods > 1:
+            cur_ax.set_title(TRANSLATIONS[method], fontsize=12)
+        cur_ax.set_ylabel(TRANSLATIONS[metric])
+        cur_ax.set_xlim([0, iterations])
+        cur_ax.set_ylim([0, 1])
 
-    add_coloured_task_labels(ax[0], envs, sequence, iterations, n_envs)
+    top_ax = ax if n_methods == 1 else ax[0]
+    bottom_ax = ax if n_methods == 1 else ax[-1]
+    add_coloured_task_labels(top_ax, sequence, iterations, fontsize=8)
     n_cols = n_envs if n_envs == 4 else n_envs // 2
-    plot_name = f'method/{sequence}_{metric}'
-    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=n_cols, legend_anchor=-0.8)
+    method = f'_{methods[0]}' if n_methods == 1 else ''
+    plot_name = f'method/{sequence}_{metric}{method}'
+    anchor = -1.1 if n_methods > 1 else -0.7
+    bottom_adjust = 0 if n_methods > 1 else -0.175
+    plot_and_save(ax=bottom_ax, plot_name=plot_name, n_col=n_cols, legend_anchor=anchor, bottom_adjust=bottom_adjust)
 
 
 if __name__ == "__main__":

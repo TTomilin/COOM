@@ -153,10 +153,9 @@ def common_dl_args() -> argparse.ArgumentParser:
     return parser
 
 
-def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int):
+def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int, fontsize: int = 9):
     env_steps = iterations // n_envs
     task_indicators = np.arange(0 + env_steps // 2, iterations + env_steps // 2, env_steps)
-    fontsize = 10 if n_envs == 4 else 9
     tick_labels = [TRANSLATIONS[env] for env in envs]
     ax_twin = ax.twiny()
     ax_twin.set_xlim(ax.get_xlim())
@@ -166,8 +165,9 @@ def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int):
     return ax_twin
 
 
-def add_coloured_task_labels(ax: np.ndarray, envs: List[str], sequence: str, max_steps: int, n_envs: int):
-    ax_twin = add_task_labels(ax, envs, max_steps, n_envs)
+def add_coloured_task_labels(ax: np.ndarray, sequence: str, iterations: int, fontsize: int = 9):
+    envs = SEQUENCES[sequence]
+    ax_twin = add_task_labels(ax, envs, iterations, len(envs), fontsize)
     for xtick, color in zip(ax_twin.get_xticklabels(), COLORS[sequence]):
         xtick.set_color(color)
         xtick.set_fontweight('bold')
@@ -237,10 +237,11 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     return False
 
 
-def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fontsize: int = 11) -> None:
+def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fontsize: int = 11,
+                  bottom_adjust: float = 0) -> None:
     ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
     plt.savefig(f'plots/{plot_name}.png')
     plt.show()
 
@@ -298,12 +299,13 @@ def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[in
 
 
 def get_data_per_env(envs: List[str], iterations: int, method: str, metric: str, seeds: List[int], sequence: str,
-                     folder: str) -> np.ndarray:
+                     folder: str = None) -> np.ndarray:
     seed_data = np.empty((len(envs), len(seeds), iterations))
     seed_data[:] = np.nan
+    folder = f'/{folder}' if folder else ''
     for e, env in enumerate(envs):
         for k, seed in enumerate(seeds):
-            path = os.path.join(os.getcwd(), 'data', folder, sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+            path = f'{os.getcwd()}/data{folder}/{sequence}/{method}/seed_{seed}/{env}_{metric}.json'
             if not os.path.exists(path):
                 print(f'Path {path} does not exist')
                 continue
