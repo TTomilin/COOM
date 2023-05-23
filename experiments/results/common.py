@@ -11,6 +11,7 @@ TRANSLATIONS = {
     'packnet': 'PackNet',
     'mas': 'MAS',
     'agem': 'AGEM',
+    'ewc': 'EWC',
     'l2': 'L2',
     'vcl': 'VCL',
     'fine_tuning': 'Fine-tuning',
@@ -108,7 +109,7 @@ ENVS = {
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
-METHODS = ['packnet', 'mas', 'agem', 'l2', 'vcl', 'fine_tuning', 'perfect_memory']
+METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'vcl', 'fine_tuning', 'perfect_memory']
 KERNEL_SIGMA = 3
 INTERVAL_INTENSITY = 0.25
 CRITICAL_VALUES = {
@@ -136,7 +137,7 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         nargs='+', help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",
-                        choices=['packnet', 'vcl', 'mas', 'agem', 'l2', 'fine_tuning'])
+                        choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning'])
     return parser
 
 
@@ -145,7 +146,7 @@ def common_dl_args() -> argparse.ArgumentParser:
     parser.add_argument("--project", type=str, required=True, help="Name of the WandB project")
     parser.add_argument("--method", type=str, help="Optional filter by CL method")
     parser.add_argument("--type", type=str, default='test', choices=['train', 'test'], help="Type of data to download")
-    parser.add_argument("--wandb_tags", type=str, nargs='+', help="WandB tags to filter runs")
+    parser.add_argument("--wandb_tags", type=str, nargs='+', default=[], help="WandB tags to filter runs")
     parser.add_argument("--overwrite", default=False, action='store_true', help="Overwrite existing files")
     parser.add_argument("--include_runs", type=str, nargs="+", default=[],
                         help="List of runs that shouldn't be filtered out")
@@ -201,17 +202,14 @@ def get_cl_method(run):
 
 
 def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the run shouldn't be filtered out
-    if any(logs in run.name for logs in args.include_runs):
-        return True
-    # Check whether the run has successfully finished
-    if run.state != "finished":
-        return False
-    # Load the configuration of the run
-    config = json.loads(run.json_config)
     # Check whether the provided CL sequence corresponds to the run
     if args.sequence not in run.url:
         return False
+    # Check whether the provided method corresponds to the run
+    if args.method and args.method != get_cl_method(run):
+        return False
+    # Load the configuration of the run
+    config = json.loads(run.json_config)
     # Check whether the wandb tags are suitable
     if 'wandb_tags' in config:
         tags = config['wandb_tags']['value']
@@ -232,8 +230,11 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
         method = get_cl_method(run)
         if method != args.method:
             return False
-    # All filters have been passed
-    return True
+    # Include only finished runs and the specified crashed/failed ones
+    if any(logs in run.name for logs in args.include_runs) or run.state == "finished":
+        # All filters have been passed
+        return True
+    return False
 
 
 def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fontsize: int = 11) -> None:
@@ -288,8 +289,25 @@ def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[in
     for k, seed in enumerate(seeds):
         path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
         if not os.path.exists(path):
+            print(f'Path {path} does not exist')
             continue
         with open(path, 'r') as f:
             seed_data = json.load(f)
             data[k, np.arange(len(seed_data))] = seed_data
     return data
+
+
+def get_data_per_env(envs: List[str], iterations: int, method: str, metric: str, seeds: List[int], sequence: str,
+                     folder: str) -> np.ndarray:
+    seed_data = np.empty((len(envs), len(seeds), iterations))
+    seed_data[:] = np.nan
+    for e, env in enumerate(envs):
+        for k, seed in enumerate(seeds):
+            path = os.path.join(os.getcwd(), 'data', folder, sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+            if not os.path.exists(path):
+                print(f'Path {path} does not exist')
+                continue
+            with open(path, 'r') as f:
+                data = json.load(f)
+                seed_data[e, k, np.arange(len(data))] = data
+    return seed_data

@@ -13,8 +13,8 @@ def main(cfg: argparse.Namespace) -> None:
 
     for i, method in enumerate(methods):
         for j, env in enumerate(envs):
-            seed_data = get_data(env, iterations, method, metric, seeds, sequence)
-            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[env], iterations, seed_data, n_seeds)
+            data = get_data(env, iterations, method, metric, seeds, sequence)
+            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[env], iterations, data, n_seeds)
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[method], fontsize=12)

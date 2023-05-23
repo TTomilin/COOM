@@ -7,32 +7,17 @@ def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
     colors = COLORS[cfg.sequence]
-    methods, seeds, folders, sequence = cfg.methods, cfg.seeds, cfg.folders, cfg.sequence
+    methods, seeds, folders, sequence, metric = cfg.methods, cfg.seeds, cfg.folders, cfg.sequence, cfg.metric
     envs = SEQUENCES[sequence]
     n_envs, n_seeds, n_methods = len(envs), len(seeds), len(methods)
-    fig_size = (12, 10) if n_methods < 5 else (12, 12)
+    fig_size = (12, 10) if n_methods < 5 else (12, 14)
     fig, ax = plt.subplots(n_methods, 1, sharey='all', sharex='all', figsize=fig_size)
-    max_steps = -np.inf
     iterations = cfg.task_length * n_envs
 
     for i, method in enumerate(methods):
         for j, folder in enumerate(folders):
-            seed_data = np.empty((n_envs, n_seeds, iterations))
-            seed_data[:] = np.nan
-            for e, env in enumerate(envs):
-                for k, seed in enumerate(seeds):
-                    path = f'{os.getcwd()}/data/{folder}/{sequence}/{method}/seed_{seed}/{env}_success.json'
-                    if not os.path.exists(path):
-                        print(f'Path {path} does not exist')
-                        continue
-                    with open(path, 'r') as f:
-                        data = json.load(f)
-                    data = data
-                    steps = len(data)
-                    max_steps = max(max_steps, steps)
-                    seed_data[e, k, np.arange(steps)] = data
-
-            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[folder], iterations, seed_data, n_seeds * n_envs,
+            data = get_data_per_env(envs, iterations, method, metric, seeds, sequence, folder)
+            plot_curve(ax[i], cfg.confidence, colors[j], TRANSLATIONS[folder], iterations, data, n_seeds * n_envs,
                        agg_axes=(0, 1))
 
         ax[i].set_ylabel('Average Success')
