@@ -13,14 +13,15 @@ from coom.utils.enums import Sequence
 
 class ContinualLearningEnv(CommonEnv):
 
-    def __init__(self, logger: Logger, sequence: Sequence, steps_per_env: int = 2e5, scenario_kwargs: List[Dict[str, any]] = None,
-                 doom_kwargs: Dict[str, any] = None):
+    def __init__(self, logger: Logger, sequence: Sequence, steps_per_env: int = 2e5, start_from: int = 0,
+                 scenario_kwargs: List[Dict[str, any]] = None, doom_kwargs: Dict[str, any] = None):
         self.steps_per_env = steps_per_env
-        self._envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs, doom_kwargs)
+        self._envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs,
+                                   doom_kwargs)
         self._num_tasks = len(self._envs)
         self.steps = steps_per_env * self.num_tasks
+        self.cur_seq_idx = start_from
         self.cur_step = 0
-        self.cur_seq_idx = 0
 
     def _check_steps_bound(self) -> None:
         if self.cur_step >= self.steps:
@@ -92,7 +93,8 @@ class ContinualLearningEnv(CommonEnv):
         return self._get_active_env().clear_episode_statistics()
 
 
-def get_doom_envs(logger: Logger, scenarios: List[Type[DoomEnv]], env_names: List[str], scenario_kwargs: List[Dict[str, any]] = None,
+def get_doom_envs(logger: Logger, scenarios: List[Type[DoomEnv]], env_names: List[str],
+                  scenario_kwargs: List[Dict[str, any]] = None,
                   doom_kwargs: Dict[str, any] = None, task_idx: int = None) -> List[DoomEnv]:
     """
     Returns a list of doom environments.

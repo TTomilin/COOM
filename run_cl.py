@@ -83,7 +83,7 @@ def main(parser: argparse.ArgumentParser):
         args.render = False
 
     scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
-    cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, scenario_kwargs, doom_kwargs)
+    cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, args.start_from, scenario_kwargs, doom_kwargs)
     cl_env.tasks = [
         wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
                  record_dir)
@@ -113,6 +113,7 @@ def main(parser: argparse.ArgumentParser):
         seed=args.seed,
         steps_per_env=args.steps_per_env,
         start_steps=args.start_steps,
+        start_from_task=args.start_from,
         log_every=args.log_every,
         update_after=args.update_after,
         update_every=args.update_every,

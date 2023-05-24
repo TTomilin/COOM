@@ -33,6 +33,7 @@ class SAC:
             policy_kwargs: Dict = None,
             seed: int = 0,
             steps_per_env: int = 4e5,
+            start_from_task: int = 0,
             log_every: int = 1000,
             replay_size: int = 1e5,
             gamma: float = 0.99,
@@ -126,6 +127,7 @@ class SAC:
         self.policy_kwargs = policy_kwargs
         self.steps_per_env = steps_per_env
         self.steps = steps_per_env * env.num_tasks
+        self.start_from_task = start_from_task
         self.log_every = log_every
         self.replay_size = replay_size
         self.gamma = gamma
@@ -571,7 +573,8 @@ class SAC:
         self.target_critic2.load_weights(os.path.join(checkpoint_dir, "target_critic2"))
 
     def _handle_task_change(self, current_task_idx: int):
-        self.on_task_start(current_task_idx)
+        if self.start_from_task != current_task_idx:
+            self.on_task_start(current_task_idx)
 
         if self.reset_buffer_on_task_change:
             assert self.buffer_type == BufferType.FIFO

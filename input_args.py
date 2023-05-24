@@ -24,6 +24,7 @@ def parse_args():
     arg('--seed', type=int, default=0, help='Seed for randomness')
     arg('--gpu', '-g', default=None, type=int, help='Which GPU to use')
     arg("--sparse_rewards", default=False, action='store_true', help="Whether to use the sparse reward setting")
+    arg('--start_from', type=int, default=0, help='Which task to start/continue the training from')
 
     # Save/Load
     arg("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")
