@@ -57,13 +57,11 @@ class RunAndGun(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        # return 50.0
-        return 25.0
+        return 50.0
 
     @property
     def performance_lower_bound(self) -> float:
-        # return 15.0  # Kills achievable by random actions
-        return 7.5  # Kills achievable by random actions
+        return 15.0  # Kills achievable by random actions
 
     def extra_statistics(self, mode: str = '') -> Dict[str, float]:
         if not self.game_variable_buffer:
