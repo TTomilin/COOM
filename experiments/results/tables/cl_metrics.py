@@ -1,3 +1,5 @@
+import pandas as pd
+
 from experiments.results.common import *
 
 
@@ -19,7 +21,7 @@ def calculate_performance(data: np.ndarray):
     return np.nanmean(data, axis=(-1, -2))
 
 
-def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int, confidence: float, second_half: bool):
+def calc_metrics(metric: str, seeds: List[int], sequence: str, task_length: int, confidence: float, second_half: bool):
     envs = SEQUENCES[sequence]
     if second_half:
         envs = envs[len(envs) // 2:]
@@ -43,6 +45,7 @@ def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int,
                 if second_half:
                     data = data[len(data) // 2:]
                 steps = len(data)
+                data = np.array(data).astype(np.float)
                 data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
                 data_per_task = np.array_split(data, n_envs)
                 seed_data[k] = data_per_task
@@ -58,9 +61,9 @@ def calc_metrics(metric: str, seeds: List[str], sequence: str, task_length: int,
     _, forgetting_ci = calculate_forgetting(ci_data)
 
     # Print performance results
-    print(f'\n\n{sequence}')
-    print_results(performance, performance_ci, methods, "Performance")
-    print_results(forgetting, forgetting_ci, methods, "Forgetting")
+    # print(f'\n\n{sequence}')
+    # print_results(performance, performance_ci, methods, "Performance")
+    # print_results(forgetting, forgetting_ci, methods, "Forgetting")
 
     return performance, performance_ci, forgetting, forgetting_ci
 
@@ -78,8 +81,7 @@ def normalize(metric_data, ci):
 
 
 def main(cfg: argparse.Namespace) -> None:
-    sequences = cfg.sequences
-
+    seeds, sequences = cfg.seeds, cfg.sequences
     performances = np.empty((len(sequences), len(METHODS)))
     performance_cis = np.empty((len(sequences), len(METHODS)))
     forgettings = np.empty((len(sequences), len(METHODS)))
@@ -99,9 +101,31 @@ def main(cfg: argparse.Namespace) -> None:
     forgetting = np.nanmean(forgettings, axis=0)
     forgetting_ci = np.nanmean(forgetting_cis, axis=0)
 
-    print(f'\n\nAverage')
-    print_results(performance, performance_ci, METHODS, "Performance")
-    print_results(forgetting, forgetting_ci, METHODS, "Forgetting")
+    print_latex(sequences, performances, performance_cis)
+    print_latex(sequences, forgettings, forgetting_cis)
+    # print(f'\n\nAverage')
+    # print_results(performance, performance_ci, METHODS, "Performance")
+    # print_results(forgetting, forgetting_ci, METHODS, "Forgetting")
+
+
+
+def print_latex(sequences, mean, ci):
+    results = pd.DataFrame(columns=['algorithm'] + sequences + ['Average'])
+    for i, method in enumerate(METHODS):
+        row = [TRANSLATIONS[method]] + [f'{mean[j][i]:.2f} \tiny ± {ci[j][i]:.2f}' if not np.isnan(mean[j][i]) else '-'
+                                        for j in range(len(sequences))]
+        avg = np.nanmean([mean[j][i] for j in range(len(sequences))])
+        row += [f'{avg:.2f} \tiny ± {np.nanstd([mean[j][i] for j in range(len(sequences))]):.2f}']
+        results.loc[len(results)] = row
+    results = results.set_index('algorithm')
+
+    def highlight_max(s):
+        s_arr = s.to_numpy()  # convert series to numpy array
+        is_max = s_arr == s_arr.max()
+        return ['\\textbf{' + str(val) + '}' if is_max[idx] and not val == '-' else str(val) for idx, val in enumerate(s_arr)]
+
+    results = results.apply(highlight_max, axis=0)
+    print(results.to_latex(escape=False))
 
 
 if __name__ == "__main__":
