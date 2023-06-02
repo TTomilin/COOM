@@ -60,11 +60,6 @@ def calc_metrics(metric: str, seeds: List[int], sequence: str, task_length: int,
     data_at_the_end, forgetting = calculate_forgetting(cl_data)
     _, forgetting_ci = calculate_forgetting(ci_data)
 
-    # Print performance results
-    # print(f'\n\n{sequence}')
-    # print_results(performance, performance_ci, methods, "Performance")
-    # print_results(forgetting, forgetting_ci, methods, "Forgetting")
-
     return performance, performance_ci, forgetting, forgetting_ci
 
 
@@ -96,17 +91,8 @@ def main(cfg: argparse.Namespace) -> None:
         forgettings[i] = np.pad(forgetting, (0, len(METHODS) - len(forgetting)), 'constant', constant_values=np.nan)
         forgetting_cis[i] = np.pad(forgetting_ci, (0, len(METHODS) - len(forgetting_ci)), 'constant',
                                    constant_values=np.nan)
-    performance = np.nanmean(performances, axis=0)
-    performance_ci = np.nanmean(performance_cis, axis=0)
-    forgetting = np.nanmean(forgettings, axis=0)
-    forgetting_ci = np.nanmean(forgetting_cis, axis=0)
-
-    print_latex(sequences, performances, performance_cis)
-    print_latex(sequences, forgettings, forgetting_cis)
-    # print(f'\n\nAverage')
-    # print_results(performance, performance_ci, METHODS, "Performance")
-    # print_results(forgetting, forgetting_ci, METHODS, "Forgetting")
-
+    print_latex_swapped(sequences, performances, performance_cis, highlight_max=True)
+    print_latex_swapped(sequences, forgettings, forgetting_cis, highlight_max=False)
 
 
 def print_latex(sequences, mean, ci):
@@ -122,9 +108,28 @@ def print_latex(sequences, mean, ci):
     def highlight_max(s):
         s_arr = s.to_numpy()  # convert series to numpy array
         is_max = s_arr == s_arr.max()
-        return ['\\textbf{' + str(val) + '}' if is_max[idx] and not val == '-' else str(val) for idx, val in enumerate(s_arr)]
+        return ['\\textbf{' + str(val) + '}' if is_max[idx] and not val == '-' else str(val) for idx, val in
+                enumerate(s_arr)]
 
     results = results.apply(highlight_max, axis=0)
+    print(results.to_latex(escape=False))
+
+
+def print_latex_swapped(sequences, mean, ci, highlight_max=True):
+    methods = [TRANSLATIONS[method] for method in METHODS]
+    results = pd.DataFrame(columns=['sequence'] + methods)
+    for i, seq in enumerate(sequences):
+        row = [seq] + [f'{mean[i][j]:.2f} \tiny ± {ci[i][j]:.2f}' if not np.isnan(mean[i][j]) else '-'
+                       for j in range(len(METHODS))]
+        index = np.nanargmax(mean[i]) if highlight_max else np.nanargmin(mean[i])
+        row[index + 1] = f'\textbf{{{row[index + 1]}}}'
+        results.loc[len(results)] = row
+
+    average_row = ['Average'] + [f'{np.nanmean(mean[:, j]):.2f} \tiny ± {np.nanmean(ci[:, j]):.2f}'
+                                 for j in range(len(METHODS))]
+    results.loc[len(results)] = average_row
+
+    results = results.set_index('sequence')
     print(results.to_latex(escape=False))
 
 
