@@ -1,15 +1,11 @@
+import argparse
 import gym
 import numpy as np
-import string
-
 import random
-
-from datetime import datetime
-
-import argparse
+import string
 import tensorflow as tf
+from datetime import datetime
 from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
-
 from typing import Union, Callable, Type, Dict, Optional
 
 
@@ -59,7 +55,7 @@ def float_or_str(v: Union[float, str]) -> Union[float, str]:
 
 
 def reset_weights(
-    model: tf.keras.Model, model_cl: Type[tf.keras.Model], model_kwargs: Dict
+        model: tf.keras.Model, model_cl: Type[tf.keras.Model], model_kwargs: Dict
 ) -> None:
     """ Re-initialize random weights of the model.
 
