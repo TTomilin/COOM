@@ -42,9 +42,9 @@ def main(cfg: argparse.Namespace) -> None:
         cur_ax.plot(baseline, label='sac', color=COLOR_SAC)
         cur_ax.tick_params(labelbottom=True)
         cur_ax.fill_between(np.arange(iterations), mean, baseline, where=(mean < baseline), alpha=0.3, color=COLOR_SAC,
-                           interpolate=True)
+                            interpolate=True)
         cur_ax.fill_between(np.arange(iterations), mean, baseline, where=(mean >= baseline), alpha=0.3, color=COLORS[i],
-                           interpolate=True)
+                            interpolate=True)
 
         # ax[i].set_ylabel('Current Task Success', fontsize=11)
         if n_methods > 1:
@@ -65,11 +65,14 @@ def main(cfg: argparse.Namespace) -> None:
     labels.append(labels.pop(sac_idx))
     labels = [TRANSLATIONS[label] for label in labels]
 
-    anchor = -0.9 if n_methods > 1 else -0.55
-    bottom_adjust = -0.25 if n_methods > 1 else -0.125
-    n_cols = n_envs if n_envs == 4 else n_methods + 1
-    bottom_ax.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, anchor), ncol=n_cols, fancybox=True,
-                  shadow=True)
+    if n_methods == 1:
+        bottom_ax.legend(handles, labels)
+    else:
+        anchor = -0.9 if n_methods > 1 else -0.55
+        n_cols = n_envs if n_envs == 4 else n_methods + 1
+        bottom_ax.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, anchor), ncol=n_cols, fancybox=True,
+                         shadow=True)
+    bottom_adjust = -0.25 if n_methods > 1 else 0
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
     plt.savefig(f'plots/transfer/{sequence}_{"_".join(methods)}.png')
     plt.show()

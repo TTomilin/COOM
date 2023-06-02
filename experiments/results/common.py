@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d
 from typing import List
 
 TRANSLATIONS = {
-    'sac': 'SAC (reference)',
+    'sac': 'SAC',
     'packnet': 'PackNet',
     'mas': 'MAS',
     'agem': 'AGEM',
