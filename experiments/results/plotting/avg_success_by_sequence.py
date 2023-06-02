@@ -31,12 +31,14 @@ def main(cfg: argparse.Namespace) -> None:
         add_task_labels(ax, envs, iterations, n_envs)
 
     bottom_ax = ax if n_sequences == 1 else ax[-1]
+    bottom_ax.set_xlabel("Timesteps (K)", fontsize=10)
+    ax.legend()
     folder = 'success'
     os.makedirs(folder, exist_ok=True)
     plot_name = f'{folder}/{"_".join(sequences)}'
-    bottom_adjust = 0 if n_sequences > 1 else -0.1
-    plot_and_save(bottom_ax, plot_name, n_col=len(methods[0]), legend_anchor=-0.5, bottom_adjust=bottom_adjust)
-
+    plt.tight_layout()
+    plt.savefig(f'plots/{plot_name}.png')
+    plt.show()
 
 if __name__ == "__main__":
     parser = common_plot_args()
