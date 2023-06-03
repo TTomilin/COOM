@@ -112,6 +112,7 @@ LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'vcl', 'fine_tuning', 'perfect_memory']
 KERNEL_SIGMA = 3
 INTERVAL_INTENSITY = 0.25
+LOG_INTERVAL = 1000
 CRITICAL_VALUES = {
     0.9: 1.833,
     0.95: 1.96,
@@ -181,6 +182,7 @@ def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_d
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
     ax.plot(mean, label=label, color=color, linestyle=linestyle)
+    ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
     ax.tick_params(labelbottom=True)
     ax.fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
@@ -189,7 +191,7 @@ def add_main_ax(fig):
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
     main_ax.get_yaxis().set_ticks([])
-    main_ax.set_xlabel('Timesteps (K)', fontsize=11)
+    # main_ax.set_xlabel('Timesteps (K)', fontsize=11)
     main_ax.xaxis.labelpad = 25
     return main_ax
 

@@ -13,16 +13,16 @@ def main(cfg: argparse.Namespace) -> None:
     if n_envs == 8:
         methods = [method for method in methods if method != 'perfect_memory']
     n_methods = len(methods)
-    figsize = (9, 4) if n_methods > 1 else (10, 3)
+    figsize = (9, 4) if n_methods > 1 else (10, 2)
     fig, ax = plt.subplots(n_methods, 1, sharex='all', sharey='all', figsize=figsize)
     task_length = cfg.task_length
-    iterations = task_length * n_envs
+    iterations = task_length * n_envs * LOG_INTERVAL
     baseline = get_baseline_data(sequence, envs, seeds, task_length, cfg.metric)
     baseline = gaussian_filter1d(baseline, sigma=2)
 
     for i, method in enumerate(methods):
         cur_ax = ax if n_methods == 1 else ax[i]
-        seed_data = np.empty((len(seeds), iterations))
+        seed_data = np.empty((len(seeds), int(iterations / LOG_INTERVAL)))
         seed_data[:] = np.nan
         for j, env in enumerate(envs):
             for k, seed in enumerate(seeds):
@@ -37,14 +37,12 @@ def main(cfg: argparse.Namespace) -> None:
 
         mean = np.nanmean(seed_data, axis=0)
         mean = gaussian_filter1d(mean, sigma=2)
-
-        cur_ax.plot(mean, label=method, color=COLORS[i])
-        cur_ax.plot(baseline, label='sac', color=COLOR_SAC)
-        cur_ax.tick_params(labelbottom=True)
-        cur_ax.fill_between(np.arange(iterations), mean, baseline, where=(mean < baseline), alpha=0.3, color=COLOR_SAC,
-                            interpolate=True)
-        cur_ax.fill_between(np.arange(iterations), mean, baseline, where=(mean >= baseline), alpha=0.3, color=COLORS[i],
-                            interpolate=True)
+        x = np.arange(0, iterations, LOG_INTERVAL)
+        cur_ax.plot(x, mean, label=method, color=COLORS[i])
+        cur_ax.plot(x, baseline, label='sac', color=COLOR_SAC)
+        cur_ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 2))
+        cur_ax.fill_between(x, mean, baseline, where=(mean < baseline), alpha=0.3, color=COLOR_SAC, interpolate=True)
+        cur_ax.fill_between(x, mean, baseline, where=(mean >= baseline), alpha=0.3, color=COLORS[i], interpolate=True)
 
         # ax[i].set_ylabel('Current Task Success', fontsize=11)
         if n_methods > 1:
@@ -57,7 +55,7 @@ def main(cfg: argparse.Namespace) -> None:
     bottom_ax = ax if n_methods == 1 else ax[-1]
     add_task_labels(top_ax, envs, iterations, n_envs)
     main_ax = add_main_ax(fig)
-    main_ax.set_ylabel('Current Task Success', fontsize=11, labelpad=20)
+    main_ax.set_ylabel('Current Task Success', fontsize=10, labelpad=25)
 
     handles, labels = ax.get_legend_handles_labels() if n_methods == 1 else get_handles_and_labels(ax)
     sac_idx = labels.index('sac')
