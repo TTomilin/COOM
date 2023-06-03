@@ -53,7 +53,7 @@ def main(args: argparse.Namespace) -> None:
 
         file_path = 'plots/actions'
         os.makedirs(file_path, exist_ok=True)
-        plt.savefig(f'{file_path}/{method}_{"_".join(sequences)}.png')
+        plt.savefig(f'{file_path}/{method}_{"_".join(sequences)}.pdf')
         plt.show()
 
 

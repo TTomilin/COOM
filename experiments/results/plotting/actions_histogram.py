@@ -59,7 +59,7 @@ def main(args: argparse.Namespace) -> None:
 
     file_path = 'plots/actions'
     os.makedirs(file_path, exist_ok=True)
-    plt.savefig(f'{file_path}/{sequence}_{method}.png')
+    plt.savefig(f'{file_path}/{sequence}_{method}.pdf')
     plt.show()
 
 

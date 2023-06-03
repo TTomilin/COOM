@@ -28,16 +28,17 @@ def main(cfg: argparse.Namespace) -> None:
         ax.set_ylim([0, 1])
         if n_sequences > 1:
             ax.set_title(sequence, fontsize=14)
-        add_task_labels(ax, envs, iterations, n_envs)
+        add_task_labels(ax, envs, iterations, n_envs, fontsize=9)
 
-    bottom_ax = ax if n_sequences == 1 else ax[-1]
-    bottom_ax.set_xlabel("Timesteps (K)", fontsize=10)
-    ax.legend()
+    # bottom_ax = ax if n_sequences == 1 else ax[-1]
+    # bottom_ax.set_xlabel("Timesteps (K)", fontsize=10)
+    # plt.ticklabel_format(axis='x', style='sci', scilimits=(1, 1))
+    ax.legend(ncol=2)
     folder = 'success'
     os.makedirs(folder, exist_ok=True)
     plot_name = f'{folder}/{"_".join(sequences)}'
     plt.tight_layout()
-    plt.savefig(f'plots/{plot_name}.png')
+    plt.savefig(f'plots/{plot_name}.pdf')
     plt.show()
 
 if __name__ == "__main__":

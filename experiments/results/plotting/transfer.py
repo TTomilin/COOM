@@ -63,7 +63,7 @@ def main(args: argparse.Namespace) -> None:
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=3, fancybox=True, shadow=True)
     fig.tight_layout()
-    plt.savefig(f'plots/transfer/{args.sequence}_{args.method}_individual.png')
+    plt.savefig(f'plots/transfer/{args.sequence}_{args.method}_individual.pdf')
     plt.show()
 
 

@@ -48,7 +48,7 @@ def main(args: argparse.Namespace) -> None:
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=6, fancybox=True, shadow=True)
     fig.tight_layout()
-    plt.savefig('plots/COC/train_per_env.png')
+    plt.savefig('plots/COC/train_per_env.pdf')
     plt.show()
 
 

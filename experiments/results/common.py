@@ -244,7 +244,7 @@ def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fo
     ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
-    plt.savefig(f'plots/{plot_name}.png')
+    plt.savefig(f'plots/{plot_name}.pdf')
     plt.show()
 
 

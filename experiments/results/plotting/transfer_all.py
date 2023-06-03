@@ -72,7 +72,7 @@ def main(cfg: argparse.Namespace) -> None:
                          shadow=True)
     bottom_adjust = -0.25 if n_methods > 1 else 0
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
-    plt.savefig(f'plots/transfer/{sequence}_{"_".join(methods)}.png')
+    plt.savefig(f'plots/transfer/{sequence}_{"_".join(methods)}.pdf')
     plt.show()
 
 
