@@ -36,7 +36,7 @@ def main(cfg: argparse.Namespace) -> None:
 
     add_task_labels(ax[0], envs, max_steps, n_envs)
     plot_name = f'training/{"vs".join(cfg.sequences)}_{n_envs}envs'
-    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=8, legend_anchor=-0.7)
+    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=8, vertical_anchor=-0.7)
 
 
 if __name__ == "__main__":

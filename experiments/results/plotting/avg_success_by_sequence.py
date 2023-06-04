@@ -17,9 +17,10 @@ def main(cfg: argparse.Namespace) -> None:
         envs = SEQUENCES[sequence]
         n_envs = len(envs)
         methods = METHODS if n_envs == 4 else METHODS[:-1]
-        iterations = cfg.task_length * n_envs
+        iterations = cfg.task_length * n_envs * LOG_INTERVAL
+        n_data_points = int(iterations / 1000)
         for j, method in enumerate(methods):
-            data = get_data_per_env(envs, iterations, method, metric, seeds, sequence)
+            data = get_data_per_env(envs, n_data_points, method, metric, seeds, sequence)
             plot_curve(ax, cfg.confidence, colors[j], TRANSLATIONS[method], iterations, data, n_seeds * n_envs,
                        agg_axes=(0, 1))
 

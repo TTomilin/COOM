@@ -12,13 +12,14 @@ def main(args: argparse.Namespace) -> None:
     y_label_shift = -0.06 if n_envs == 4 else -0.04
     share_y = sequence in ['CD4', 'CD8'] or args.metric == 'success'
     fig, ax = plt.subplots(n_envs, 1, sharex='all', sharey=share_y, figsize=figsize)
-    iterations = args.task_length * n_envs
+    iterations = args.task_length * n_envs * LOG_INTERVAL
+    n_data_points = int(iterations / 1000)
     methods = METHODS if n_envs == 4 else METHODS[:-1]
 
     for i, env in enumerate(envs):
         for j, method in enumerate(methods):
             metric = args.metric if args.metric else METRICS[env] if env in METRICS else 'kills'
-            data = get_data(env, iterations, method, metric, seeds, sequence)
+            data = get_data(env, n_data_points, method, metric, seeds, sequence)
             plot_curve(ax[i], args.confidence, PLOT_COLORS[j], TRANSLATIONS[method], iterations, data, len(seeds))
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
@@ -31,7 +32,7 @@ def main(args: argparse.Namespace) -> None:
     fontsize = 9 if n_envs == 4 else 12
     legend_anchor = -0.7 if n_envs == 4 else -1
     plot_name = f'env/{sequence}_{metric}'
-    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=len(methods), legend_anchor=legend_anchor, fontsize=fontsize)
+    plot_and_save(ax=ax[-1], plot_name=plot_name, n_col=len(methods), vertical_anchor=legend_anchor, fontsize=fontsize)
 
 
 if __name__ == "__main__":

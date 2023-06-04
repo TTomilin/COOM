@@ -53,7 +53,7 @@ def main(cfg: argparse.Namespace) -> None:
 
     top_ax = ax if n_methods == 1 else ax[0]
     bottom_ax = ax if n_methods == 1 else ax[-1]
-    add_task_labels(top_ax, envs, iterations, n_envs)
+    add_task_labels(top_ax, envs, iterations, n_envs, fontsize=10)
     main_ax = add_main_ax(fig)
     main_ax.set_ylabel('Current Task Success', fontsize=10, labelpad=25)
 

@@ -9,14 +9,15 @@ def main(cfg: argparse.Namespace) -> None:
     n_seeds, n_envs = len(seeds), len(envs)
     methods = cfg.methods if cfg.methods else METHODS if n_envs == 4 else METHODS[:-1]
     n_methods = len(methods)
-    figsize = (12, 14) if n_methods > 1 else (9, 3)
+    figsize = (12, 14) if n_methods > 1 else (11, 2.5)
     fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=figsize)
-    iterations = cfg.task_length * n_envs
+    iterations = cfg.task_length * n_envs * LOG_INTERVAL
+    n_data_points = int(iterations / 1000)
 
     for i, method in enumerate(methods):
         cur_ax = ax if n_methods == 1 else ax[i]
         for j, env in enumerate(envs):
-            data = get_data(env, iterations, method, metric, seeds, sequence)
+            data = get_data(env, n_data_points, method, metric, seeds, sequence)
             plot_curve(cur_ax, cfg.confidence, colors[j], TRANSLATIONS[env], iterations, data, n_seeds)
 
         if n_methods > 1:
@@ -27,13 +28,15 @@ def main(cfg: argparse.Namespace) -> None:
 
     top_ax = ax if n_methods == 1 else ax[0]
     bottom_ax = ax if n_methods == 1 else ax[-1]
-    add_coloured_task_labels(top_ax, sequence, iterations, fontsize=8)
-    n_cols = n_envs if n_envs == 4 else n_envs // 2
+    add_coloured_task_labels(top_ax, sequence, iterations, fontsize=9)
+    n_cols = n_envs if n_envs == 4 else n_envs // 2 if n_methods > 1 else 1
     method = f'_{methods[0]}' if n_methods == 1 else ''
     plot_name = f'method/{sequence}_{metric}{method}'
-    anchor = -1.1 if n_methods > 1 else -0.7
-    bottom_adjust = 0 if n_methods > 1 else -0.175
-    plot_and_save(ax=bottom_ax, plot_name=plot_name, n_col=n_cols, legend_anchor=anchor, bottom_adjust=bottom_adjust)
+    vertical_anchor = -1.1 if n_methods > 1 else -0.1
+    bottom_adjust = 0 if n_methods > 1 else 0
+    loc = 'lower center' if n_methods > 1 else 'lower right'
+    plot_and_save(ax=bottom_ax, plot_name=plot_name, n_col=n_cols, vertical_anchor=vertical_anchor,
+                  bottom_adjust=bottom_adjust, loc=loc, horizontal_anchor=1.225)
 
 
 if __name__ == "__main__":

@@ -181,10 +181,11 @@ def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_d
     mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
-    ax.plot(mean, label=label, color=color, linestyle=linestyle)
+    x = np.arange(0, iterations, LOG_INTERVAL)
+    ax.plot(x, mean, label=label, color=color, linestyle=linestyle)
     ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
     ax.tick_params(labelbottom=True)
-    ax.fill_between(np.arange(iterations), mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
+    ax.fill_between(x, mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
 
 def add_main_ax(fig):
@@ -239,11 +240,11 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
     return False
 
 
-def plot_and_save(ax, plot_name: str, n_col: int, legend_anchor: float = 0.0, fontsize: int = 11,
-                  bottom_adjust: float = 0) -> None:
-    ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
-    ax.legend(loc='lower center', bbox_to_anchor=(0.5, legend_anchor), ncol=n_col, fancybox=True, shadow=True)
-    plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
+def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
+                  bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5) -> None:
+    # ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
+    ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
+    plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=-1.0)
     plt.savefig(f'plots/{plot_name}.pdf')
     plt.show()
 
