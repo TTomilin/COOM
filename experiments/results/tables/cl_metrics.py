@@ -119,18 +119,22 @@ def print_latex_combined(sequences, data, data_cis):
     for i, method in enumerate(METHODS):
         row = [TRANSLATIONS[method]]
         for j, sequence in enumerate(sequences):
-            # cell_values = [f'{data[j, i, k]:.2f} \tiny ± {data_cis:.2f}' if not np.isnan(data[j, i, k]) else '-' for k in range(3)]
-            cell_values = [data[j, i, k] if not np.isnan(data[j, i, k]) else np.nan for k in range(3)]
-            cell_values = [f'\\textbf{{{"{:.2f}".format(highlight_func[k](cell_values))}}}' if not np.isnan(cell_values[k]) and cell_values[k] == highlight_func[k](cell_values) else f'{cell_values[k]:.2f}' if not np.isnan(cell_values[k]) else '-' for k in range(3)]
-            cell_value = ' & '.join(cell_values)
-            row.append(cell_value)
-        avg_values = [np.nanmean(data[:, i, k]) for k in range(3)]
-        # avg_std = [np.nanstd(data_cis[:, i, k]) for k in range(3)]
-        # avg_cell_value = ' / '.join([f'{avg_value:.2f} \tiny ± {avg_std:.2f}' for avg_value in avg_values])
-        avg_highlight = [highlight_func[k](avg_values) for k in range(3)]
-        avg_values = [f'\\textbf{{{"{:.2f}".format(avg_values[k])}}}' if not np.isnan(avg_values[k]) and avg_values[k] == avg_highlight[k] else f'{avg_values[k]:.2f}' if not np.isnan(avg_values[k]) else '-' for k in range(3)]
-        avg_cell_value = ' & '.join(avg_values)
-        row.append(avg_cell_value)
+            cell_values = []
+            for k in range(3):
+                value = data[j, i, k]
+                significant = highlight_func[k](data[j, :, k]) == value
+                cell_string = f'\\textbf{{{value:.2f}}}' if significant else f'{{{value:.2f}}}' if not np.isnan(value) else '-'
+                cell_values.append(cell_string)
+            cell = ' & '.join(cell_values)
+            row.append(cell)
+        cell_values = []
+        for k in range(3):
+            value = np.nanmean(data[:, i, k])
+            significant = highlight_func[k](np.nanmean(data[:, :, k], axis=0)) == value
+            avg_string = f'\\textbf{{{value:.2f}}}' if significant else f'{{{value:.2f}}}' if not np.isnan(value) else '-'
+            cell_values.append(avg_string)
+        cell = ' & '.join(cell_values)
+        row.append(cell)
         results.loc[len(results)] = row
     results = results.set_index('Method')
     multi_col_format = 'c@{\hskip 0.05in}c@{\hskip 0.05in}c'
