@@ -17,7 +17,7 @@ def main(cfg: argparse.Namespace) -> None:
     fig, ax = plt.subplots(n_methods, 1, sharex='all', sharey='all', figsize=figsize)
     task_length = cfg.task_length
     iterations = task_length * n_envs * LOG_INTERVAL
-    baseline = get_baseline_data(sequence, envs, seeds, task_length, cfg.metric)
+    baseline = get_baseline_data(sequence, seeds, task_length, cfg.metric)
     baseline = gaussian_filter1d(baseline, sigma=2)
 
     for i, method in enumerate(methods):

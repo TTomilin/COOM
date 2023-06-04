@@ -249,12 +249,13 @@ def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, 
     plt.show()
 
 
-def get_baseline_data(sequence: str, scenarios: List[str], seeds: List[str], task_length: int,
+def get_baseline_data(sequence: str, seeds: List[str], task_length: int,
                       set_metric: str = None) -> np.ndarray:
-    seed_data = np.empty((len(seeds), task_length * len(scenarios)))
+    envs = SEQUENCES[sequence]
+    seed_data = np.empty((len(seeds), task_length * len(envs)))
     seed_data[:] = np.nan
     baseline_type = 'single_hard' if sequence == 'COC' else 'single'
-    for i, env in enumerate(scenarios):
+    for i, env in enumerate(envs):
         metric = set_metric if set_metric else METRICS[env]
         for k, seed in enumerate(seeds):
             path = f'{os.getcwd()}/data/{baseline_type}/sac/seed_{seed}/{env}_{metric}.json'

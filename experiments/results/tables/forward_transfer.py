@@ -66,7 +66,7 @@ def main(cfg: argparse.Namespace) -> None:
         task_length = cfg.task_length
 
         cl_data = get_cl_data(seeds, envs, task_length, cfg.metric, sequence)
-        baseline_data = get_baseline_data(sequence, envs, seeds, task_length, cfg.metric)
+        baseline_data = get_baseline_data(sequence, seeds, task_length, cfg.metric)
 
         auc_cl = np.nanmean(cl_data, axis=-1)
         auc_baseline = np.nanmean(baseline_data, axis=-1)
