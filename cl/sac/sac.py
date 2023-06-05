@@ -11,7 +11,6 @@ from tensorflow_probability.python.distributions import Categorical
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cl.sac import models
-from cl.sac.models import PopArtMlpCritic
 from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType
 from cl.utils.logx import EpochLogger
 from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed, create_one_hot_vec
@@ -150,7 +149,6 @@ class SAC:
         self.model_path = model_path
         self.timestamp = timestamp
         self.test_threads = []
-        self.use_popart = critic_cl is PopArtMlpCritic
         self.obs_shape = env.observation_space.shape
         self.act_dim = env.action_space.n
         logger.log(f"Observations shape: {self.obs_shape}", color='blue')  # should be N_FRAMES x H x W
@@ -350,20 +348,10 @@ class SAC:
             min_q = dist.probs_parameter() * tf.stop_gradient(tf.minimum(q1, q2))
             min_target_q = dist_next.probs_parameter() * tf.minimum(target_q1, target_q2)
 
-            # Entropy-regularized Bellman backup for Q functions, using Clipped Double-Q targets
-            if self.critic_cl is PopArtMlpCritic:
-                q_backup = tf.stop_gradient(
-                    self.critic1.normalize(
-                        rewards + self.gamma * (1 - done)
-                        * (self.critic1.unnormalize(min_target_q, next_obs) - log_alpha_exp * entropy_next),
-                        obs,
-                    )
-                )
-            else:
-                q_backup = tf.stop_gradient(
-                    rewards + self.gamma * (1 - done)
-                    * (tf.math.reduce_sum(min_target_q, axis=-1) - log_alpha_exp * entropy_next)
-                )
+            q_backup = tf.stop_gradient(
+                rewards + self.gamma * (1 - done)
+                * (tf.math.reduce_sum(min_target_q, axis=-1) - log_alpha_exp * entropy_next)
+            )
 
             # Critic loss
             q1_loss = 0.5 * tf.reduce_mean((q_backup - q1_vals)**2)
@@ -401,11 +389,6 @@ class SAC:
         else:
             alpha_gradient = None
         del g
-
-        if self.use_popart:
-            # Stats are shared between critic1 and critic2.
-            # We keep them only in critic1.
-            self.critic1.update_stats(q_backup, obs)
 
         gradients = (actor_gradients, critic_gradients, alpha_gradient)
         return gradients, metrics
@@ -502,16 +485,7 @@ class SAC:
 
         for task_idx in range(self.num_tasks):
             if self.auto_alpha:
-                self.logger.store(
-                    {f"train/alpha/{task_idx}": float(tf.math.exp(self.all_log_alpha[task_idx][0]))}
-                )
-            if self.use_popart:
-                self.logger.store(
-                    {
-                        f"train/popart_mean/{task_idx}": self.critic1.moment1[task_idx][0],
-                        f"train/popart_std/{task_idx}": self.critic1.sigma[task_idx][0],
-                    }
-                )
+                self.logger.store({f"train/alpha/{task_idx}": float(tf.math.exp(self.all_log_alpha[task_idx][0]))})
 
     def _log_after_epoch(self, epoch, current_task_timestep, global_timestep, info, learning_rate):
         # Log info about epoch
@@ -532,9 +506,6 @@ class SAC:
         for task_idx in range(self.num_tasks):
             if self.auto_alpha:
                 self.logger.log_tabular(f"train/alpha/{task_idx}", average_only=True)
-            if self.use_popart:
-                self.logger.log_tabular(f"train/popart_mean/{task_idx}", average_only=True)
-                self.logger.log_tabular(f"train/popart_std/{task_idx}", average_only=True)
         self.logger.log_tabular("train/loss_reg", average_only=True)
         for stat in self.env.get_statistics('train').keys():
             self.logger.log_tabular(stat, average_only=True)
@@ -657,7 +628,7 @@ class SAC:
             # End of trajectory handling
             if done:
                 episodes += 1
-                buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100
+                buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100  # Percentage
                 self.logger.log(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
                       f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
