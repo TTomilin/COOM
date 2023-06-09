@@ -138,16 +138,16 @@ def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray
     print(latex_table)
 
 
-
 def print_combined(sequences, data, data_cis):
+    data_types = data.shape[-1]
     pd.set_option('display.max_colwidth', None)
-    results = pd.DataFrame(columns=['Method'] + [f'\multicolumn{{3}}{{c}}{{{sequence}}}' for sequence in sequences] + ['\multicolumn{3}{c}{Average}'])
+    results = pd.DataFrame(columns=['Method'] + [f'\multicolumn{{{data_types}}}{{c}}{{{sequence}}}' for sequence in sequences] + ['\multicolumn{3}{c}{Average}'])
     highlight_func = [np.nanmax if k in [0, 2] else np.nanmin for k in range(3)]
     for i, method in enumerate(METHODS):
         row = [TRANSLATIONS[method]]
         for j, sequence in enumerate(sequences):
             cell_values = []
-            for k in range(3):
+            for k in range(data_types):
                 value = data[j, i, k]
                 significant = highlight_func[k](data[j, :, k]) == value
                 cell_string = f'\\textbf{{{value:.2f}}}' if significant else f'{value:.2f}' if not np.isnan(value) else '-'
@@ -155,7 +155,7 @@ def print_combined(sequences, data, data_cis):
             cell = ' & '.join(cell_values)
             row.append(cell)
         cell_values = []
-        for k in range(3):
+        for k in range(data_types):
             value = np.nanmean(data[:, i, k])
             significant = highlight_func[k](np.nanmean(data[:, :, k], axis=0)) == value
             avg_string = f'\\textbf{{{value:.2f}}}' if significant else f'{value:.2f}' if not np.isnan(value) else '-'
