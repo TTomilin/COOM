@@ -1,19 +1,16 @@
-import os
-
 from experiments.results.common import *
 
 
 def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
-    plt.rcParams['axes.grid'] = True
-    seeds, sequences = args.seeds, args.sequences
+    methods, seeds, sequences = args.methods, args.seeds, args.sequences
     colors = COLORS[sequences[0]]
     envs = SEQUENCES[sequences[0]]
     n_envs = len(envs)
     metric = None
     n_rows = 2
     n_cols = int(np.ceil(n_envs / n_rows))
-    fig, ax = plt.subplots(n_rows, n_cols, sharex='all', figsize=(10, 4))
+    fig, ax = plt.subplots(n_rows, n_cols, sharex='all', figsize=(10, 4.5))
     max_steps = -np.inf
     task_length = args.task_length
 
@@ -21,12 +18,12 @@ def main(args: argparse.Namespace) -> None:
         row = i % n_cols
         col = i // n_cols
         for j, sequence in enumerate(sequences):
-            for l, method in enumerate(args.methods):
-                metric = args.metric if args.metric else METRICS[env]
+            for l, method in enumerate(methods):
+                metric = METRICS[env] if args.metric == 'env' else args.metric
                 seed_data = np.empty((len(seeds), task_length))
                 seed_data[:] = np.nan
                 for k, seed in enumerate(seeds):
-                    path = os.path.join(os.getcwd(), '../data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+                    path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
                     if not os.path.exists(path):
                         continue
                     with open(path, 'r') as f:
@@ -41,14 +38,18 @@ def main(args: argparse.Namespace) -> None:
 
         ax[col, row].set_ylabel(TRANSLATIONS[metric])
         ax[col, row].set_title(TRANSLATIONS[env])
-        ax[col, row].yaxis.set_label_coords(-0.2, 0.5)
+        ax[col, row].yaxis.set_label_coords(-0.22, 0.5)
         ax[col, row].ticklabel_format(axis='y', style='sci', scilimits=(0, 5))
+        ax[col, row].set_xlim([0, task_length])
 
     add_main_ax(fig)
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=6, fancybox=True, shadow=True)
     fig.tight_layout()
-    plt.savefig('plots/COC/train_per_env.pdf')
+    methods = [TRANSLATIONS[method] for method in methods]
+    plot_name = f'plots/COC/train_{"vs".join(methods)}_per_env'
+    print(f'Saving plot to {plot_name}')
+    plt.savefig(plot_name)
     plt.show()
 
 
