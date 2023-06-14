@@ -1,3 +1,5 @@
+import matplotlib as mpl
+
 from experiments.results.common import *
 
 
