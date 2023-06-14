@@ -175,13 +175,13 @@ def add_coloured_task_labels(ax: np.ndarray, sequence: str, iterations: int, fon
 
 
 def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_data: np.ndarray, n_seeds: int,
-               agg_axes=0, linestyle='-'):
+               agg_axes=0, linestyle='-', interval=1):
     mean = np.nanmean(seed_data, axis=agg_axes)
     std = np.nanstd(seed_data, axis=agg_axes)
     mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
-    x = np.arange(0, iterations, LOG_INTERVAL)
+    x = np.arange(0, iterations, interval)
     ax.plot(x, mean, label=label, color=color, linestyle=linestyle)
     ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
     ax.tick_params(labelbottom=True)
@@ -192,7 +192,7 @@ def add_main_ax(fig):
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
     main_ax.get_yaxis().set_ticks([])
-    # main_ax.set_xlabel('Timesteps (K)', fontsize=11)
+    main_ax.set_xlabel('Timesteps (K)', fontsize=11)
     main_ax.xaxis.labelpad = 25
     return main_ax
 
@@ -205,6 +205,9 @@ def get_cl_method(run):
 
 
 def suitable_run(run, args: argparse.Namespace) -> bool:
+    # Check whether the provided tags correspond to the run
+    if any(logs in run.name for logs in args.include_runs):
+        return True
     # Check whether the provided CL sequence corresponds to the run
     if args.sequence not in run.url:
         return False
@@ -233,11 +236,10 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
         method = get_cl_method(run)
         if method != args.method:
             return False
-    # Include only finished runs and the specified crashed/failed ones
-    if any(logs in run.name for logs in args.include_runs) or run.state == "finished":
-        # All filters have been passed
-        return True
-    return False
+    if run.state != "finished":
+        return False
+    # All filters have been passed
+    return True
 
 
 def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
