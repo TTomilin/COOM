@@ -1,6 +1,6 @@
 import pandas as pd
 from numpy import ndarray
-from typing import Tuple
+from typing import Tuple, Callable
 
 from experiments.results.common import *
 
@@ -84,22 +84,26 @@ def main(cfg: argparse.Namespace) -> None:
             data[i, j] = [performance[j], transfer[j]]
             data_cis[i, j] = [performance_ci[j], transfer_ci[j]]
 
-    print_combined(folders, methods, data, data_cis)
+    print('Printing ablation study table\n')
+    print_table(folders, methods, data, data_cis, value_cell)
+    print('\nPrinting ablations result difference table\n')
+    print_table(folders, methods, data, data_cis, diff_cell)
 
 
-def print_combined(folders, methods, data, data_cis):
+def print_table(folders: List[str], methods: List[str], data: ndarray, data_cis: ndarray, get_cell_func: Callable):
     data_types = data.shape[-1]
-    pd.set_option('display.max_colwidth', None)
     results = pd.DataFrame(
         columns=['Method'] + [f'\multicolumn{{{data_types}}}{{c}}{{{TRANSLATIONS[folder]}}}' for folder in folders])
     for i, method in enumerate(methods):
         row = [TRANSLATIONS[method]]
+        default_ap = data[0, i, 0]  # Default Average Performance
+        default_ft = data[0, i, 1]  # Default Forward Transfer
         for j, sequence in enumerate(folders):
             cell_values = []
             for k in range(data_types):
                 value = data[j, i, k]
                 ci = data_cis[j, i, k]
-                cell_string = f'{value:.2f} \tiny ± {ci:.2f}' if not np.isnan(value) else '-'
+                cell_string = get_cell_func(value, ci, j, k, default_ap, default_ft)
                 cell_values.append(cell_string)
             cell = ' & '.join(cell_values)
             row.append(cell)
@@ -108,6 +112,15 @@ def print_combined(folders, methods, data, data_cis):
     multi_col_format = 'c@{\hskip 0.05in}c@{\hskip 0.05in}c'
     latex_table = results.to_latex(escape=False, column_format='l' + multi_col_format * (len(folders)))
     print(latex_table)
+
+
+def value_cell(value: float, ci: float, *args) -> str:
+    return f'{value:.2f} \tiny ± {ci:.2f}' if not np.isnan(value) else '-'
+
+
+def diff_cell(value: float, _: float, j: int, k: int, default_ap: ndarray, default_ft: ndarray) -> str:
+    diff_string = ((value - default_ap) / default_ap) * 100 if k == 0 else value - default_ft
+    return f'{value:.2f}' if j == 0 else f' {diff_string:+.2f}' + (r'\%' if k == 0 else '')
 
 
 if __name__ == "__main__":
