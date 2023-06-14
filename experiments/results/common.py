@@ -47,6 +47,9 @@ TRANSLATIONS = {
     'single_head': 'Single Head',
     'multi_head': 'Multi Head',
 
+    'walltime': 'Walltime',
+    'system.proc.memory.rssMB': 'memory',
+
     'single': 'Single',
     'CD4': 'CD4',
     'CD8': 'CD8',
@@ -182,7 +185,7 @@ def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_d
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
     x = np.arange(0, iterations, interval)
-    ax.plot(x, mean, label=label, color=color, linestyle=linestyle)
+    ax.plot(x, mean, label=label, linestyle=linestyle)
     ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
     ax.tick_params(labelbottom=True)
     ax.fill_between(x, mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
@@ -244,7 +247,7 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
 
 def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
                   bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5) -> None:
-    # ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
+    ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
     ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=-1.0)
     plt.savefig(f'plots/{plot_name}.pdf')
@@ -291,10 +294,14 @@ def get_action_data(folder: str, iterations: int, method: str, n_actions: int, s
 
 
 def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[int], sequence: str):
+    return get_data_from_file(f'{env}_{metric}', iterations, method, seeds, sequence)
+
+
+def get_data_from_file(file_name: str, iterations: int, method: str, seeds: List[int], sequence: str):
     data = np.empty((len(seeds), iterations))
     data[:] = np.nan
     for k, seed in enumerate(seeds):
-        path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
+        path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{file_name}.json')
         if not os.path.exists(path):
             print(f'Path {path} does not exist')
             continue

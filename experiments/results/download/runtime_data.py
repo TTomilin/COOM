@@ -16,13 +16,10 @@ def main(args: argparse.Namespace) -> None:
 def store_data(run: Run, args: argparse.Namespace) -> None:
     sequence, metric, tags = args.sequence, args.metric, args.wandb_tags
     config = json.loads(run.json_config)
-    history = list(iter(run.scan_history(keys=[metric])))
-    if not history:
-        print(f'No data named "{metric}" found for {run.name}')
+    system_metric = list(iter(run.scan_history(keys=[metric])))[-1][metric] if metric == 'walltime' else run.system_metrics[metric]
+    if not system_metric:
+        print(f'No system metric named "{metric}" found for {run.name}')
         return
-    values = [item[metric] for item in history]
-    if metric == 'buffer_capacity':
-        values *= 350
     method = get_cl_method(run)
     seed = max(run.config["seed"], 1)
     wandb_tags = config['wandb_tags']['value']
@@ -32,11 +29,11 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
         os.makedirs(path)
         print(f"Created new directory {path}")
 
-    file_path = f'{path}/{metric}.json'
+    file_path = f'{path}/{TRANSLATIONS[metric]}.json'
     if args.overwrite or not os.path.exists(file_path):
         print(f'Saving {run.id} --- {file_path}')
         with open(f'{file_path}', 'w') as f:
-            json.dump(values, f)
+            json.dump(system_metric, f)
 
 
 if __name__ == "__main__":
