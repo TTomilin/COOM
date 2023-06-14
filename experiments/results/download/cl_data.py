@@ -20,7 +20,8 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
     seq_len = 4 if sequence in ['CD4', 'CO4'] else 8
     for env_idx in range(seq_len):
         task = SEQUENCES[sequence][env_idx]
-        metric = METRICS[task] if metric == 'env' else metric
+        if metric == 'env':
+            metric = METRICS[task]
         env = f'run_and_gun-{task}' if sequence in ['CD4', 'CD8'] else f'{task}-{ENVS[sequence]}'
         log_key = f'test/stochastic/{env_idx}/{env}/{metric}' if data_type == 'test' else f'train/{metric}'
         history = list(iter(run.scan_history(keys=[log_key])))
