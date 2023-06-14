@@ -83,7 +83,7 @@ def parse_args():
     arg("--regularize_critic", default=False, action='store_true',
         help="If True, both actor and critic are regularized; if False, only actor is")
     arg("--clipnorm", type=float, default=None, help="Value for gradient clipping")
-    arg("--agent_policy_exploration", type=str2bool, default=False,
+    arg("--agent_policy_exploration", default=False, action='store_true',
         help="If True, uniform exploration for start_steps steps is used only in the first task (in continual learning). Otherwise, it is used in every task")
 
     # Testing
