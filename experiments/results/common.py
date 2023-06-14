@@ -47,8 +47,9 @@ TRANSLATIONS = {
     'single_head': 'Single Head',
     'multi_head': 'Multi Head',
 
-    'walltime': 'Walltime',
+    'walltime': 'Walltime (h)',
     'system.proc.memory.rssMB': 'memory',
+    'memory': 'Memory Consumption (GB)',
 
     'single': 'Single',
     'CD4': 'CD4',
@@ -112,8 +113,8 @@ ENVS = {
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
-METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'vcl', 'fine_tuning', 'perfect_memory']
-KERNEL_SIGMA = 3
+METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'perfect_memory']
+KERNEL_SIGMA = 2
 INTERVAL_INTENSITY = 0.25
 LOG_INTERVAL = 1000
 CRITICAL_VALUES = {
@@ -185,17 +186,17 @@ def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_d
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
     x = np.arange(0, iterations, interval)
-    ax.plot(x, mean, label=label, linestyle=linestyle)
+    ax.plot(x, mean, label=label, linestyle=linestyle, color=color)
     ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
     ax.tick_params(labelbottom=True)
     ax.fill_between(x, mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
 
-def add_main_ax(fig):
+def add_main_ax(fig, fontsize: int = 11):
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
     main_ax.get_yaxis().set_ticks([])
-    main_ax.set_xlabel('Timesteps (K)', fontsize=11)
+    main_ax.set_xlabel('Timesteps', fontsize=fontsize)
     main_ax.xaxis.labelpad = 25
     return main_ax
 
@@ -208,7 +209,7 @@ def get_cl_method(run):
 
 
 def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the provided tags correspond to the run
+    # Check whether the run is in the list of runs to include by exception
     if any(logs in run.name for logs in args.include_runs):
         return True
     # Check whether the provided CL sequence corresponds to the run
@@ -246,11 +247,13 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
 
 
 def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
-                  bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5) -> None:
-    ax.set_xlabel("Timesteps (K)", fontsize=fontsize)
+                  bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5,
+                  add_xlabel: bool = True) -> None:
+    if add_xlabel:
+        ax.set_xlabel("Timesteps", fontsize=fontsize)
     ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=-1.0)
-    plt.savefig(f'plots/{plot_name}.pdf')
+    plt.savefig(f'plots/{plot_name}.png')
     plt.show()
 
 
