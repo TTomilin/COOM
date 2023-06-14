@@ -29,11 +29,12 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
         os.makedirs(path)
         print(f"Created new directory {path}")
 
-    file_path = f'{path}/{TRANSLATIONS[metric]}.json'
+    file_name = metric if metric == 'walltime' else TRANSLATIONS[metric]
+    file_path = f'{path}/{file_name}.json'
     if args.overwrite or not os.path.exists(file_path):
         print(f'Saving {run.id} --- {file_path}')
         with open(f'{file_path}', 'w') as f:
-            json.dump(system_metric, f)
+            json.dump([system_metric], f)
 
 
 if __name__ == "__main__":
