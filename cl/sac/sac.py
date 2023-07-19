@@ -578,7 +578,7 @@ class SAC:
         self.start_time = time.time()
 
         if self.test_only:
-            self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+            self.test_agent(deterministic=True, num_episodes=self.num_test_eps_stochastic)
             return
 
         obs, info = self.env.reset()
