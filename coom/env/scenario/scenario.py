@@ -194,13 +194,6 @@ class DoomEnv(CommonEnv):
             if not self.render_enabled:
                 return [img]
             try:
-                h, w = img.shape[:2]
-                render_w = 1280
-
-                if w < render_w:
-                    render_h = int(render_w * h / w)
-                    img = cv2.resize(img, (render_w, render_h))
-
                 # Render the image to the screen with swapped red and blue channels
                 cv2.imshow('DOOM', img[:, :, [2, 1, 0]])
                 cv2.waitKey(1)
