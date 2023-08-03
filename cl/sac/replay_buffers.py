@@ -1,21 +1,22 @@
-from enum import Enum
-
 import numpy as np
 import random
 import tensorflow as tf
-from typing import Dict, Iterable
+from enum import Enum
+from numba import njit
+from typing import Dict, List, Tuple, Any
+from typing import Optional, Union
 
 
 class BufferType(Enum):
     FIFO = "fifo"
     RESERVOIR = "reservoir"
-    PRIORITIZED = "prioritized"
+    PRIORITY = "priority"
 
 
 class ReplayBuffer:
     """A simple FIFO experience replay buffer for SAC agents."""
 
-    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
@@ -52,7 +53,7 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
@@ -99,7 +100,7 @@ class EpisodicMemory:
 class ReservoirReplayBuffer(ReplayBuffer):
     """Buffer for SAC agents implementing reservoir sampling."""
 
-    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
         super().__init__(obs_shape, size, num_tasks)
         self.timestep = 0
 
@@ -126,26 +127,103 @@ class ReservoirReplayBuffer(ReplayBuffer):
         self.size = min(self.size + 1, self.max_size)
 
 
-class Experience:
-    def __init__(self, obs, action, reward, next_obs, done, one_hot):
-        self.obs = obs
-        self.action = action
-        self.reward = reward
-        self.next_obs = next_obs
-        self.done = done
-        self.one_hot = one_hot
+class PrioritizedReplayBufferTianshou(ReplayBuffer):
+    """Implementation of Prioritized Experience Replay. arXiv:1511.05952.
 
-    def __repr__(self):
-        return f"Experience(obs={self.obs}, action={self.action}, reward={self.reward}, next_obs={self.next_obs}, done={self.done}, one_hot={self.one_hot})"
+    :param float alpha: the prioritization exponent.
+    :param float beta: the importance sample soft coefficient.
+    :param bool weight_norm: whether to normalize returned weights with the maximum
+        weight value within the batch. Default to True.
 
-    def __str__(self):
-        return self.__repr__()
+    .. seealso::
 
-    def __eq__(self, other):
-        return self.obs == other.obs and self.action == other.action and self.reward == other.reward and self.next_obs == other.next_obs and self.done == other.done and self.one_hot == other.one_hot
+        Please refer to :class:`~tianshou.data.ReplayBuffer` for other APIs' usage.
+    """
 
-    def __hash__(self):
-        return hash((self.obs, self.action, self.reward, self.next_obs, self.done, self.one_hot))
+    def __init__(
+            self,
+            size: int,
+            alpha: float,
+            beta: float,
+            weight_norm: bool = True,
+            **kwargs: Any
+    ) -> None:
+        # will raise KeyError in PrioritizedVectorReplayBuffer
+        # super().__init__(size, **kwargs)
+        ReplayBuffer.__init__(self, size, **kwargs)
+        assert alpha > 0.0 and beta >= 0.0
+        self._alpha, self._beta = alpha, beta
+        self._max_prio = self._min_prio = 1.0
+        # save weight directly in this class instead of self._meta
+        self.weight = SegmentTree(size)
+        self.__eps = np.finfo(np.float32).eps.item()
+        self.options.update(alpha=alpha, beta=beta)
+        self._weight_norm = weight_norm
+
+    def init_weight(self, index: Union[int, np.ndarray]) -> None:
+        self.weight[index] = self._max_prio**self._alpha
+
+    def update(self, buffer: ReplayBuffer) -> np.ndarray:
+        indices = super().update(buffer)
+        self.init_weight(indices)
+        return indices
+
+    def add(
+            self,
+            batch: Any,
+            buffer_ids: Optional[Union[np.ndarray, List[int]]] = None
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        ptr, ep_rew, ep_len, ep_idx = super().add(batch, buffer_ids)
+        self.init_weight(ptr)
+        return ptr, ep_rew, ep_len, ep_idx
+
+    def sample_indices(self, batch_size: int) -> np.ndarray:
+        if batch_size > 0 and len(self) > 0:
+            scalar = np.random.rand(batch_size) * self.weight.reduce()
+            return self.weight.get_prefix_sum_idx(scalar)  # type: ignore
+        else:
+            return super().sample_indices(batch_size)
+
+    def get_weight(self, index: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        """Get the importance sampling weight.
+
+        The "weight" in the returned Batch is the weight on loss function to debias
+        the sampling process (some transition tuples are sampled more often so their
+        losses are weighted less).
+        """
+        # important sampling weight calculation
+        # original formula: ((p_j/p_sum*N)**(-beta))/((p_min/p_sum*N)**(-beta))
+        # simplified formula: (p_j/p_min)**(-beta)
+        return (self.weight[index] / self._min_prio)**(-self._beta)
+
+    def update_weight(
+            self, index: np.ndarray, new_weight: Union[np.ndarray, tf.Tensor]
+    ) -> None:
+        """Update priority weight by index in this buffer.
+
+        :param np.ndarray index: index you want to update weight.
+        :param np.ndarray new_weight: new priority weight you want to update.
+        """
+        weight = np.abs(np.array(new_weight)) + self.__eps
+        self.weight[index] = weight**self._alpha
+        self._max_prio = max(self._max_prio, weight.max())
+        self._min_prio = min(self._min_prio, weight.min())
+
+    def __getitem__(self, index: Union[slice, int, List[int], np.ndarray]) -> Any:
+        if isinstance(index, slice):  # change slice to np array
+            # buffer[:] will get all available data
+            indices = self.sample_indices(0) if index == slice(None) \
+                else self._indices[:len(self)][index]
+        else:
+            indices = index  # type: ignore
+        batch = super().__getitem__(indices)
+        weight = self.get_weight(indices)
+        # ref: https://github.com/Kaixhin/Rainbow/blob/master/memory.py L154
+        batch.weight = weight / np.max(weight) if self._weight_norm else weight
+        return batch
+
+    def set_beta(self, beta: float) -> None:
+        self._beta = beta
 
 
 class PrioritizedReplayBuffer(ReplayBuffer):
@@ -156,7 +234,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
     absolute_error_upper = 1.  # clipped abs error
 
-    def __init__(self, obs_shape: Iterable[int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
         super().__init__(obs_shape, size, num_tasks)
         self.buffer = SumTree(size)
 
@@ -177,14 +255,14 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         if max_priority == 0:
             max_priority = self.absolute_error_upper
 
-        experience = Experience(obs, action, reward, next_obs, done, one_hot)
+        experience = (obs, next_obs, action, reward, done, one_hot)
 
         # Add the new experience to the tree with the maximum priority
         self.buffer.add(max_priority, experience)
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
-    def sample_batch(self, batch_size: int) -> Dict[str, tf.Tensor]:
+    def sample_batch(self, batch_size: int) -> Tuple[np.ndarray, Dict[str, tf.Tensor], np.ndarray]:
         # Create a sample array that will contain the mini-batch
         memory_b = []
 
@@ -226,9 +304,18 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
             memory_b.append(data)
 
-        return b_idx, np.array(memory_b), b_ISWeights
+        memory_b = np.array(memory_b)
+        batch = dict(
+            obs=tf.convert_to_tensor(memory_b[:, 0].tolist(), dtype=tf.float32),
+            next_obs=tf.convert_to_tensor(memory_b[:, 1].tolist(), dtype=tf.float32),
+            actions=tf.convert_to_tensor(memory_b[:, 2].tolist(), dtype=tf.int32),
+            rewards=tf.convert_to_tensor(memory_b[:, 3].tolist(), dtype=tf.float32),
+            done=tf.convert_to_tensor(memory_b[:, 4].tolist(), dtype=tf.float32),
+            one_hot=tf.convert_to_tensor(memory_b[:, 5].tolist(), dtype=tf.float32),
+        )
+        return b_idx, batch, b_ISWeights
 
-    def batch_update(self, tree_idx: np.ndarray, abs_errors: np.ndarray) -> None:
+    def batch_update(self, tree_idx: np.ndarray, abs_errors: tf.Tensor) -> None:
         """
         Update the priorities in the tree
         """
@@ -293,7 +380,7 @@ class SumTree(object):
            / \
           0   0
          / \ / \
-        tree_index  0 0  0  We fill the leaves from left to right
+        0  0 0  0  We fill the leaves from left to right
         """
 
         # Update the data frame
@@ -383,3 +470,136 @@ class SumTree(object):
     @property
     def total_priority(self):
         return self.tree[0]  # Returns the root node
+
+
+class SegmentTree:
+    """Implementation of Segment Tree.
+
+    The segment tree stores an array ``arr`` with size ``n``. It supports value
+    update and fast query of the sum for the interval ``[left, right)`` in
+    O(log n) time. The detailed procedure is as follows:
+
+    1. Pad the array to have length of power of 2, so that leaf nodes in the \
+    segment tree have the same depth.
+    2. Store the segment tree in a binary heap.
+
+    :param int size: the size of segment tree.
+    """
+
+    def __init__(self, size: int) -> None:
+        bound = 1
+        while bound < size:
+            bound *= 2
+        self._size = size
+        self._bound = bound
+        self._value = np.zeros([bound * 2])
+        self._compile()
+
+    def __len__(self) -> int:
+        return self._size
+
+    def __getitem__(self, index: Union[int, np.ndarray]) -> Union[float, np.ndarray]:
+        """Return self[index]."""
+        return self._value[index + self._bound]
+
+    def __setitem__(
+            self, index: Union[int, np.ndarray], value: Union[float, np.ndarray]
+    ) -> None:
+        """Update values in segment tree.
+
+        Duplicate values in ``index`` are handled by numpy: later index
+        overwrites previous ones.
+        ::
+
+            >>> a = np.array([1, 2, 3, 4])
+            >>> a[[0, 1, 0, 1]] = [4, 5, 6, 7]
+            >>> print(a)
+            [6 7 3 4]
+        """
+        if isinstance(index, int):
+            index, value = np.array([index]), np.array([value])
+        assert np.all(0 <= index) and np.all(index < self._size)
+        _setitem(self._value, index + self._bound, value)
+
+    def reduce(self, start: int = 0, end: Optional[int] = None) -> float:
+        """Return operation(value[start:end])."""
+        if start == 0 and end is None:
+            return self._value[1]
+        if end is None:
+            end = self._size
+        if end < 0:
+            end += self._size
+        return _reduce(self._value, start + self._bound - 1, end + self._bound)
+
+    def get_prefix_sum_idx(self, value: Union[float,
+                                              np.ndarray]) -> Union[int, np.ndarray]:
+        r"""Find the index with given value.
+
+        Return the minimum index for each ``v`` in ``value`` so that
+        :math:`v \le \mathrm{sums}_i`, where
+        :math:`\mathrm{sums}_i = \sum_{j = 0}^{i} \mathrm{arr}_j`.
+
+        .. warning::
+
+            Please make sure all of the values inside the segment tree are
+            non-negative when using this function.
+        """
+        assert np.all(value >= 0.0) and np.all(value < self._value[1])
+        single = False
+        if not isinstance(value, np.ndarray):
+            value = np.array([value])
+            single = True
+        index = _get_prefix_sum_idx(value, self._bound, self._value)
+        return index.item() if single else index
+
+    def _compile(self) -> None:
+        f64 = np.array([0, 1], dtype=np.float64)
+        f32 = np.array([0, 1], dtype=np.float32)
+        i64 = np.array([0, 1], dtype=np.int64)
+        _setitem(f64, i64, f64)
+        _setitem(f64, i64, f32)
+        _reduce(f64, 0, 1)
+        _get_prefix_sum_idx(f64, 1, f64)
+        _get_prefix_sum_idx(f32, 1, f64)
+
+
+@njit
+def _setitem(tree: np.ndarray, index: np.ndarray, value: np.ndarray) -> None:
+    """Numba version, 4x faster: 0.1 -> 0.024."""
+    tree[index] = value
+    while index[0] > 1:
+        index //= 2
+        tree[index] = tree[index * 2] + tree[index * 2 + 1]
+
+
+@njit
+def _reduce(tree: np.ndarray, start: int, end: int) -> float:
+    """Numba version, 2x faster: 0.009 -> 0.005."""
+    # nodes in (start, end) should be aggregated
+    result = 0.0
+    while end - start > 1:  # (start, end) interval is not empty
+        if start % 2 == 0:
+            result += tree[start + 1]
+        start //= 2
+        if end % 2 == 1:
+            result += tree[end - 1]
+        end //= 2
+    return result
+
+
+@njit
+def _get_prefix_sum_idx(value: np.ndarray, bound: int, sums: np.ndarray) -> np.ndarray:
+    """Numba version (v0.51), 5x speed up with size=100000 and bsz=64.
+
+    vectorized np: 0.0923 (numpy best) -> 0.024 (now)
+    for-loop: 0.2914 -> 0.019 (but not so stable)
+    """
+    index = np.ones(value.shape, dtype=np.int64)
+    while index[0] < bound:
+        index *= 2
+        lsons = sums[index]
+        direct = lsons < value
+        value -= lsons * direct
+        index += direct
+    index -= bound
+    return index

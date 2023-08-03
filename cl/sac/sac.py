@@ -168,7 +168,7 @@ class SAC:
             self.replay_buffer = ReservoirReplayBuffer(
                 obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
-        elif buffer_type == BufferType.PRIORITIZED:
+        elif buffer_type == BufferType.PRIORITY:
             self.replay_buffer = PrioritizedReplayBuffer(
                 obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
@@ -353,6 +353,9 @@ class SAC:
                 * (tf.math.reduce_sum(min_target_q, axis=-1) - log_alpha_exp * entropy_next)
             )
 
+            # Absolute error for PER
+            abs_error = tf.math.minimum(tf.abs(q_backup - q1_vals), tf.abs(q_backup - q2_vals))
+
             # Critic loss
             q1_loss = 0.5 * tf.reduce_mean((q_backup - q1_vals)**2)
             q2_loss = 0.5 * tf.reduce_mean((q_backup - q2_vals)**2)
@@ -376,6 +379,7 @@ class SAC:
                 entropy=entropy,
                 reg_loss=auxiliary_loss,
                 agem_violation=0,
+                abs_error=abs_error,
             )
 
             actor_loss += auxiliary_loss
@@ -548,10 +552,15 @@ class SAC:
             self.on_task_start(current_task_idx)
 
         if self.reset_buffer_on_task_change:
-            assert self.buffer_type == BufferType.FIFO
-            self.replay_buffer = ReplayBuffer(
-                obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
-            )
+            assert self.buffer_type == BufferType.FIFO or self.buffer_type == BufferType.PRIORITY
+            if self.buffer_type == BufferType.FIFO:
+                self.replay_buffer = ReplayBuffer(
+                    obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
+                )
+            else:
+                self.replay_buffer = PrioritizedReplayBuffer(
+                    obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
+                )
         if self.reset_critic_on_task_change:
             reset_weights(self.critic1, self.critic_cl, self.policy_kwargs)
             self.target_critic1.set_weights(self.critic1.get_weights())
@@ -646,7 +655,7 @@ class SAC:
 
                 for j in range(self.n_updates):
 
-                    if self.buffer_type == BufferType.PRIORITIZED:
+                    if self.buffer_type == BufferType.PRIORITY:
                         tree_idx, batch, IS_weights = self.replay_buffer.sample_batch(self.batch_size)
                     else:
                         batch = self.replay_buffer.sample_batch(self.batch_size)
@@ -657,9 +666,9 @@ class SAC:
                         tf.convert_to_tensor(current_task_idx), batch, episodic_batch
                     )
 
-                    if self.buffer_type == BufferType.PRIORITIZED:
+                    if self.buffer_type == BufferType.PRIORITY:
                         # Update priority in the SumTree
-                        absolute_errors = results['value_loss']
+                        absolute_errors = results['abs_error']
                         # absolute_errors = np.abs(np.mean(q_values_old - q_values, axis=1))
                         self.replay_buffer.batch_update(tree_idx, absolute_errors)
 
