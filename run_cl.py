@@ -1,5 +1,18 @@
 import argparse
 import tensorflow as tf
+
+# Limit tensorflow memory usage
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+        # logger.log(f"Enabling GPU memory growth for GPU: {gpu}", color='magenta')
+        # logger.log(f"GPU memory limit: {args.gpu_memory_limit} GB", color='magenta')
+        # tf.config.experimental.set_virtual_device_configuration(
+        #     args.gpu,
+        #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=args.gpu_memory_limit * 1024)]
+        # )
+
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -55,18 +68,6 @@ def main(parser: argparse.ArgumentParser):
         # Restrict TensorFlow to only use the specified GPU
         tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
         logger.log(f"Using GPU: {args.gpu}", color='magenta')
-
-    # Limit tensorflow memory usage
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    if gpus:
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-            logger.log(f"Enabling GPU memory growth for GPU: {gpu}", color='magenta')
-            # logger.log(f"GPU memory limit: {args.gpu_memory_limit} GB", color='magenta')
-            # tf.config.experimental.set_virtual_device_configuration(
-            #     args.gpu,
-            #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=args.gpu_memory_limit * 1024)]
-            # )
 
     for scenario in scenarios:
         scenario.value['class'].add_cli_args(parser)
