@@ -88,8 +88,8 @@ def main(parser: argparse.ArgumentParser):
     record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
     task_idx = scenarios.index(test_scenarios[0]) if args.test_only else None
     test_envs = get_doom_envs(logger, test_scenarios, test_envs, task_idx=task_idx, doom_kwargs=doom_kwargs)
-    test_envs = [wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
-                          record_dir)
+    test_envs = [wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack,
+                          args.use_lstm, args.record, record_dir)
                  for env in test_envs]
     if args.test_only:
         args.render = False
@@ -97,8 +97,8 @@ def main(parser: argparse.ArgumentParser):
     scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
     cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, args.start_from, scenario_kwargs, doom_kwargs)
     cl_env.tasks = [
-        wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.record,
-                 record_dir)
+        wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
+                 args.record, record_dir)
         for env in cl_env.tasks]
 
     num_heads = num_tasks if args.multihead_archs else 1
@@ -106,6 +106,7 @@ def main(parser: argparse.ArgumentParser):
         hidden_sizes=args.hidden_sizes,
         activation=get_activation_from_str(args.activation),
         use_layer_norm=args.use_layer_norm,
+        use_lstm=args.use_lstm,
         num_heads=num_heads,
         hide_task_id=args.hide_task_id,
     )

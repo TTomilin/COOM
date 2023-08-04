@@ -152,7 +152,7 @@ class SAC:
         self.test_threads = []
         self.obs_shape = env.observation_space.shape
         self.act_dim = env.action_space.n
-        logger.log(f"Observations shape: {self.obs_shape}", color='blue')  # should be N_FRAMES x H x W
+        logger.log(f"Observations shape: {self.obs_shape}", color='blue')
         logger.log(f"Actions shape: {self.act_dim}", color='blue')
 
         # Share environment information with the policy architecture

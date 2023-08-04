@@ -45,6 +45,7 @@ def parse_args():
         help="Number of steps between subsequent evaluations and logging")
 
     # Model
+    arg("--use_lstm", default=False, action='store_true', help="Whether to use an LSTM after the CNN encoder head")
     arg("--hidden_sizes", type=int, nargs="+", default=[256, 256], help="Hidden sizes list for the MLP models")
     arg("--activation", type=str, default="lrelu", help="Activation kind for the models")
     arg("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")

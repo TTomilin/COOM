@@ -131,8 +131,8 @@ def get_single_env(logger: Logger, scenario: Type[DoomEnv], task: str = 'default
     return scenario(doom_kwargs, **scenario_kwargs)
 
 
-def wrap_env(env: DoomEnv, sparse_rewards: bool = False, frame_height: int = 84, frame_width: int = 84,
-             frame_stack: int = 4, record: bool = False, record_dir: str = 'videos') -> gym.Env:
+def wrap_env(env: DoomEnv, sparse_rewards=False, frame_height=84, frame_width=84, frame_stack=4, use_lstm=False,
+             record=False, record_dir='videos') -> gym.Env:
     reward_wrappers = env.reward_wrappers_sparse() if sparse_rewards else env.reward_wrappers_dense()
     for wrapper in reward_wrappers:
         env = wrapper.wrapper_class(env, **wrapper.kwargs)  # Apply the scenario specific reward wrappers
@@ -140,7 +140,8 @@ def wrap_env(env: DoomEnv, sparse_rewards: bool = False, frame_height: int = 84,
     env = RescaleWrapper(env)
     env = NormalizeObservation(env)
     env = FrameStack(env, frame_stack)
-    env = RGBStack(env)
+    if not use_lstm:
+        env = RGBStack(env)
     if record:
         env = RecordVideo(env, record_dir, episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env
