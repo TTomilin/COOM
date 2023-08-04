@@ -11,7 +11,8 @@ from tensorflow_probability.python.distributions import Categorical
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cl.sac import models
-from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType
+from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType, \
+    PrioritizedExperienceReplay
 from cl.utils.logx import EpochLogger
 from cl.utils.run_utils import reset_optimizer, reset_weights, set_seed, create_one_hot_vec
 from coom.env.scenario.common import CommonEnv
@@ -172,6 +173,9 @@ class SAC:
             self.replay_buffer = PrioritizedReplayBuffer(
                 obs_shape=self.obs_shape, size=replay_size, num_tasks=self.num_tasks
             )
+        elif buffer_type == BufferType.PER:
+            self.replay_buffer = PrioritizedExperienceReplay(
+                obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks)
         else:
             raise ValueError(f"Unknown buffer type: {buffer_type}")
 
@@ -317,6 +321,7 @@ class SAC:
             rewards: tf.Tensor,
             done: tf.Tensor,
             one_hot: tf.Tensor,
+            **kwargs: Dict[str, tf.Tensor],
     ) -> Tuple[Tuple[List[tf.Tensor], List[tf.Tensor], List[tf.Tensor]], Dict]:
         with tf.GradientTape(persistent=True) as g:
             if self.auto_alpha:
@@ -552,13 +557,16 @@ class SAC:
             self.on_task_start(current_task_idx)
 
         if self.reset_buffer_on_task_change:
-            assert self.buffer_type == BufferType.FIFO or self.buffer_type == BufferType.PRIORITY
             if self.buffer_type == BufferType.FIFO:
                 self.replay_buffer = ReplayBuffer(
                     obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
                 )
-            else:
+            elif self.buffer_type == BufferType.PRIORITY:
                 self.replay_buffer = PrioritizedReplayBuffer(
+                    obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
+                )
+            elif self.buffer_type == BufferType.PER:
+                self.replay_buffer = PrioritizedExperienceReplay(
                     obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
                 )
         if self.reset_critic_on_task_change:
@@ -639,7 +647,7 @@ class SAC:
                 episodes += 1
                 buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100  # Percentage
                 self.logger.log(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
-                      f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
+                                f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
                                    "train/episodes": episodes, "buffer_capacity": buffer_capacity})
                 self.logger.store(self.env.get_statistics('train'))
@@ -655,22 +663,17 @@ class SAC:
 
                 for j in range(self.n_updates):
 
-                    if self.buffer_type == BufferType.PRIORITY:
-                        tree_idx, batch, IS_weights = self.replay_buffer.sample_batch(self.batch_size)
-                    else:
-                        batch = self.replay_buffer.sample_batch(self.batch_size)
-
+                    batch = self.replay_buffer.sample_batch(self.batch_size)
                     episodic_batch = self.get_episodic_batch(current_task_idx)
 
                     results = self.learn_on_batch(
                         tf.convert_to_tensor(current_task_idx), batch, episodic_batch
                     )
 
-                    if self.buffer_type == BufferType.PRIORITY:
-                        # Update priority in the SumTree
-                        absolute_errors = results['abs_error'].numpy()
-                        # absolute_errors = np.abs(np.mean(q_values_old - q_values, axis=1))
-                        self.replay_buffer.batch_update(tree_idx, absolute_errors)
+                    # Update priority in the tree
+                    abs_errors = results['abs_error'].numpy()
+                    if self.buffer_type == BufferType.PER or self.buffer_type == BufferType.PRIORITY:
+                        self.replay_buffer.update_weights(batch['idxs'].numpy(), abs_errors)
 
                     self._log_after_update(results)
 
