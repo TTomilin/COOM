@@ -354,7 +354,7 @@ class SAC:
             )
 
             # Absolute error for PER
-            abs_error = tf.math.minimum(tf.abs(q_backup - q1_vals), tf.abs(q_backup - q2_vals))
+            abs_error = tf.stop_gradient(tf.math.minimum(tf.abs(q_backup - q1_vals), tf.abs(q_backup - q2_vals)))
 
             # Critic loss
             q1_loss = 0.5 * tf.reduce_mean((q_backup - q1_vals)**2)
@@ -668,7 +668,7 @@ class SAC:
 
                     if self.buffer_type == BufferType.PRIORITY:
                         # Update priority in the SumTree
-                        absolute_errors = results['abs_error']
+                        absolute_errors = results['abs_error'].numpy()
                         # absolute_errors = np.abs(np.mean(q_values_old - q_values, axis=1))
                         self.replay_buffer.batch_update(tree_idx, absolute_errors)
 
