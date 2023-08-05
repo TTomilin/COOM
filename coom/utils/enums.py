@@ -35,3 +35,5 @@ class Sequence(Enum):
     COC = {'scenarios': [DoomScenario.PITFALL, DoomScenario.ARMS_DEALER, DoomScenario.HIDE_AND_SEEK,
                          DoomScenario.FLOOR_IS_LAVA, DoomScenario.CHAINSAW, DoomScenario.RAISE_THE_ROOF,
                          DoomScenario.RUN_AND_GUN, DoomScenario.HEALTH_GATHERING], 'envs': ['hard']}
+    CD16 = {'scenarios': [DoomScenario.RUN_AND_GUN], 'envs': CD8['envs'] + CD8['envs']}
+    CO16 = {'scenarios': CO8['scenarios'] + CO8['scenarios'], 'envs': ['default']}
