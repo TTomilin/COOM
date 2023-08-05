@@ -1,5 +1,4 @@
 import numpy as np
-from numba import njit
 from typing import Union, Optional
 
 
@@ -231,7 +230,6 @@ class SegmentTree:
         _get_prefix_sum_idx(f32, 1, f64)
 
 
-@njit
 def _get_prefix_sum_idx(value: np.ndarray, bound: int, sums: np.ndarray) -> np.ndarray:
     """Numba version (v0.51), 5x speed up with size=100000 and bsz=64.
 
@@ -249,7 +247,6 @@ def _get_prefix_sum_idx(value: np.ndarray, bound: int, sums: np.ndarray) -> np.n
     return index
 
 
-@njit
 def _reduce(tree: np.ndarray, start: int, end: int) -> float:
     """Numba version, 2x faster: 0.009 -> 0.005."""
     # nodes in (start, end) should be aggregated
@@ -264,7 +261,6 @@ def _reduce(tree: np.ndarray, start: int, end: int) -> float:
     return result
 
 
-@njit
 def _setitem(tree: np.ndarray, index: np.ndarray, value: np.ndarray) -> None:
     """Numba version, 4x faster: 0.1 -> 0.024."""
     tree[index] = value
