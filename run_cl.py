@@ -4,25 +4,8 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from input_args import parse_args
-
-from cl.methods.agem import AGEM_SAC
-from cl.methods.ewc import EWC_SAC
-from cl.methods.l2 import L2_SAC
-from cl.methods.mas import MAS_SAC
-from cl.methods.packnet import PackNet_SAC
-from cl.sac.sac import SAC
-from cl.methods.vcl import VCL_SAC
 from cl.utils.logx import EpochLogger
-
-
-class CLMethod(Enum):
-    SAC = (SAC, [])
-    L2 = (L2_SAC, ['cl_reg_coef', 'regularize_critic'])
-    EWC = (EWC_SAC, ['cl_reg_coef', 'regularize_critic'])
-    MAS = (MAS_SAC, ['cl_reg_coef', 'regularize_critic'])
-    VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
-    PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
-    AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
+from cl.sac.sac import SAC
 
 
 def main(parser: argparse.ArgumentParser):
@@ -45,6 +28,22 @@ def main(parser: argparse.ArgumentParser):
     from cl.utils.wandb_utils import WandBLogger
     from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
     from coom.utils.enums import Sequence, DoomScenario
+
+    from cl.methods.agem import AGEM_SAC
+    from cl.methods.ewc import EWC_SAC
+    from cl.methods.l2 import L2_SAC
+    from cl.methods.mas import MAS_SAC
+    from cl.methods.packnet import PackNet_SAC
+    from cl.methods.vcl import VCL_SAC
+
+    class CLMethod(Enum):
+        SAC = (SAC, [])
+        L2 = (L2_SAC, ['cl_reg_coef', 'regularize_critic'])
+        EWC = (EWC_SAC, ['cl_reg_coef', 'regularize_critic'])
+        MAS = (MAS_SAC, ['cl_reg_coef', 'regularize_critic'])
+        VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
+        PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
+        AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
 
     sequence = Sequence[args.sequence.upper()]
     scenarios = sequence.value['scenarios']
