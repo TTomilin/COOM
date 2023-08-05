@@ -72,6 +72,7 @@ class EpisodicMemory:
             next_obs: np.ndarray,
             done: np.ndarray,
             one_hot: np.ndarray,
+            **kwargs: Dict[str, np.ndarray]
     ) -> None:
         assert len(obs) == len(actions) == len(rewards) == len(next_obs) == len(done)
         assert self.size + len(obs) <= self.max_size
