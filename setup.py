@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 # Required dependencies
 required = [
-    "tensorflow>=2.0",
+    "tensorflow",
     "tensorflow-probability",
     "matplotlib",
     "seaborn",
@@ -14,6 +14,8 @@ required = [
     "opencv-python",
     "imageio-ffmpeg",
     "promise",
+    "numba",
+    "scipy",
 ]
 
 setup(
