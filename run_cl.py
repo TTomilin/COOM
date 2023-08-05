@@ -3,48 +3,36 @@ import tensorflow as tf
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from input_args import parse_args
-from cl.utils.logx import EpochLogger
+
+from cl.methods.agem import AGEM_SAC
+from cl.methods.ewc import EWC_SAC
+from cl.methods.l2 import L2_SAC
+from cl.methods.mas import MAS_SAC
+from cl.methods.packnet import PackNet_SAC
+from cl.methods.vcl import VCL_SAC, VclMlpActor
+from cl.sac.models import MlpActor
+from cl.sac.replay_buffers import BufferType
 from cl.sac.sac import SAC
+from cl.utils.logx import EpochLogger
+from cl.utils.run_utils import get_activation_from_str
+from cl.utils.wandb_utils import WandBLogger
+from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
+from coom.utils.enums import Sequence, DoomScenario
+from input_args import parse_args
+
+
+class CLMethod(Enum):
+    SAC = (SAC, [])
+    L2 = (L2_SAC, ['cl_reg_coef', 'regularize_critic'])
+    EWC = (EWC_SAC, ['cl_reg_coef', 'regularize_critic'])
+    MAS = (MAS_SAC, ['cl_reg_coef', 'regularize_critic'])
+    VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
+    PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
+    AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
 
 
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
-
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
-
-    if args.gpu is not None:
-        # Restrict TensorFlow to only use the specified GPU
-        physical_devices = tf.config.list_physical_devices('GPU')
-        logger.log(f"list of physical devices GPU: {physical_devices}", color='magenta')
-        gpu = physical_devices[args.gpu]
-        tf.config.experimental.set_visible_devices(gpu, 'GPU')
-        logger.log(f"Using GPU: {gpu}", color='magenta')
-
-    from cl.methods.vcl import VclMlpActor
-    from cl.sac.models import MlpActor
-    from cl.sac.replay_buffers import BufferType
-    from cl.utils.run_utils import get_activation_from_str
-    from cl.utils.wandb_utils import WandBLogger
-    from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
-    from coom.utils.enums import Sequence, DoomScenario
-
-    from cl.methods.agem import AGEM_SAC
-    from cl.methods.ewc import EWC_SAC
-    from cl.methods.l2 import L2_SAC
-    from cl.methods.mas import MAS_SAC
-    from cl.methods.packnet import PackNet_SAC
-    from cl.methods.vcl import VCL_SAC
-
-    class CLMethod(Enum):
-        SAC = (SAC, [])
-        L2 = (L2_SAC, ['cl_reg_coef', 'regularize_critic'])
-        EWC = (EWC_SAC, ['cl_reg_coef', 'regularize_critic'])
-        MAS = (MAS_SAC, ['cl_reg_coef', 'regularize_critic'])
-        VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
-        PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
-        AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
-
     sequence = Sequence[args.sequence.upper()]
     scenarios = sequence.value['scenarios']
     envs = sequence.value['envs']
@@ -58,9 +46,18 @@ def main(parser: argparse.ArgumentParser):
     if args.with_wandb:
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario.name.lower() for scenario in scenarios], timestamp, sequence.name)
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     logger.log(f'Task sequence: {args.sequence}', color='magenta')
     logger.log(f'Scenarios: {[s.name for s in scenarios]}', color='magenta')
     logger.log(f'Environments: {envs}', color='magenta')
+
+    if args.gpu is not None:
+        # Restrict TensorFlow to only use the specified GPU
+        physical_devices = tf.config.list_physical_devices('GPU')
+        logger.log(f"list of physical devices GPU: {physical_devices}", color='magenta')
+        gpu = physical_devices[args.gpu]
+        tf.config.experimental.set_visible_devices(gpu, 'GPU')
+        logger.log(f"Using GPU: {gpu}", color='magenta')
 
     for scenario in scenarios:
         scenario.value['class'].add_cli_args(parser)
