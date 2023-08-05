@@ -23,15 +23,6 @@ class ArmsDealer(DoomEnv):
     agent moves in the environment. Finally, the agent is penalized for being idle.
     """
 
-    @classmethod
-    def add_cli_args(cls, parser):
-        def arg(*args, **kwargs):
-            parser.add_argument(*args, **kwargs)
-
-        super().add_cli_args(parser)
-        arg('--experiment_summaries_interval', default=20, type=int,
-            help='How often in seconds we write avg. statistics about the experiment (reward, episode length, extra stats...)')
-
     def __init__(self,
                  doom_kwargs: Dict[str, any],
                  reward_scaler_traversal: float = 1e-3,
