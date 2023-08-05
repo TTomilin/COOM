@@ -9,7 +9,7 @@ A demo of COOM can be found on [Youtube](https://www.youtube.com/watch?v=FUm2B8M
 [//]: # (We provide the complete source code for the benchmark together with the tested algorithms implementations and code for producing result tables and plots.)
 
 ## Installation
-1. Install the dependencies for ViZDoom: [Linux](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building.md#-linux), [MacOS](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building.md#-linux) or [Windows](https://github.com/mwydmuch/ViZDoom/blob/master/doc/Building.md#-windows).
+1. Install the dependencies for [ViZDoom](https://github.com/Farama-Foundation/ViZDoom/).
 2. Clone the repository
 ```bash
 $ git clone https://github.com/TTomilin/COOM
@@ -20,7 +20,7 @@ $ cd COOM
 ```
 4. Install the dependencies 
 ```bash 
-$ python install setup.py
+$ python setup.py install
 ```
 
 ## Environments
