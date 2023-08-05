@@ -33,6 +33,16 @@ class CLMethod(Enum):
 
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
+    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
+
+    if args.gpu is not None:
+        # Restrict TensorFlow to only use the specified GPU
+        physical_devices = tf.config.list_physical_devices('GPU')
+        logger.log(f"list of physical devices GPU: {physical_devices}", color='magenta')
+        gpu = physical_devices[args.gpu]
+        tf.config.experimental.set_visible_devices(gpu, 'GPU')
+        logger.log(f"Using GPU: {gpu}", color='magenta')
+
     sequence = Sequence[args.sequence.upper()]
     scenarios = sequence.value['scenarios']
     envs = sequence.value['envs']
@@ -46,18 +56,9 @@ def main(parser: argparse.ArgumentParser):
     if args.with_wandb:
         WandBLogger.add_cli_args(parser)
         WandBLogger(parser, [scenario.name.lower() for scenario in scenarios], timestamp, sequence.name)
-    logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
     logger.log(f'Task sequence: {args.sequence}', color='magenta')
     logger.log(f'Scenarios: {[s.name for s in scenarios]}', color='magenta')
     logger.log(f'Environments: {envs}', color='magenta')
-
-    if args.gpu is not None:
-        # Restrict TensorFlow to only use the specified GPU
-        physical_devices = tf.config.list_physical_devices('GPU')
-        logger.log(f"list of physical devices GPU: {physical_devices}", color='magenta')
-        gpu = physical_devices[args.gpu]
-        tf.config.experimental.set_visible_devices(gpu, 'GPU')
-        logger.log(f"Using GPU: {gpu}", color='magenta')
 
     for scenario in scenarios:
         scenario.value['class'].add_cli_args(parser)
