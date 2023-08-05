@@ -3,22 +3,16 @@ import tensorflow as tf
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
+from input_args import parse_args
 
 from cl.methods.agem import AGEM_SAC
 from cl.methods.ewc import EWC_SAC
 from cl.methods.l2 import L2_SAC
 from cl.methods.mas import MAS_SAC
 from cl.methods.packnet import PackNet_SAC
-from cl.methods.vcl import VCL_SAC, VclMlpActor
-from cl.sac.models import MlpActor
-from cl.sac.replay_buffers import BufferType
 from cl.sac.sac import SAC
+from cl.methods.vcl import VCL_SAC
 from cl.utils.logx import EpochLogger
-from cl.utils.run_utils import get_activation_from_str
-from cl.utils.wandb_utils import WandBLogger
-from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
-from coom.utils.enums import Sequence, DoomScenario
-from input_args import parse_args
 
 
 class CLMethod(Enum):
@@ -33,6 +27,7 @@ class CLMethod(Enum):
 
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
+
     logger = EpochLogger(args.logger_output, config=vars(args), group_id=args.group_id)
 
     if args.gpu is not None:
@@ -42,6 +37,14 @@ def main(parser: argparse.ArgumentParser):
         gpu = physical_devices[args.gpu]
         tf.config.experimental.set_visible_devices(gpu, 'GPU')
         logger.log(f"Using GPU: {gpu}", color='magenta')
+
+    from cl.methods.vcl import VclMlpActor
+    from cl.sac.models import MlpActor
+    from cl.sac.replay_buffers import BufferType
+    from cl.utils.run_utils import get_activation_from_str
+    from cl.utils.wandb_utils import WandBLogger
+    from coom.envs import get_doom_envs, ContinualLearningEnv, wrap_env
+    from coom.utils.enums import Sequence, DoomScenario
 
     sequence = Sequence[args.sequence.upper()]
     scenarios = sequence.value['scenarios']
