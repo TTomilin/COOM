@@ -53,20 +53,10 @@ def main(parser: argparse.ArgumentParser):
 
     if args.gpu is not None:
         # Restrict TensorFlow to only use the specified GPU
-        tf.config.experimental.set_visible_devices(args.gpu, 'GPU')
-        logger.log(f"Using GPU: {args.gpu}", color='magenta')
-
-    # Limit tensorflow memory usage
-    # gpus = tf.config.experimental.list_physical_devices('GPU')
-    # if gpus:
-    #     for gpu in gpus:
-    #         logger.log(f"Enabling GPU memory growth for GPU: {gpu}", color='magenta')
-    #         tf.config.experimental.set_memory_growth(gpu, True)
-            # logger.log(f"GPU memory limit: {args.gpu_memory_limit} GB", color='magenta')
-            # tf.config.experimental.set_virtual_device_configuration(
-            #     args.gpu,
-            #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=args.gpu_memory_limit * 1024)]
-            # )
+        physical_devices = tf.config.list_physical_devices('GPU')
+        gpu = physical_devices[args.gpu]
+        tf.config.experimental.set_visible_devices(gpu, 'GPU')
+        logger.log(f"Using GPU: {gpu}", color='magenta')
 
     for scenario in scenarios:
         scenario.value['class'].add_cli_args(parser)
