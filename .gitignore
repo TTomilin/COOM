@@ -166,3 +166,6 @@ _vizdoom.ini
 /experiments/results/data/CD8_backup/
 /experiments/results/plots/
 /experiments/results/data/
+
+# OPE
+/coom/ope/
