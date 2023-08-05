@@ -54,6 +54,7 @@ def main(parser: argparse.ArgumentParser):
     if args.gpu is not None:
         # Restrict TensorFlow to only use the specified GPU
         physical_devices = tf.config.list_physical_devices('GPU')
+        logger.log(f"list of physical devices GPU: {physical_devices}", color='magenta')
         gpu = physical_devices[args.gpu]
         tf.config.experimental.set_visible_devices(gpu, 'GPU')
         logger.log(f"Using GPU: {gpu}", color='magenta')
