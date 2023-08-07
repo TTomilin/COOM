@@ -117,7 +117,7 @@ def parse_args():
     arg('--frame_height', type=int, default=84, help='Height of the frame')
     arg('--frame_width', type=int, default=84, help='Width of the frame')
     arg("--augment", default=False, action='store_true', help="Whether to use image augmentation")
-    arg("--augmentation", type=str, default=None, choices=['conv', 'shift'], help="Type of image augmentation")
+    arg("--augmentation", type=str, default=None, choices=['conv', 'shift', 'noise'], help="Type of image augmentation")
 
     # Reward
     arg('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')

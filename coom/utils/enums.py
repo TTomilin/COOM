@@ -9,7 +9,7 @@ from coom.env.scenario.parkour import Parkour
 from coom.env.scenario.pitfall import Pitfall
 from coom.env.scenario.raise_the_roof import RaiseTheRoof
 from coom.env.scenario.run_and_gun import RunAndGun
-from coom.env.utils.augmentations import random_conv, random_shift
+from coom.env.utils.augmentations import random_conv, random_shift, random_noise
 
 
 class DoomScenario(Enum):
@@ -50,3 +50,4 @@ class Sequence(Enum):
 class Augmentation(Enum):
     CONV = {'method': random_conv}
     SHIFT = {'method': random_shift}
+    NOISE = {'method': random_noise}
