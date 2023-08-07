@@ -57,7 +57,7 @@ class RunAndGun(DoomEnv):
 
     @property
     def performance_upper_bound(self) -> float:
-        return 25.0
+        return 20.0
 
     @property
     def performance_lower_bound(self) -> float:
