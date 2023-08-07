@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 required = [
     "tensorflow==2.5.0",
     "tensorflow-probability==0.11.0",
-    "matplotlib",
+    "matplotlib==3.5.2",
     "seaborn",
     "wandb",
     "vizdoom",
