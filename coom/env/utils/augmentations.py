@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-from matplotlib import pyplot as plt
 
 
 def random_shift(imgs, pad=4):
