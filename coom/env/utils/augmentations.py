@@ -11,8 +11,11 @@ def random_shift(obs, pad=16):
     return obs
 
 
-def random_conv(obs: np.ndarray) -> np.ndarray:
+def random_conv(obs: np.ndarray, aug_prob=0.5) -> np.ndarray:
     """Applies a random conv2d, deviates slightly from https://arxiv.org/abs/1910.05396"""
+    # Augment only %prob% of the time
+    if np.random.rand() > aug_prob:
+        return obs
     weights = tf.random.normal((3, 3, 3, 3))
     obs = tf.pad(obs / 255., paddings=[[1, 1], [1, 1], [0, 0]], mode='SYMMETRIC')
     obs = tf.cast(obs, tf.float32)
