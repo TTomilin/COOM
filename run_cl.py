@@ -89,7 +89,7 @@ def main(parser: argparse.ArgumentParser):
     cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, args.start_from, scenario_kwargs, doom_kwargs)
     cl_env.tasks = [
         wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
-                 args.record, record_dir)
+                 args.record, record_dir, args.augment, args.augmentation)
         for env in cl_env.tasks]
 
     num_heads = num_tasks if args.multihead_archs else 1

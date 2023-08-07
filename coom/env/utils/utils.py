@@ -1,5 +1,6 @@
 from collections import deque
 
+import tensorflow as tf
 from scipy import spatial
 from vizdoom import ScreenResolution
 
@@ -33,3 +34,7 @@ def distance_traversed(game_var_buf: deque, x_index: int, y_index: int) -> float
     coordinates_past = [game_var_buf[0][x_index],
                         game_var_buf[0][y_index]]
     return spatial.distance.euclidean(coordinates_curr, coordinates_past)
+
+
+def combine_frames(obs):
+    return tf.reshape(obs, [obs.shape[1], obs.shape[2], obs.shape[0] * obs.shape[3]])

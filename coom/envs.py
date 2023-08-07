@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple, Type
 from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
 from coom.env.scenario.scenario import DoomEnv
-from coom.env.wrappers.observation import RescaleWrapper, ResizeWrapper, RGBStack
+from coom.env.wrappers.observation import Rescale, Resize, RGBStack, Augment
 from coom.utils.enums import Sequence
 
 
@@ -132,12 +132,14 @@ def get_single_env(logger: Logger, scenario: Type[DoomEnv], task: str = 'default
 
 
 def wrap_env(env: DoomEnv, sparse_rewards=False, frame_height=84, frame_width=84, frame_stack=4, use_lstm=False,
-             record=False, record_dir='videos') -> gym.Env:
+             record=False, record_dir='videos', augment=False, augmentation='conv') -> gym.Env:
     reward_wrappers = env.reward_wrappers_sparse() if sparse_rewards else env.reward_wrappers_dense()
     for wrapper in reward_wrappers:
         env = wrapper.wrapper_class(env, **wrapper.kwargs)  # Apply the scenario specific reward wrappers
-    env = ResizeWrapper(env, frame_height, frame_width)
-    env = RescaleWrapper(env)
+    if augment:
+        env = Augment(env, augmentation)
+    env = Resize(env, frame_height, frame_width)
+    env = Rescale(env)
     env = NormalizeObservation(env)
     env = FrameStack(env, frame_stack)
     if not use_lstm:

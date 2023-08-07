@@ -1,13 +1,15 @@
 import cv2
+import gym
 import numpy as np
-import tensorflow as tf
 from gym.spaces import Box
 from typing import Tuple, Dict, Any
 
-import gym
+from coom.env.scenario.scenario import DoomEnv
+from coom.env.utils.utils import combine_frames
+from coom.utils.enums import Augmentation
 
 
-class RescaleWrapper(gym.Wrapper):
+class Rescale(gym.Wrapper):
     """Rescale the observation space to [-1, 1]."""
 
     def __init__(self, env):
@@ -22,29 +24,7 @@ class RescaleWrapper(gym.Wrapper):
         return state / 255. * 2 - 1, reward, done, truncated, info
 
 
-class NormalizeWrapper(gym.Wrapper):
-    """Normalize the observation space."""
-
-    def __init__(self, env, eps=1e-6):
-        gym.Wrapper.__init__(self, env)
-        self.eps = eps
-
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
-        state, info = self.env.reset()
-        mean = self.states.mean()
-        std = self.states.std() + self.eps
-        state = (state - mean) / std
-        return state / 255. * 2 - 1, info
-
-    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
-        state, reward, done, truncated, info = self.env.step(action)
-        mean = self.states.mean()
-        std = self.states.std() + self.eps
-        state = (state - mean) / std
-        return state, reward, done, truncated, info
-
-
-class ResizeWrapper(gym.Wrapper):
+class Resize(gym.Wrapper):
     """Resize the observation space."""
 
     def __init__(self, env, height=84, width=84):
@@ -84,5 +64,19 @@ class RGBStack(gym.Wrapper):
         return state, reward, done, truncated, info
 
 
-def combine_frames(obs):
-    return tf.reshape(obs, [obs.shape[1], obs.shape[2], obs.shape[0] * obs.shape[3]])
+class Augment(gym.Wrapper):
+    """Augment the visual observation"""
+
+    def __init__(self, env: DoomEnv, augmentation: str):
+        super(Augment, self).__init__(env)
+        self.augmentation = Augmentation[augmentation.upper()].value['method']
+
+    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+        obs, info = self.env.reset()
+        obs = self.augmentation(obs)
+        return obs, info
+
+    def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
+        obs, reward, done, truncated, info = self.env.step(action)
+        obs = self.augmentation(obs)
+        return obs, reward, done, truncated, info

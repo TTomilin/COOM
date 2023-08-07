@@ -112,10 +112,12 @@ def parse_args():
     arg("--episodic_batch_size", type=int, default=0,
         help="Minibatch size to compute additional loss in 'agem' continual learning method.")
 
-    # DOOM
+    # Observation
     arg('--frame_stack', type=int, default=4, help='Number of frames to stack')
     arg('--frame_height', type=int, default=84, help='Height of the frame')
     arg('--frame_width', type=int, default=84, help='Width of the frame')
+    arg("--augment", default=False, action='store_true', help="Whether to use image augmentation")
+    arg("--augmentation", type=str, default=None, choices=['conv', 'shift'], help="Type of image augmentation")
 
     # Reward
     arg('--reward_frame_survived', default=0.01, type=float, help='For surviving a frame')
