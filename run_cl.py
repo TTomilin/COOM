@@ -37,7 +37,7 @@ def main(parser: argparse.ArgumentParser):
     scenarios = sequence.value['scenarios']
     envs = sequence.value['envs']
     test_scenarios = [DoomScenario[scenario.upper()] for scenario in args.scenarios] if args.test_only else scenarios
-    test_envs = args.envs if args.test_only else envs
+    test_envs = args.envs if args.test_only else [] if args.no_test else envs
     experiment_dir = Path(__file__).parent.resolve()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     num_tasks = len(scenarios) * len(envs)

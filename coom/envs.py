@@ -16,9 +16,9 @@ class ContinualLearningEnv(CommonEnv):
     def __init__(self, logger: Logger, sequence: Sequence, steps_per_env: int = 2e5, start_from: int = 0,
                  scenario_kwargs: List[Dict[str, any]] = None, doom_kwargs: Dict[str, any] = None):
         self.steps_per_env = steps_per_env
-        self._envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs,
-                                   doom_kwargs)
-        self._num_tasks = len(self._envs)
+        self.envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs,
+                                  doom_kwargs)
+        self._num_tasks = len(self.envs)
         self.steps = steps_per_env * self.num_tasks
         self.cur_seq_idx = start_from
         self.cur_step = 0
@@ -27,7 +27,7 @@ class ContinualLearningEnv(CommonEnv):
         if self.cur_step >= self.steps:
             raise RuntimeError("Steps limit exceeded for ContinualLearningEnv!")
 
-    def _get_active_env(self) -> DoomEnv:
+    def get_active_env(self) -> DoomEnv:
         return self.tasks[self.cur_seq_idx]
 
     @property
@@ -36,7 +36,7 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def task(self) -> str:
-        return self._get_active_env().name
+        return self.get_active_env().name
 
     @property
     def task_id(self) -> int:
@@ -56,15 +56,15 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def tasks(self):
-        return self._envs
+        return self.envs
 
     @tasks.setter
     def tasks(self, envs):
-        self._envs = envs
+        self.envs = envs
 
     def step(self, action: int) -> Tuple[np.ndarray, float, bool, bool, Dict[str, Any]]:
         self._check_steps_bound()
-        obs, reward, done, truncated, info = self._get_active_env().step(action)
+        obs, reward, done, truncated, info = self.get_active_env().step(action)
         info["seq_idx"] = self.cur_seq_idx
 
         self.cur_step += 1
@@ -80,17 +80,17 @@ class ContinualLearningEnv(CommonEnv):
         return obs, reward, done, truncated, info
 
     def render(self, mode="rgb_array"):
-        self._get_active_env().render(mode)
+        self.get_active_env().render(mode)
 
     def reset(self) -> np.ndarray:
         self._check_steps_bound()
-        return self._get_active_env().reset()
+        return self.get_active_env().reset()
 
     def get_statistics(self, mode: str = '') -> Dict[str, float]:
-        return self._get_active_env().get_statistics(mode)
+        return self.get_active_env().get_statistics(mode)
 
     def clear_episode_statistics(self) -> None:
-        return self._get_active_env().clear_episode_statistics()
+        return self.get_active_env().clear_episode_statistics()
 
 
 def get_doom_envs(logger: Logger, scenarios: List[Type[DoomEnv]], env_names: List[str],
