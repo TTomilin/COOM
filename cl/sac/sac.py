@@ -262,6 +262,7 @@ class SAC:
 
     def on_task_end(self, current_task_idx: int) -> None:
         self.logger.log(f'Task {current_task_idx} finished', color='white')
+        self.env.envs[current_task_idx].close()
 
     def get_episodic_batch(self, current_task_idx: int) -> Optional[Dict[str, tf.Tensor]]:
         return None
