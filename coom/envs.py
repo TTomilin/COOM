@@ -42,7 +42,7 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def num_tasks(self) -> int:
-        return self.num_tasks
+        return self._num_tasks
 
     @property
     def action_space(self) -> gym.spaces.Discrete:
