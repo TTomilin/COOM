@@ -8,16 +8,14 @@ from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
 from coom.env.scenario.scenario import DoomEnv
 from coom.env.wrappers.observation import Rescale, Resize, RGBStack, Augment
-from coom.utils.enums import Sequence
 
 
 class ContinualLearningEnv(CommonEnv):
 
-    def __init__(self, logger: Logger, sequence: Sequence, steps_per_env: int = 2e5, start_from: int = 0,
-                 scenario_kwargs: List[Dict[str, any]] = None, doom_kwargs: Dict[str, any] = None):
+    def __init__(self, logger: Logger, scenarios: List[Type[DoomEnv]], envs: List[str], steps_per_env: int = 2e5,
+                 start_from: int = 0, scenario_kwargs: List[Dict[str, any]] = None, doom_kwargs: Dict[str, any] = None):
         self.steps_per_env = steps_per_env
-        self.envs = get_doom_envs(logger, sequence.value['scenarios'], sequence.value['envs'], scenario_kwargs,
-                                  doom_kwargs)
+        self.envs = get_doom_envs(logger, scenarios, envs, scenario_kwargs, doom_kwargs)
         self._num_tasks = len(self.envs)
         self.steps = steps_per_env * self.num_tasks
         self.cur_seq_idx = start_from
@@ -44,7 +42,7 @@ class ContinualLearningEnv(CommonEnv):
 
     @property
     def num_tasks(self) -> int:
-        return self._num_tasks
+        return self.num_tasks
 
     @property
     def action_space(self) -> gym.spaces.Discrete:

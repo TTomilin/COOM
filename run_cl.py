@@ -34,7 +34,7 @@ class CLMethod(Enum):
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
     sequence = Sequence[args.sequence.upper()]
-    scenarios = sequence.value['scenarios']
+    scenarios = sequence.value['scenarios'] * args.repeat_sequence
     envs = sequence.value['envs']
     test_scenarios = [DoomScenario[scenario.upper()] for scenario in args.scenarios] if args.test_only else scenarios
     test_envs = args.envs if args.test_only else [] if args.no_test else envs
@@ -86,7 +86,8 @@ def main(parser: argparse.ArgumentParser):
         args.render = False
 
     scenario_kwargs = [{key: vars(args)[key] for key in scenario_enum.value['kwargs']} for scenario_enum in scenarios]
-    cl_env = ContinualLearningEnv(logger, sequence, args.steps_per_env, args.start_from, scenario_kwargs, doom_kwargs)
+    cl_env = ContinualLearningEnv(logger, scenarios, envs, args.steps_per_env, args.start_from, scenario_kwargs,
+                                  doom_kwargs)
     cl_env.tasks = [
         wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
                  args.record, record_dir, args.augment, args.augmentation)
