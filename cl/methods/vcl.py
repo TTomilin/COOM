@@ -1,14 +1,13 @@
-from typing import Callable, Iterable, List, Tuple
-
 import gym
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
 from tensorflow.python.keras import Input, Model, Sequential
 from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.initializers.initializers_v2 import GlorotUniform
-from tensorflow.python.keras.layers import Conv2D, Flatten, Concatenate, Activation, Layer
+from tensorflow.python.keras.layers import Concatenate, Activation, Layer
+from typing import Callable, List, Tuple
 
-from cl.sac.models import _choose_head
+from cl.sac.models import _choose_head, build_conv_head
 from cl.sac.sac import SAC
 
 
@@ -173,21 +172,12 @@ class BayesianDense(Layer):
         return output
 
 
-def variational_mlp(
-        height: int,
-        width: int,
-        channels: int,
-        num_tasks: int,
-        hidden_sizes: Tuple[int],
-        activation: Callable,
-        use_layer_norm: bool = False,
-) -> Model:
+def variational_mlp(state_shape: Tuple[int], num_tasks: int, hidden_sizes: Tuple[int], activation: Callable,
+                    use_layer_norm: bool = False, use_lstm: bool = False) -> Model:
     task_input = Input(shape=num_tasks, name='task_input', dtype=tf.float32)
-    conv_in = Input(shape=(height, width, channels), name='conv_head_in')
-    conv_head = Conv2D(32, 8, strides=4, activation="relu")(conv_in)
-    conv_head = Conv2D(64, 4, strides=2, activation="relu")(conv_head)
-    conv_head = Conv2D(64, 3, strides=1, activation="relu")(conv_head)
-    conv_head = Flatten()(conv_head)
+    conv_in = Input(shape=state_shape, name='conv_head_in')
+    conv_head = build_conv_head(conv_in, use_lstm)
+
     model = Concatenate()([conv_head, task_input])
     model = BayesianDense(model.shape[-1], hidden_sizes[0])(model)
     if use_layer_norm:
@@ -208,9 +198,10 @@ class VclMlpActor(Model):
             state_space: gym.spaces.Box,
             action_space: gym.spaces.Discrete,
             num_tasks: int,
-            hidden_sizes: Iterable[int] = (256, 256),
+            hidden_sizes: Tuple[int] = (256, 256),
             activation: Callable = tf.tanh,
             use_layer_norm: bool = False,
+            use_lstm: bool = False,
             num_heads: int = 1,
             hide_task_id: bool = False,
     ) -> None:
@@ -219,8 +210,7 @@ class VclMlpActor(Model):
         self.num_heads = num_heads
         self.hide_task_id = hide_task_id
 
-        self.core = variational_mlp(*state_space.shape, num_tasks, hidden_sizes, activation,
-                                    use_layer_norm=use_layer_norm)
+        self.core = variational_mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm)
 
         self.head_mu = Sequential(
             [
