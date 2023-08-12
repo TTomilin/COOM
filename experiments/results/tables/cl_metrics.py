@@ -1,76 +1,7 @@
 import pandas as pd
-from numpy import ndarray
-from typing import Tuple
 
 from experiments.results.common import *
-
-
-def calculate_data_at_the_end(data):
-    return data[:, :, :, -10:].mean(axis=3)
-
-
-def calculate_forgetting(data: np.ndarray):
-    end_data = calculate_data_at_the_end(data)
-    forgetting = (np.diagonal(end_data, axis1=1, axis2=2) - end_data[:, :, -1]).clip(0, np.inf)
-    return forgetting
-
-
-def calculate_performance(data: np.ndarray):
-    data = data.mean(axis=3)
-    data = np.triu(data)
-    data[data == 0] = np.nan
-    return np.nanmean(data, axis=(-1, -2))
-
-
-def calculate_transfer(transfer_data, baseline_data, n_seeds: int, confidence: float) -> Tuple[ndarray, ndarray]:
-    auc_cl = np.nanmean(transfer_data, axis=-1)
-    auc_baseline = np.nanmean(baseline_data, axis=-1)
-    ft = (auc_cl - auc_baseline) / (1 - auc_baseline)
-    ft_mean = np.nanmean(ft, 0)
-    ft_std = np.nanstd(ft, 0)
-    ci = CRITICAL_VALUES[confidence] * ft_std / np.sqrt(n_seeds)
-    return ft_mean, ci
-
-
-def get_cl_data(metric: str, seeds: List[int], sequence: str, task_length: int, confidence: float, second_half: bool):
-    envs = SEQUENCES[sequence]
-    if second_half:
-        envs = envs[len(envs) // 2:]
-    n_envs = len(envs)
-    iterations = n_envs * task_length
-    methods = METHODS if n_envs == 4 or second_half else METHODS[:-1]  # Omit Perfect Memory for 8 env sequences
-    cl_data = np.empty((len(methods), n_envs, n_envs, task_length))
-    ci_data = np.empty((len(methods), n_envs, n_envs, task_length))
-    transfer_data = np.empty((len(seeds), len(methods), task_length * n_envs))
-    cl_data[:] = np.nan
-    ci_data[:] = np.nan
-    transfer_data[:] = np.nan
-    for i, method in enumerate(methods):
-        for j, env in enumerate(envs):
-            seed_data = np.empty((len(seeds), n_envs, task_length))
-            seed_data[:] = np.nan
-            for k, seed in enumerate(seeds):
-                path = os.path.join(os.getcwd(), 'data', sequence, method, f'seed_{seed}', f'{env}_{metric}.json')
-                if not os.path.exists(path):
-                    continue
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                if second_half:
-                    data = data[len(data) // 2:]
-                task_start = j * task_length
-                steps = len(data)
-                data = np.array(data).astype(np.float)
-                data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
-                data_per_task = np.array_split(data, n_envs)
-                seed_data[k] = data_per_task
-                transfer_data[k, i, np.arange(task_start, task_start + task_length)] = data[
-                                                                                       task_start: task_start + task_length]
-            mean = np.nanmean(seed_data, axis=0)
-            std = np.nanstd(seed_data, axis=0)
-            ci = CRITICAL_VALUES[confidence] * std / np.sqrt(len(seeds))
-            cl_data[i][j] = mean
-            ci_data[i][j] = ci
-    return cl_data, ci_data, transfer_data
+from experiments.results.common import calculate_performance, get_cl_data, calculate_forgetting
 
 
 def print_results(metric_data: np.ndarray, ci: np.ndarray, methods: List[str], metric: str):
@@ -105,11 +36,11 @@ def main(cfg: argparse.Namespace) -> None:
         forgetting_ci = calculate_forgetting(ci_data)
         transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), cfg.confidence)
 
-        if sequence == cfg.forgetting_sequence:
-            print_task_forgetting(methods, cfg.forgetting_sequence, forgetting, forgetting_ci)
+        # if sequence == cfg.forgetting_sequence:
+        #     print_task_forgetting(methods, cfg.forgetting_sequence, forgetting, forgetting_ci)
         for j in range(len(methods)):
-            data[i, j] = [performance[j], forgetting[:, :-1].mean(axis=1)[j], transfer[j]]
-            data_cis[i, j] = [performance_ci[j], forgetting_ci[:, :-1].mean(axis=1)[j], transfer_ci[j]]
+            data[i, j] = [performance[j], forgetting[j], transfer[j]]
+            data_cis[i, j] = [performance_ci[j], forgetting_ci[j], transfer_ci[j]]
 
     print_combined(sequences, data, data_cis)
 

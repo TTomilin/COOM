@@ -3,8 +3,9 @@ import json
 import numpy as np
 import os
 from matplotlib import pyplot as plt
+from numpy import ndarray
 from scipy.ndimage import gaussian_filter1d
-from typing import List
+from typing import List, Tuple
 
 TRANSLATIONS = {
     'sac': 'SAC',
@@ -47,6 +48,13 @@ TRANSLATIONS = {
     'single_head': 'Single Head',
     'multi_head': 'Multi Head',
 
+    'per': 'PER',
+    'lstm': 'LSTM',
+
+    'conv': 'Conv',
+    'shift': 'Shift',
+    'noise': 'Noise',
+
     'walltime': 'Walltime (h)',
     'system.proc.memory.rssMB': 'memory',
     'memory': 'Memory Consumption (GB)',
@@ -80,6 +88,9 @@ SEQUENCES = {
             'health_gathering'],
     'COC': ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof', 'run_and_gun',
             'health_gathering'],
+    'CD16': 2 * ['obstacles', 'green', 'resized', 'invulnerable', 'default', 'red', 'blue', 'shadows'],
+    'CO16': 2 * ['pitfall', 'arms_dealer', 'hide_and_seek', 'floor_is_lava', 'chainsaw', 'raise_the_roof',
+                 'run_and_gun', 'health_gathering'],
 }
 
 COLORS = {
@@ -107,10 +118,11 @@ METRICS = {
 ENVS = {
     'CO4': 'default',
     'CO8': 'default',
+    'CO16': 'default',
     'COC': 'hard',
 }
 
-SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD']
+SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'perfect_memory']
@@ -126,8 +138,8 @@ CRITICAL_VALUES = {
 
 def common_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Name of the task sequence")
+    parser.add_argument("--sequence", type=str, default='CO8',
+                        choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], help="Name of the task sequence")
     parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
@@ -139,8 +151,9 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser = common_args()
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
-    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'], choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        nargs='+', help="Name of the task sequences")
+    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'],
+                        choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], nargs='+',
+                        help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",
                         choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning'])
     return parser
@@ -329,3 +342,75 @@ def get_data_per_env(envs: List[str], iterations: int, method: str, metric: str,
                 data = json.load(f)
                 seed_data[e, k, np.arange(len(data))] = data
     return seed_data
+
+
+def calculate_performance(data: np.ndarray):
+    data = data.mean(axis=3)
+    data = np.triu(data)
+    data[data == 0] = np.nan
+    return np.nanmean(data, axis=(-1, -2))
+
+
+def calculate_transfer(transfer_data, baseline_data, n_seeds: int, confidence: float) -> Tuple[ndarray, ndarray]:
+    auc_cl = np.nanmean(transfer_data, axis=-1)
+    auc_baseline = np.nanmean(baseline_data, axis=-1)
+    ft = (auc_cl - auc_baseline) / (1 - auc_baseline)
+    ft_mean = np.nanmean(ft, 0)
+    ft_std = np.nanstd(ft, 0)
+    ci = CRITICAL_VALUES[confidence] * ft_std / np.sqrt(n_seeds)
+    return ft_mean, ci
+
+
+def get_cl_data(metric: str, seeds: List[int], sequence: str, task_length: int, confidence: float,
+                second_half: bool = False, folder: str = '', methods: List[str] = None) -> Tuple[
+    ndarray, ndarray, ndarray]:
+    envs = SEQUENCES[sequence]
+    if second_half:
+        envs = envs[len(envs) // 2:]
+    n_envs = len(envs)
+    iterations = n_envs * task_length
+    if methods is None:
+        methods = METHODS if n_envs == 4 or second_half else METHODS[:-1]  # Omit Perfect Memory for 8 env sequences
+    cl_data = np.empty((len(methods), n_envs, n_envs, task_length))
+    ci_data = np.empty((len(methods), n_envs, n_envs, task_length))
+    transfer_data = np.empty((len(seeds), len(methods), task_length * n_envs))
+    cl_data[:] = np.nan
+    ci_data[:] = np.nan
+    transfer_data[:] = np.nan
+    for i, method in enumerate(methods):
+        for j, env in enumerate(envs):
+            seed_data = np.empty((len(seeds), n_envs, task_length))
+            seed_data[:] = np.nan
+            for k, seed in enumerate(seeds):
+                path = os.path.join(os.getcwd(), 'data', folder, sequence, method, f'seed_{seed}',
+                                    f'{env}_{metric}.json')
+                if not os.path.exists(path):
+                    continue
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                if second_half:
+                    data = data[len(data) // 2:]
+                task_start = j * task_length
+                steps = len(data)
+                data = np.array(data).astype(np.float)
+                data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
+                data_per_task = np.array_split(data, n_envs)
+                seed_data[k] = data_per_task
+                transfer_data[k, i, np.arange(task_start, task_start + task_length)] = data[
+                                                                                       task_start: task_start + task_length]
+            mean = np.nanmean(seed_data, axis=0)
+            std = np.nanstd(seed_data, axis=0)
+            ci = CRITICAL_VALUES[confidence] * std / np.sqrt(len(seeds))
+            cl_data[i][j] = mean
+            ci_data[i][j] = ci
+    return cl_data, ci_data, transfer_data
+
+
+def calculate_forgetting(data: np.ndarray):
+    end_data = calculate_data_at_the_end(data)
+    forgetting = (np.diagonal(end_data, axis1=1, axis2=2) - end_data[:, :, -1]).clip(0, np.inf)
+    return forgetting[:, :-1].mean(axis=1)
+
+
+def calculate_data_at_the_end(data):
+    return data[:, :, :, -10:].mean(axis=3)
