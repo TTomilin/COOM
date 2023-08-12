@@ -1,4 +1,3 @@
-import os
 import wandb
 from wandb.apis.public import Run
 
