@@ -6,7 +6,8 @@ from experiments.results.common import calculate_transfer
 
 
 def main(cfg: argparse.Namespace) -> None:
-    methods, seeds, folders, sequence, metric = cfg.methods, cfg.seeds, cfg.folders, cfg.sequence, cfg.metric
+    methods, seeds, folders, sequence, metric, task_length, confidence = \
+        cfg.methods, cfg.seeds, cfg.folders, cfg.sequence, cfg.metric, cfg.task_length, cfg.confidence
     envs = SEQUENCES[sequence]
     n_envs, n_seeds, n_methods, n_folders = len(envs), len(seeds), len(methods), len(folders)
 
@@ -16,14 +17,14 @@ def main(cfg: argparse.Namespace) -> None:
     data_cis[:] = np.nan
 
     for i, folder in enumerate(folders):
-        cl_data, ci_data, transfer_data = get_cl_data(cfg.metric, cfg.seeds, sequence, cfg.task_length,
-                                                      cfg.confidence, folder=folder, methods=methods)
-        baseline_data = get_baseline_data(sequence, seeds, cfg.task_length, cfg.metric)
+        cl_data, ci_data, transfer_data = get_cl_data(methods, metric, seeds, sequence, task_length, confidence,
+                                                      folder=folder)
+        baseline_data = get_baseline_data(sequence, seeds, task_length, metric)
         performance = calculate_performance(cl_data)
         performance_ci = calculate_performance(ci_data)
         forgetting = calculate_forgetting(cl_data)
         forgetting_ci = calculate_forgetting(ci_data)
-        transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), cfg.confidence)
+        transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), confidence)
 
         for j in range(len(methods)):
             data[i, j] = [performance[j], forgetting[j], transfer[j]]

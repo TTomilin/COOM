@@ -17,24 +17,24 @@ def normalize(metric_data, ci):
 
 
 def main(cfg: argparse.Namespace) -> None:
-    seeds, sequences = cfg.seeds, cfg.sequences
+    methods, seeds, sequences, metric, task_length, confidence = \
+        cfg.methods, cfg.seeds, cfg.sequences, cfg.metric, cfg.task_length, cfg.confidence
 
-    # Create 3-dimensional arrays to store performances, forgettings, transfers + their confidence intervals
+    # Create 3-dimensional arrays to store performance, forgetting, transfer + their confidence intervals
     data = np.empty((len(sequences), len(METHODS), 3))
     data_cis = np.empty((len(sequences), len(METHODS), 3))
     data[:] = np.nan
     data_cis[:] = np.nan
 
     for i, sequence in enumerate(sequences):
-        methods = METHODS if sequence in ['CD4', 'CO4'] else METHODS[:-1]
-        cl_data, ci_data, transfer_data = get_cl_data(cfg.metric, cfg.seeds, sequence, cfg.task_length, cfg.confidence,
-                                                      cfg.second_half)
+        cl_data, ci_data, transfer_data = get_cl_data(methods, metric, seeds, sequence, task_length, confidence,
+                                                      second_half=cfg.second_half)
         baseline_data = get_baseline_data(sequence, seeds, cfg.task_length, cfg.metric)
         performance = calculate_performance(cl_data)
         performance_ci = calculate_performance(ci_data)
         forgetting = calculate_forgetting(cl_data)
         forgetting_ci = calculate_forgetting(ci_data)
-        transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), cfg.confidence)
+        transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), confidence)
 
         # if sequence == cfg.forgetting_sequence:
         #     print_task_forgetting(methods, cfg.forgetting_sequence, forgetting, forgetting_ci)
@@ -42,7 +42,7 @@ def main(cfg: argparse.Namespace) -> None:
             data[i, j] = [performance[j], forgetting[j], transfer[j]]
             data_cis[i, j] = [performance_ci[j], forgetting_ci[j], transfer_ci[j]]
 
-    print_combined(sequences, data, data_cis)
+    print_combined(methods, sequences, data, data_cis)
 
 
 def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray, cis: ndarray):
@@ -52,7 +52,8 @@ def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray
     results = pd.DataFrame(columns=['Scenario'] + method_names + ['Average'])
     for i, env in enumerate(envs):
         env_name = TRANSLATIONS[env]
-        row = [env_name] + ['-' if np.isnan(forgetting[j, i]) or i == len(envs) - 1 else f'{forgetting[j, i]:.2f} \tiny ± {cis[j, i]:.2f}' for j in range(len(methods))]
+        row = [env_name] + ['-' if np.isnan(forgetting[j, i]) or i == len(
+            envs) - 1 else f'{forgetting[j, i]:.2f} \tiny ± {cis[j, i]:.2f}' for j in range(len(methods))]
         method_forget = [forgetting[j, i] for j in range(len(methods))]
         row += [f'{np.nanmean(method_forget):.2f} \tiny ± {np.nanstd(method_forget):.2f}']
         results.loc[len(results)] = row
@@ -69,19 +70,24 @@ def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray
     print(latex_table)
 
 
-def print_combined(sequences, data, data_cis):
+def print_combined(methods: List[str], sequences, data, data_cis):
     data_types = data.shape[-1]
     pd.set_option('display.max_colwidth', None)
-    results = pd.DataFrame(columns=['Method'] + [f'\multicolumn{{{data_types}}}{{c}}{{{sequence}}}' for sequence in sequences] + ['\multicolumn{3}{c}{Average}'])
+    results = pd.DataFrame(
+        columns=['Method'] + [f'\multicolumn{{{data_types}}}{{c}}{{{sequence}}}' for sequence in sequences] + [
+            '\multicolumn{3}{c}{Average}'])
     highlight_func = [np.nanmax if k in [0, 2] else np.nanmin for k in range(3)]
-    for i, method in enumerate(METHODS):
+    methods = METHODS if methods is None else methods
+    for i, method in enumerate(methods):
         row = [TRANSLATIONS[method]]
         for j, sequence in enumerate(sequences):
             cell_values = []
             for k in range(data_types):
                 value = data[j, i, k]
+                ci = data_cis[j, i, k]
                 significant = highlight_func[k](data[j, :, k]) == value
-                cell_string = f'\\textbf{{{value:.2f}}}' if significant else f'{value:.2f}' if not np.isnan(value) else '-'
+                cell_string = f'\\textbf{{{value:.2f}}} ± {ci:.2f}' if significant else f'{value:.2f} ± {ci:.2f}' \
+                    if not np.isnan(value) else '-'
                 cell_values.append(cell_string)
             cell = ' & '.join(cell_values)
             row.append(cell)
@@ -141,5 +147,6 @@ def print_latex_swapped(sequences, mean, ci, highlight_max=True):
 if __name__ == "__main__":
     parser = common_plot_args()
     parser.add_argument("--second_half", default=False, action='store_true', help="Only regard sequence 2nd half")
-    parser.add_argument("--forgetting_sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'], help="Sequence to compare the forgetting of tasks on")
+    parser.add_argument("--forgetting_sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
+                        help="Sequence to compare the forgetting of tasks on")
     main(parser.parse_args())

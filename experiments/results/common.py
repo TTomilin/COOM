@@ -361,9 +361,8 @@ def calculate_transfer(transfer_data, baseline_data, n_seeds: int, confidence: f
     return ft_mean, ci
 
 
-def get_cl_data(metric: str, seeds: List[int], sequence: str, task_length: int, confidence: float,
-                second_half: bool = False, folder: str = '', methods: List[str] = None) -> Tuple[
-    ndarray, ndarray, ndarray]:
+def get_cl_data(methods: List[str], metric: str, seeds: List[int], sequence: str, task_length: int, confidence: float,
+                second_half: bool = False, folder: str = '') -> Tuple[ndarray, ndarray, ndarray]:
     envs = SEQUENCES[sequence]
     if second_half:
         envs = envs[len(envs) // 2:]
