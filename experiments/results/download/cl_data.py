@@ -16,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
 def store_data(run: Run, args: argparse.Namespace) -> None:
     sequence, metric, data_type, tags = args.sequence, args.metric, args.type, args.wandb_tags
     config = json.loads(run.json_config)
-    seq_len = 4 if sequence in ['CD4', 'CO4'] else 8
+    seq_len = 1 if data_type == 'train' else 4 if sequence in ['CD4', 'CO4'] else 8
     for env_idx in range(seq_len):
         task = SEQUENCES[sequence][env_idx]
         if metric == 'env':
@@ -27,14 +27,14 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
 
         # Legacy
         if not history:
-            print(f'No data for {run.name} {env}')
+            # print(f'No data for {run.name} {env}')
             env = f'seek_and_slay-default' if sequence in ['CO4'] else f'seek_and_slay-{task}'
-            log_key = f'test/stochastic/{env_idx}/seek_and_slay-{task}/{metric}'
+            log_key = f'test/stochastic/{env_idx}/{env}/{metric}'
             history = list(iter(run.scan_history(keys=[log_key])))
 
             # More legacy
             if not history:
-                print(f'Still no data for {run.name} {env}')
+                # print(f'Still no data for {run.name} {env}')
                 log_key = f'test/stochastic/{env_idx}/seek_and_slay-shadows_obstacles/{metric}'
                 history = list(iter(run.scan_history(keys=[log_key])))
 
