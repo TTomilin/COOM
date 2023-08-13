@@ -41,6 +41,7 @@ TRANSLATIONS = {
     'ep_length': 'Frames Alive',
     'arms_dealt': 'Weapons Delivered',
     'distance': 'Distance',
+    'kits_obtained': 'Health Kits Obtained',
 
     'reg_critic': 'Critic Regularization',
     'no_reg_critic': 'No Critic Regularization',
@@ -111,7 +112,7 @@ METRICS = {
     'chainsaw': 'kills',
     'raise_the_roof': 'ep_length',
     'run_and_gun': 'kills',
-    'health_gathering': 'ep_length',
+    'health_gathering': 'kits_obtained',
     'default': 'kills',
 }
 
