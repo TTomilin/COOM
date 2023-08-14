@@ -11,6 +11,9 @@ python3 run_cl.py --sequence CD4 --seed 3 --cl_method agem --regularize_critic -
 python3 run_cl.py --sequence CD4 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD4 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD4 --seed 3 --cl_method l2 --cl_reg_coef=100000
+python3 run_cl.py --sequence CD4 --seed 1 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CD4 --seed 2 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CD4 --seed 3 --cl_method ewc --cl_reg_coef=10000
 python3 run_cl.py --sequence CD4 --seed 1 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CD4 --seed 2 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CD4 --seed 3 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
@@ -34,6 +37,9 @@ python3 run_cl.py --sequence CD8 --seed 3 --cl_method agem --regularize_critic -
 python3 run_cl.py --sequence CD8 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD8 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CD8 --seed 3 --cl_method l2 --cl_reg_coef=100000
+python3 run_cl.py --sequence CD8 --seed 1 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CD8 --seed 2 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CD8 --seed 3 --cl_method ewc --cl_reg_coef=10000
 python3 run_cl.py --sequence CD8 --seed 1 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CD8 --seed 2 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CD8 --seed 3 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
@@ -54,6 +60,9 @@ python3 run_cl.py --sequence CO4 --seed 3 --cl_method agem --regularize_critic -
 python3 run_cl.py --sequence CO4 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO4 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO4 --seed 3 --cl_method l2 --cl_reg_coef=100000
+python3 run_cl.py --sequence CO4 --seed 1 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CO4 --seed 2 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CO4 --seed 3 --cl_method ewc --cl_reg_coef=10000
 python3 run_cl.py --sequence CO4 --seed 1 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CO4 --seed 2 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CO4 --seed 3 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
@@ -77,6 +86,9 @@ python3 run_cl.py --sequence CO8 --seed 3 --cl_method agem --regularize_critic -
 python3 run_cl.py --sequence CO8 --seed 1 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO8 --seed 2 --cl_method l2 --cl_reg_coef=100000
 python3 run_cl.py --sequence CO8 --seed 3 --cl_method l2 --cl_reg_coef=100000
+python3 run_cl.py --sequence CO8 --seed 1 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CO8 --seed 2 --cl_method ewc --cl_reg_coef=10000
+python3 run_cl.py --sequence CO8 --seed 3 --cl_method ewc --cl_reg_coef=10000
 python3 run_cl.py --sequence CO8 --seed 1 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CO8 --seed 2 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
 python3 run_cl.py --sequence CO8 --seed 3 --cl_method vcl --cl_reg_coef=1.0 --vcl_first_task_kl False
