@@ -14,7 +14,7 @@ def parse_args():
     arg('--scenarios', type=str, nargs="+", default=None,
         choices=['defend_the_center', 'health_gathering', 'run_and_gun', 'dodge_projectiles', 'chainsaw',
                  'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer', 'parkour', 'pitfall'])
-    arg("--cl_method", type=str, choices=[None, "l2", "ewc", "mas", "vcl", "packnet", "agem"], default=None,
+    arg("--cl_method", type=str, choices=[None, "owl", "l2", "ewc", "mas", "vcl", "packnet", "agem"], default=None,
         help="If None, the fine-tuning method will be used")
     arg("--envs", type=str, nargs="+", default=['default'], help="Name of the environments in the scenario(s) to run")
     arg("--test_envs", type=str, nargs="+", default=[],

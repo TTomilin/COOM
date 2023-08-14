@@ -10,6 +10,7 @@ from cl.methods.l2 import L2_SAC
 from cl.methods.mas import MAS_SAC
 from cl.methods.packnet import PackNet_SAC
 from cl.methods.vcl import VCL_SAC, VclMlpActor
+from cl.methods.owl import OWL_SAC
 from cl.sac.models import MlpActor
 from cl.sac.replay_buffers import BufferType
 from cl.sac.sac import SAC
@@ -29,7 +30,7 @@ class CLMethod(Enum):
     VCL = (VCL_SAC, ['cl_reg_coef', 'regularize_critic', 'vcl_first_task_kl'])
     PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
     AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
-
+    OWL = (OWL_SAC, ['cl_reg_coef', 'regularize_critic'])
 
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
@@ -105,7 +106,7 @@ def main(parser: argparse.ArgumentParser):
 
     cl_method = args.cl_method if args.cl_method is not None else 'sac'
     actor_cl = VclMlpActor if cl_method == "vcl" else MlpActor
-
+   
     sac_kwargs = dict(
         env=cl_env,
         test_envs=test_envs,
