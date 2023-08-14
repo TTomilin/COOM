@@ -1,17 +1,9 @@
-import time
 import numpy as np
 import tensorflow as tf
-from typing import List, Tuple
-import gym
-import tensorflow as tf
-from tensorflow.python.keras import Input, Model, Sequential
-from tensorflow.python.keras.engine.input_layer import InputLayer
-from typing import Callable, List, Tuple
+import time
 
 from cl.methods.ewc import EWC_SAC
 from cl.utils.run_utils import create_one_hot_vec
-
-import torch
 
 
 class ExpWeights(object):
@@ -72,6 +64,8 @@ class ExpWeights(object):
                 self.l[i] *= self.decay
                 self.l[i] += self.lr * (feedback[i] / max(np.exp(self.l[i]), 0.0001))
 
+
+# noinspection PyInterpreter
 class OWL_SAC(EWC_SAC):
     """OWL method.
 
@@ -79,37 +73,36 @@ class OWL_SAC(EWC_SAC):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        
-    def test_agent(self, deterministic, num_episodes) -> None:
+
+    def test_agent(self, deterministic, num_episodes, n_arms: int = 2) -> None:
         mode = "deterministic" if deterministic else "stochastic"
         num_actions = self.test_envs[0].action_space.n
         total_action_counts = {i: 0 for i in range(num_actions)}
 
-
         # Bandit
-        lr=0.90
-        decay=0.90
-        epsilon=0.0
-        bandit_step=1
+        lr = 0.90
+        decay = 0.90
+        epsilon = 0.0
+        bandit_step = 1
         greedy_bandit = True
         bandit_loss = 'mse'
 
         # Bandit debug
         n_tasks = len(self.test_envs)
-        n_arms = 2
+        n_arms = n_arms
         episode_max_steps = 1000
-        feedback, arm = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps+1)), \
-                            np.empty((n_tasks, num_episodes, episode_max_steps+1))
+        feedback, arm = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps + 1)), \
+                        np.empty((n_tasks, num_episodes, episode_max_steps + 1))
         mses = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps + 1))
         feedback[:], arm[:], mses[:] = np.nan, np.nan, 0
 
         # TB
-        bandit_probs, bandit_p = np.empty((n_tasks, n_arms, num_episodes)), np.empty((n_tasks, n_arms, num_episodes, episode_max_steps+1))
+        bandit_probs, bandit_p = np.empty((n_tasks, n_arms, num_episodes)), np.empty(
+            (n_tasks, n_arms, num_episodes, episode_max_steps + 1))
         bandit_probs[:], bandit_p[:] = np.nan, np.nan
         dones, corrects = {i: 0 for i in range(n_tasks)}, {i: [] for i in range(n_tasks)}
         return_per_episode, num_frames_per_episode = \
             np.zeros((n_tasks, num_episodes)), np.zeros((n_tasks, num_episodes))
-
 
         for seq_idx, test_env in enumerate(self.test_envs):
             start_time = time.time()
@@ -145,36 +138,35 @@ class OWL_SAC(EWC_SAC):
                     # Increment the count of the selected action
                     action_counts[action] += 1
 
-
                     # get feedback for each arm - because we can easily.
                     # We are comparing the main Q val to a fixed Q target which is chosen byt he bandit
                     scores = []
-                    with torch.no_grad():
-                        # 
-                        # next_actions, _, _ = self.policy_net(torch.Tensor(nextobs).to(self.device).unsqueeze(0), argmax=True)
-                        # next_actions = self.get_action_test(tf.convert_to_tensor(nextobs),
-                        #                           tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
-                        #                           tf.constant(deterministic))
-                        q_target = self.critic1(tf.convert_to_tensor([nextobs]),
-                                                                tf.convert_to_tensor([one_hot_vec], dtype=tf.dtypes.float32))
-                        # q_target = next_actions_probs.gather(1, next_actions)
-                        value_target = reward + (1.0 - done) * self.gamma * q_target
+
+                    # next_actions, _, _ = self.policy_net(torch.Tensor(nextobs).to(self.device).unsqueeze(0), argmax=True)
+                    # next_actions = self.get_action_test(tf.convert_to_tensor(nextobs),
+                    #                           tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
+                    #                           tf.constant(deterministic))
+                    q_target = self.critic1(tf.convert_to_tensor([nextobs]),
+                                            tf.convert_to_tensor([one_hot_vec], dtype=tf.dtypes.float32))
+                    # q_target = next_actions_probs.gather(1, next_actions)
+                    q_target = tf.stop_gradient(q_target)
+                    value_target = reward + (1.0 - done) * self.gamma * q_target
                     for k in range(n_arms):
                         # iterate through the arms/heads to get feedback for the bandit
                         # Don't need to reset the agent with idx as it is not used, until the next round
                         # state_action_values = action_probs.gather(1, torch.Tensor(np.array([action])).long().view(1, -1).to(self.device))
                         state_values = self.critic1(tf.convert_to_tensor([obs]),
-                                                                tf.convert_to_tensor([one_hot_vec], dtype=tf.dtypes.float32))
-                        
+                                                    tf.convert_to_tensor([one_hot_vec], dtype=tf.dtypes.float32))
+
                         # MSE feedback
                         mus_ = state_values.cpu().numpy()
                         # qs[i, y, x] += mus_
-                        mse = np.sqrt(np.mean((mus_ - value_target.cpu().numpy()) ** 2))
+                        mse = np.sqrt(np.mean((mus_ - value_target.cpu().numpy())**2))
                         mses[test_env.task_id, k, j, iter_episode] += mse
                         if bandit_loss == 'nll':
-                             raise NotImplementedError
+                            raise NotImplementedError
                         elif bandit_loss == 'mse':
-                            scores.append(min(1/mse, 50))
+                            scores.append(min(1 / mse, 50))
                             feedback[test_env.task_id, k, j, iter_episode] = mse
                         else:
                             raise ValueError
