@@ -12,15 +12,16 @@ def main(args: argparse.Namespace) -> None:
     y_label_shift = -0.06 if n_envs == 4 else -0.04
     share_y = sequence in ['CD4', 'CD8'] or args.metric == 'success'
     fig, ax = plt.subplots(n_envs, 1, sharex='all', sharey=share_y, figsize=figsize)
-    iterations = args.task_length * n_envs * LOG_INTERVAL
-    n_data_points = int(iterations / 1000)
     methods = METHODS if n_envs == 4 else METHODS[:-1]
+    n_data_points = args.task_length * n_envs
+    iterations = n_data_points * LOG_INTERVAL
 
     for i, env in enumerate(envs):
         for j, method in enumerate(methods):
             metric = args.metric if args.metric else METRICS[env] if env in METRICS else 'kills'
             data = get_data(env, n_data_points, method, metric, seeds, sequence)
-            plot_curve(ax[i], args.confidence, PLOT_COLORS[j], TRANSLATIONS[method], iterations, data, len(seeds))
+            plot_curve(ax[i], args.confidence, PLOT_COLORS[j], TRANSLATIONS[method], iterations, data, len(seeds),
+                       interval=LOG_INTERVAL)
 
         ax[i].set_ylabel(TRANSLATIONS[metric])
         ax[i].set_title(TRANSLATIONS[env])

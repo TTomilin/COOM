@@ -3,11 +3,11 @@ import pandas as pd
 from experiments.results.common import *
 
 
-def get_cl_data(seeds, envs: List[str], task_length, metric: str, sequence: str):
-    cl_data = np.empty((len(seeds), len(METHODS), task_length * len(envs)))
+def get_cl_data(methods: List[str], seeds, envs: List[str], task_length, metric: str, sequence: str):
+    cl_data = np.empty((len(seeds), len(methods), task_length * len(envs)))
     cl_data[:] = np.nan
     for k, seed in enumerate(seeds):
-        for i, method in enumerate(METHODS):
+        for i, method in enumerate(methods):
             for j, env in enumerate(envs):
                 path = f'{os.getcwd()}/data/{sequence}/{method}/seed_{seed}/{env}_{metric}.json'
                 if not os.path.exists(path):
@@ -59,14 +59,16 @@ def print_latex_swapped(sequences, mean, ci, highlight_max=True):
 
 
 def main(cfg: argparse.Namespace) -> None:
-    seeds, sequences = cfg.seeds, cfg.sequences
+    methods, seeds, sequences, metric, task_length, confidence = \
+        cfg.methods, cfg.seeds, cfg.sequences, cfg.metric, cfg.task_length, cfg.confidence
     means, cis = [], []
     for sequence in sequences:
         envs = SEQUENCES[sequence]
-        task_length = cfg.task_length
+        if methods is None:
+            methods = METHODS if sequence in ['CD4', 'CO4'] else METHODS[:-1]
 
-        cl_data = get_cl_data(seeds, envs, task_length, cfg.metric, sequence)
-        baseline_data = get_baseline_data(sequence, seeds, task_length, cfg.metric)
+        cl_data = get_cl_data(methods, seeds, envs, task_length, metric, sequence)
+        baseline_data = get_baseline_data(sequence, seeds, task_length, metric)
 
         auc_cl = np.nanmean(cl_data, axis=-1)
         auc_baseline = np.nanmean(baseline_data, axis=-1)

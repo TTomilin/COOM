@@ -3,7 +3,7 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 
 
-def random_shift(obs, pad=16):
+def random_shift(obs, pad=4):
     """Vectorized random shift, obs: (H,W,C), pad: #pixels"""
     orig_shape = obs.shape
     obs = tf.pad(obs, paddings=[[pad, pad], [pad, pad], [0, 0]], mode='SYMMETRIC')

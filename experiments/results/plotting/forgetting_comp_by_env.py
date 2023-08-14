@@ -7,8 +7,8 @@ def main(cfg: argparse.Namespace) -> None:
     seeds, metric, sequences, methods = cfg.seeds, cfg.metric, cfg.sequences, cfg.methods
     n_envs = len(SEQUENCES[sequences[0]])
     fig, ax = plt.subplots(n_envs, 1, sharey='all', sharex='all', figsize=(11, 16))
-    iterations = cfg.task_length * n_envs * LOG_INTERVAL
-    n_data_points = int(iterations / 1000)
+    n_data_points = cfg.task_length * n_envs
+    iterations = n_data_points * LOG_INTERVAL
 
     for i, sequence in enumerate(sequences):
         envs = SEQUENCES[sequence][:n_envs]
@@ -17,7 +17,7 @@ def main(cfg: argparse.Namespace) -> None:
             for k, method in enumerate(methods):
                 data = get_data(env, n_data_points, method, metric, seeds, sequence)
                 plot_curve(ax[j], cfg.confidence, colors[k], f'{TRANSLATIONS[method]} ({sequence})', iterations, data, len(seeds),
-                           linestyle=LINE_STYLES[i])
+                           linestyle=LINE_STYLES[i], interval=LOG_INTERVAL)
 
             ax[j].set_ylabel(TRANSLATIONS[metric])
             ax[j].set_title(TRANSLATIONS[env])
