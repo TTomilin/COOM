@@ -201,17 +201,17 @@ def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_d
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
     x = np.arange(0, iterations, interval)
     ax.plot(x, mean, label=label, linestyle=linestyle, color=color)
-    ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4))
+    ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4), useMathText=True)
     ax.tick_params(labelbottom=True)
     ax.fill_between(x, mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
 
-def add_main_ax(fig, fontsize: int = 11):
+def add_main_ax(fig, fontsize: int = 11, fontweight='normal', labelpad: int = 25):
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
     main_ax.get_yaxis().set_ticks([])
-    main_ax.set_xlabel('Timesteps', fontsize=fontsize)
-    main_ax.xaxis.labelpad = 25
+    main_ax.set_xlabel('Timesteps', fontsize=fontsize, fontweight=fontweight)
+    main_ax.xaxis.labelpad = labelpad
     return main_ax
 
 
