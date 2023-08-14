@@ -74,7 +74,7 @@ class OWL_SAC(EWC_SAC):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def test_agent(self, deterministic, num_episodes, n_arms: int = 2) -> None:
+    def test_agent(self, deterministic: bool, num_episodes: int) -> None:
         mode = "deterministic" if deterministic else "stochastic"
         num_actions = self.test_envs[0].action_space.n
         total_action_counts = {i: 0 for i in range(num_actions)}
@@ -89,7 +89,7 @@ class OWL_SAC(EWC_SAC):
 
         # Bandit debug
         n_tasks = len(self.test_envs)
-        n_arms = n_arms
+        n_arms = n_tasks
         episode_max_steps = 1000
         feedback, arm = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps + 1)), \
                         np.empty((n_tasks, num_episodes, episode_max_steps + 1))
@@ -107,7 +107,7 @@ class OWL_SAC(EWC_SAC):
         for seq_idx, test_env in enumerate(self.test_envs):
             start_time = time.time()
             key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+            one_hot_vec = create_one_hot_vec(n_tasks, test_env.task_id)
 
             self.on_test_start(seq_idx)
 
@@ -122,7 +122,7 @@ class OWL_SAC(EWC_SAC):
                 while not done:
                     if iter_episode % bandit_step == 0:
                         idx = bandit.sample()
-                        one_hot_vec = create_one_hot_vec(test_env.num_tasks, idx)
+                        one_hot_vec = create_one_hot_vec(n_tasks, idx)
                     arm[test_env.task_id, j, iter_episode] = idx
                     bandit_p[test_env.task_id, :, j, iter_episode] = bandit.p
                     action = self.get_action_test(tf.convert_to_tensor(obs),
@@ -152,6 +152,7 @@ class OWL_SAC(EWC_SAC):
                     q_target = tf.stop_gradient(q_target)
                     value_target = reward + (1.0 - done) * self.gamma * q_target
                     for k in range(n_arms):
+                        one_hot_vec = create_one_hot_vec(n_tasks, k)
                         # iterate through the arms/heads to get feedback for the bandit
                         # Don't need to reset the agent with idx as it is not used, until the next round
                         # state_action_values = action_probs.gather(1, torch.Tensor(np.array([action])).long().view(1, -1).to(self.device))

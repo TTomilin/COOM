@@ -426,7 +426,7 @@ class SAC:
         ):
             target_v.assign(self.polyak * target_v + (1 - self.polyak) * v)
 
-    def test_agent(self, deterministic, num_episodes) -> None:
+    def test_agent(self, deterministic: bool, num_episodes: int) -> None:
         mode = "deterministic" if deterministic else "stochastic"
         num_actions = self.test_envs[0].action_space.n
         total_action_counts = {i: 0 for i in range(num_actions)}
