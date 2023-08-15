@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 import tensorflow as tf
 import time
@@ -9,12 +11,12 @@ from cl.utils.run_utils import create_one_hot_vec
 class ExpWeights(object):
 
     def __init__(self,
-                 arms=[0, 1],
-                 lr=1,
-                 window=20,  # we don't use this yet..
-                 epsilon=0,  # set this above zero for
-                 decay=1,
-                 greedy=False):
+                 arms: List[int],
+                 lr: float,
+                 window: int = 20,  # we don't use this yet..
+                 epsilon: float = 0,  # set this above zero for
+                 decay: float = 1,
+                 greedy: bool = False):
 
         self.arms = arms
         self.l = {i: 0 for i in range(len(self.arms))}
@@ -32,7 +34,6 @@ class ExpWeights(object):
         self.data = []
 
     def sample(self):
-
         if np.random.uniform() > self.epsilon:
             self.p = [np.exp(x) for x in self.l.values()]
             self.p /= np.sum(self.p)  # normalize to make it a distribution
@@ -50,12 +51,9 @@ class ExpWeights(object):
         self.value = self.arms[self.arm]
         self.choices.append(self.arm)
 
-        return (self.value)
+        return self.value
 
-    def update_dists(self, feedback, norm=1):
-
-        # feedback is a list
-
+    def update_dists(self, feedback):
         for i in range(len(self.arms)):
             if self.greedy:
                 self.l[i] *= self.decay
@@ -65,7 +63,6 @@ class ExpWeights(object):
                 self.l[i] += self.lr * (feedback[i] / max(np.exp(self.l[i]), 0.0001))
 
 
-# noinspection PyInterpreter
 class OWL_SAC(EWC_SAC):
     """OWL method.
 
@@ -100,9 +97,6 @@ class OWL_SAC(EWC_SAC):
         bandit_probs, bandit_p = np.empty((n_tasks, n_arms, num_episodes)), np.empty(
             (n_tasks, n_arms, num_episodes, episode_max_steps + 1))
         bandit_probs[:], bandit_p[:] = np.nan, np.nan
-        dones, corrects = {i: 0 for i in range(n_tasks)}, {i: [] for i in range(n_tasks)}
-        return_per_episode, num_frames_per_episode = \
-            np.zeros((n_tasks, num_episodes)), np.zeros((n_tasks, num_episodes))
 
         for seq_idx, test_env in enumerate(self.test_envs):
             start_time = time.time()
@@ -128,7 +122,7 @@ class OWL_SAC(EWC_SAC):
                     action = self.get_action_test(tf.convert_to_tensor(obs),
                                                   tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
                                                   tf.constant(deterministic))
-                    nextobs, reward, done, _, _ = test_env.step(
+                    next_obs, reward, done, _, _ = test_env.step(
                         action
                     )
                     episode_return += reward
@@ -142,11 +136,11 @@ class OWL_SAC(EWC_SAC):
                     # We are comparing the main Q val to a fixed Q target which is chosen byt he bandit
                     scores = []
 
-                    # next_actions, _, _ = self.policy_net(torch.Tensor(nextobs).to(self.device).unsqueeze(0), argmax=True)
-                    # next_actions = self.get_action_test(tf.convert_to_tensor(nextobs),
+                    # next_actions, _, _ = self.policy_net(torch.Tensor(next_obs).to(self.device).unsqueeze(0), argmax=True)
+                    # next_actions = self.get_action_test(tf.convert_to_tensor(next_obs),
                     #                           tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32),
                     #                           tf.constant(deterministic))
-                    q_target = self.critic1(tf.convert_to_tensor([nextobs]),
+                    q_target = self.critic1(tf.convert_to_tensor([next_obs]),
                                             tf.convert_to_tensor([one_hot_vec], dtype=tf.dtypes.float32))
                     # q_target = next_actions_probs.gather(1, next_actions)
                     q_target = tf.stop_gradient(q_target)

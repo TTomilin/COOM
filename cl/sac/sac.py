@@ -251,10 +251,10 @@ class SAC:
     def get_auxiliary_loss(self, seq_idx: tf.Tensor) -> tf.Tensor:
         return tf.constant(0.0)
 
-    def on_test_start(self, seq_idx: tf.Tensor) -> None:
+    def on_test_start(self, seq_idx: Union[tf.Tensor, int]) -> None:
         pass
 
-    def on_test_end(self, seq_idx: tf.Tensor) -> None:
+    def on_test_end(self, seq_idx: Union[tf.Tensor, int]) -> None:
         pass
 
     def on_task_start(self, current_task_idx: int) -> None:
