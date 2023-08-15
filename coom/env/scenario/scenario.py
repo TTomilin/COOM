@@ -1,13 +1,12 @@
-import argparse
 from collections import deque
 
+import argparse
 import cv2
 import gym
 import numpy as np
-import time
 import vizdoom as vzd
 from pathlib import Path
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Optional
 from vizdoom import ScreenResolution, GameVariable
 
 from cl.utils.logx import Logger
@@ -71,6 +70,7 @@ class DoomEnv(CommonEnv):
         self.render_mode = render_mode
         self.render_sleep = render_sleep
         self.render_enabled = render
+        self.episode_timeout = self.game.get_episode_timeout()
         if render or test_only:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
             self.frame_skip = 1
@@ -128,7 +128,8 @@ class DoomEnv(CommonEnv):
     def observation_space(self) -> gym.Space:
         return self._observation_space
 
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None, ) -> Tuple[
+        np.ndarray, Dict[str, Any]]:
         try:
             self.game.new_episode()
         except vzd.ViZDoomIsNotRunningException:

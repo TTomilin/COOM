@@ -32,6 +32,7 @@ class CLMethod(Enum):
     AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
     OWL = (OWL_SAC, ['cl_reg_coef', 'regularize_critic'])
 
+
 def main(parser: argparse.ArgumentParser):
     args, _ = parser.parse_known_args()
     sequence = Sequence[args.sequence.upper()]

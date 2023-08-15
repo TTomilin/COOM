@@ -2,7 +2,8 @@ import gym
 import itertools
 import numpy as np
 from gym.wrappers import NormalizeObservation, FrameStack, RecordVideo
-from typing import Any, Dict, List, Tuple, Type
+from numpy import ndarray
+from typing import Any, Dict, List, Tuple, Type, Optional, Union
 
 from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
@@ -80,7 +81,8 @@ class ContinualLearningEnv(CommonEnv):
     def render(self, mode="rgb_array"):
         self.get_active_env().render(mode)
 
-    def reset(self) -> np.ndarray:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None, ) -> Tuple[Union[ndarray, ndarray],
+                                                                                              Dict[str, Any]]:
         self._check_steps_bound()
         return self.get_active_env().reset()
 

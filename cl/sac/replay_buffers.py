@@ -2,7 +2,7 @@ import numpy as np
 import random
 import tensorflow as tf
 from enum import Enum
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from typing import Union
 
 from cl.sac.tree import SumTree, SegmentTree
@@ -18,7 +18,7 @@ class BufferType(Enum):
 class ReplayBuffer:
     """A simple FIFO experience replay buffer for SAC agents."""
 
-    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Optional[Tuple[int, ...]], size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
@@ -55,7 +55,7 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Optional[Tuple[int, ...]], size: int, num_tasks: int) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
@@ -103,7 +103,7 @@ class EpisodicMemory:
 class ReservoirReplayBuffer(ReplayBuffer):
     """Buffer for SAC agents implementing reservoir sampling."""
 
-    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Optional[Tuple[int, ...]], size: int, num_tasks: int) -> None:
         super().__init__(obs_shape, size, num_tasks)
         self.timestep = 0
 
@@ -138,7 +138,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
     absolute_error_upper = 1.  # clipped abs error
 
-    def __init__(self, obs_shape: Tuple[int, int, int], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Optional[Tuple[int, ...]], size: int, num_tasks: int) -> None:
         super().__init__(obs_shape, size, num_tasks)
         self.buffer = SumTree(size)
 
@@ -252,7 +252,7 @@ class PrioritizedExperienceReplay(ReplayBuffer):
 
     def __init__(
             self,
-            obs_shape: Tuple[int, int, int],
+            obs_shape: Optional[Tuple[int, ...]],
             size: int,
             num_tasks: int,
             alpha: float = 0.6,

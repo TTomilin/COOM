@@ -1,6 +1,6 @@
 import gym
 import numpy as np
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 
 class CommonEnv(gym.Env):
@@ -8,7 +8,8 @@ class CommonEnv(gym.Env):
     def step(self, action):
         raise NotImplementedError
 
-    def reset(self) -> Tuple[np.ndarray, Dict[str, Any]]:
+    def reset(self, *, seed: Optional[int] = None, options: Optional[dict] = None, ) -> Tuple[
+        np.ndarray, Dict[str, Any]]:
         raise NotImplementedError
 
     def render(self, mode="human"):
@@ -42,4 +43,7 @@ class CommonEnv(gym.Env):
         raise NotImplementedError
 
     def clear_episode_statistics(self) -> None:
+        raise NotImplementedError
+
+    def get_active_env(self):
         raise NotImplementedError

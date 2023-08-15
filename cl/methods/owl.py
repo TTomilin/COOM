@@ -90,7 +90,7 @@ class OWL_SAC(EWC_SAC):
         # Bandit debug
         n_tasks = len(self.test_envs)
         n_arms = n_tasks
-        episode_max_steps = 1000
+        episode_max_steps = self.env.get_active_env().episode_timeout
         feedback, arm = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps + 1)), \
                         np.empty((n_tasks, num_episodes, episode_max_steps + 1))
         mses = np.empty((n_tasks, n_arms, num_episodes, episode_max_steps + 1))

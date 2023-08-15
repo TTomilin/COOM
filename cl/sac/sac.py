@@ -21,7 +21,7 @@ from coom.env.scenario.common import CommonEnv
 class SAC:
     def __init__(
             self,
-            env: gym.Env,
+            env: CommonEnv,
             test_envs: List[CommonEnv],
             logger: EpochLogger,
             scenarios: List[str],
