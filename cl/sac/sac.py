@@ -502,7 +502,7 @@ class SAC:
                 "train/q1_vals": results["q1"],
                 "train/q2_vals": results["q2"],
                 "train/entropy": results["entropy"],
-                "train/kl_loss": results["kl_loss"],
+                "train/loss_kl": results["kl_loss"],
                 "train/loss_pi": results["pi_loss"],
                 "train/loss_q1": results["q1_loss"],
                 "train/loss_q2": results["q2_loss"],
@@ -527,6 +527,7 @@ class SAC:
         # self.logger.log_tabular("train/q1_vals", with_min_and_max=True)
         # self.logger.log_tabular("train/q2_vals", with_min_and_max=True)
         # self.logger.log_tabular("train/entropy", with_min_and_max=True)
+        self.logger.log_tabular("train/loss_kl", average_only=True)
         self.logger.log_tabular("train/loss_pi", average_only=True)
         self.logger.log_tabular("train/loss_q1", average_only=True)
         self.logger.log_tabular("train/loss_q2", average_only=True)
