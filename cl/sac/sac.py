@@ -400,6 +400,7 @@ class SAC:
                 q2=q2_vals,
                 entropy=entropy,
                 reg_loss=auxiliary_loss,
+                kl_loss=0,
                 agem_violation=0,
                 abs_error=abs_error,
             )
