@@ -100,7 +100,7 @@ def main(parser: argparse.ArgumentParser):
         model_path=args.model_path,
         timestamp=timestamp,
         test_only=args.test_only,
-        num_test_eps_stochastic=args.test_episodes,
+        num_test_eps=args.test_episodes,
         buffer_type=BufferType(args.buffer_type),
     )
     sac.run()

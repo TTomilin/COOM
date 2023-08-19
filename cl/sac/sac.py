@@ -1,4 +1,3 @@
-import gym
 import math
 import numpy as np
 import os
@@ -11,6 +10,7 @@ from tensorflow_probability.python.distributions import Categorical
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from cl.sac import models
+from cl.sac.exploration import ExplorationHelper
 from cl.sac.replay_buffers import ReplayBuffer, ReservoirReplayBuffer, PrioritizedReplayBuffer, BufferType, \
     PrioritizedExperienceReplay
 from cl.utils.logx import EpochLogger
@@ -48,11 +48,12 @@ class SAC:
             update_after: int = 1e4,
             update_every: int = 1000,
             n_updates: int = 50,
-            num_test_eps_stochastic: int = 3,
+            num_test_eps: int = 3,
             save_freq_epochs: int = 25,
             reset_buffer_on_task_change: bool = True,
             buffer_type: BufferType = BufferType.FIFO,
             reset_optimizer_on_task_change: bool = False,
+            reset_actor_on_task_change: bool = False,
             reset_critic_on_task_change: bool = False,
             clipnorm: float = None,
             target_output_std: float = None,
@@ -60,15 +61,14 @@ class SAC:
             experiment_dir: Path = None,
             model_path: str = None,
             timestamp: str = None,
+            exploration_kind: str = None,
     ):
-        """A class for SAC training, for either single task, continual learning or multi-task learning.
+        """A class for SAC training, for single task or continual learning
         After the instance is created, use run() function to actually run the training.
 
         Args:
           env: An environment on which training will be performed.
-          test_envs: Environments on which evaluation will be periodically performed;
-            for example, when env is a multi-task environment, test_envs can be a list of individual
-            task environments.
+          test_envs: Environments on which evaluation will be periodically performed.
           logger: An object for logging the results.
           test: Whether to perform evaluation on test_envs.
           actor_cl: Class for actor model.
@@ -90,25 +90,27 @@ class SAC:
             or "auto", in which case it is dynamically tuned.
             (Equivalent to inverse of reward scale in the original SAC paper.)
           batch_size: Minibatch size for the optimization.
-          start_steps: Number of steps for uniform-random action selection, before running real
-            policy. Helps exploration.
+          start_steps: Number of steps for exploration, before running real policy
           update_after: Number of env interactions to collect before starting to do gradient
             descent updates.  Ensures replay buffer is full enough for useful updates.
           update_every: Number of env interactions that should elapse between gradient descent updates.
           n_updates: Number of consecutive policy gradient descent updates to perform.
-          num_test_eps_stochastic: Number of episodes to test the stochastic policy in each evaluation.
+          num_test_eps: Number of episodes to test the stochastic policy in each evaluation.
           save_freq_epochs: How often, in epochs, to save the current policy and value function.
             (Epoch is defined as time between two subsequent evaluations, lasting log_every steps)
           reset_buffer_on_task_change: If True, replay buffer will be cleared after every task
             change (in continual learning).
           buffer_type: Type of the replay buffer. Either 'fifo' for regular FIFO buffer or 'reservoir' for reservoir sampling.
           reset_optimizer_on_task_change: If True, optimizer will be reset after every task change (in continual learning).
+          reset_actor_on_task_change: If True, actor weights are randomly re-initialized after each task change.
           reset_critic_on_task_change: If True, critic weights are randomly re-initialized after each task change.
           clipnorm: Value for gradient clipping.
           target_output_std: If alpha is 'auto', alpha is dynamically tuned so that standard
             deviation of the action distribution on every dimension matches target_output_std.
           agent_policy_exploration: If True, uniform exploration for start_steps steps is used only
             in the first task (in continual learning). Otherwise, it is used in every task.
+          exploration_kind: Kind of exploration to use at the beginning of a new task.
+          upload_weights: Whether to send weight to neptune after each task.
         """
         set_seed(seed, env=env)
 
@@ -138,11 +140,12 @@ class SAC:
         self.update_after = update_after
         self.update_every = update_every
         self.n_updates = n_updates
-        self.num_test_eps_stochastic = num_test_eps_stochastic
+        self.num_test_eps = num_test_eps
         self.save_freq_epochs = save_freq_epochs
         self.reset_buffer_on_task_change = reset_buffer_on_task_change
         self.buffer_type = buffer_type
         self.reset_optimizer_on_task_change = reset_optimizer_on_task_change
+        self.reset_actor_on_task_change = reset_actor_on_task_change
         self.reset_critic_on_task_change = reset_critic_on_task_change
         self.clipnorm = clipnorm
         self.agent_policy_exploration = agent_policy_exploration
@@ -152,6 +155,7 @@ class SAC:
         self.test_threads = []
         self.obs_shape = env.observation_space.shape
         self.act_dim = env.action_space.n
+        self.max_episode_len = env.get_active_env().game.get_episode_timeout()
         logger.log(f"Observations shape: {self.obs_shape}", color='blue')
         logger.log(f"Actions shape: {self.act_dim}", color='blue')
 
@@ -178,6 +182,11 @@ class SAC:
                 obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks)
         else:
             raise ValueError(f"Unknown buffer type: {buffer_type}")
+
+        # Exploration
+        self.exploration_kind = exploration_kind
+        self.exploration_helper = None
+        self.exploration_actor = None
 
         # Create actor and critic networks
         self.actor = actor_cl(**policy_kwargs)
@@ -259,6 +268,7 @@ class SAC:
 
     def on_task_start(self, current_task_idx: int) -> None:
         self.logger.log(f'Task {current_task_idx}-{self.env.task} started', color='white')
+        self.max_episode_len = self.env.get_active_env().game.get_episode_timeout()
 
     def on_task_end(self, current_task_idx: int) -> None:
         self.logger.log(f'Task {current_task_idx} finished', color='white')
@@ -278,6 +288,13 @@ class SAC:
         dist = Categorical(logits=logits)
         return tf.math.argmax(logits, axis=-1, output_type=dtypes.int32) if deterministic else dist.sample()
 
+    @tf.function
+    def get_exploration_action(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor,
+                               deterministic: tf.Tensor = tf.constant(False)) -> tf.Tensor:
+        logits = self.exploration_actor(tf.expand_dims(obs, 0), one_hot_task_id)
+        dist = Categorical(logits=logits)
+        return tf.math.argmax(logits, axis=-1, output_type=dtypes.int32) if deterministic else dist.sample()
+
     def get_action_test(
             self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, deterministic: tf.Tensor = tf.constant(False)
     ) -> tf.Tensor:
@@ -291,8 +308,7 @@ class SAC:
                 episodic_batch: Dict[str, tf.Tensor] = None,
         ) -> Dict:
             gradients, metrics = self.get_gradients(seq_idx, **batch)
-            # Warning: we refer here to the int task_idx in the parent function, not
-            # the passed seq_idx.
+            # Warning: we refer here to the int task_idx in the parent function, not the passed seq_idx.
             gradients = self.adjust_gradients(
                 *gradients,
                 current_task_idx=current_task_idx,
@@ -570,6 +586,12 @@ class SAC:
                 self.replay_buffer = PrioritizedExperienceReplay(
                     obs_shape=self.obs_shape, size=self.replay_size, num_tasks=self.num_tasks
                 )
+
+        if self.reset_actor_on_task_change:
+            if self.exploration_kind is not None:
+                self.exploration_actor.set_weights(self.actor.get_weights())
+            reset_weights(self.actor, self.actor_cl, self.actor_kwargs)
+
         if self.reset_critic_on_task_change:
             reset_weights(self.critic1, self.critic_cl, self.policy_kwargs)
             self.target_critic1.set_weights(self.critic1.get_weights())
@@ -591,16 +613,22 @@ class SAC:
                 + self.critic2.common_variables
         )
 
+        if self.exploration_kind is not None and current_task_idx > 0:
+            self.exploration_helper = ExplorationHelper(self.exploration_kind, num_available_heads=current_task_idx + 1,
+                                                        num_tasks=self.num_tasks)
+
     def run(self):
         """A method to run the SAC training, after the object has been created."""
         self.start_time = time.time()
 
         if self.test_only:
-            self.test_agent(deterministic=True, num_episodes=self.num_test_eps_stochastic)
+            self.test_agent(deterministic=True, num_episodes=self.num_test_eps)
             return
 
         obs, info = self.env.reset()
         episodes, episode_return, episode_len = 0, 0, 0
+        # Set exploration head as "undecided".
+        exploration_head_one_hot = None
 
         # Main loop: collect experience in env and update/log each epoch
         current_task_timestep = 0
@@ -608,6 +636,7 @@ class SAC:
         self.learn_on_batch = self.get_learn_on_batch(current_task_idx)
         episode_start = time.time()
 
+        one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
         num_actions = self.env.action_space.n
         action_counts = {i: 0 for i in range(num_actions)}
 
@@ -617,28 +646,42 @@ class SAC:
                 current_task_timestep = 0
                 current_task_idx = getattr(self.env, "cur_seq_idx")
                 self._handle_task_change(current_task_idx)
+                one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
 
-            # Until start_steps have elapsed, randomly sample actions from a uniform
-            # distribution for better exploration. Afterwards, use the learned policy.
+            obs_tensor = tf.convert_to_tensor(obs)
             if current_task_timestep > self.start_steps or (
                     self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
-                one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
-                action = self.get_action(tf.convert_to_tensor(obs),
-                                         tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32)).numpy()[0]
+                action = self.get_action(obs_tensor, tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32))
             else:
-                action = self.env.action_space.sample()
+                # Exploration
+                if self.exploration_helper is not None:
+                    # Use strategy provided by exploration helper.
+                    if exploration_head_one_hot is None:
+                        exploration_head_one_hot = self.exploration_helper.get_exploration_head_one_hot()
+                    task_id_tensor = tf.convert_to_tensor(exploration_head_one_hot, dtype=tf.dtypes.float32)
+
+                    if self.exploration_actor is not None:
+                        action = self.get_exploration_action(obs_tensor, task_id_tensor)
+                    else:
+                        action = self.get_action(obs_tensor, task_id_tensor)
+                else:
+                    # Just pure random exploration.
+                    action = self.env.action_space.sample()
 
             # Environment step
+            action = action if type(action) == int else action.numpy()[0]
             next_obs, reward, done, _, info = self.env.step(action)
+            if self.exploration_helper is not None and exploration_head_one_hot is not None:
+                self.exploration_helper.update_reward(reward)
             episode_return += reward
             episode_len += 1
             action_counts[action] += 1
 
-            # Extract task ids from the info dict
-            one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
+            # Consider also whether episode was truncated
+            done_to_store = False if episode_len == self.max_episode_len else done
 
             # Store experience to replay buffer
-            self.replay_buffer.store(obs, action, reward, next_obs, done, one_hot_vec)
+            self.replay_buffer.store(obs, action, reward, next_obs, done_to_store, one_hot_vec)
 
             # Update the most recent observation
             obs = next_obs
@@ -647,7 +690,7 @@ class SAC:
             if done:
                 episodes += 1
                 buffer_capacity = self.replay_buffer.size / self.replay_buffer.max_size * 100  # Percentage
-                self.logger.log(f"Episode {episodes} duration: {time.time() - episode_start}. Buffer capacity: "
+                self.logger.log(f"Episode {episodes} duration: {(time.time() - episode_start):.4f}. Buffer capacity: "
                                 f"{buffer_capacity:.2f}% ({self.replay_buffer.size}/{self.replay_buffer.max_size})")
                 self.logger.store({"train/return": episode_return, "train/ep_length": episode_len,
                                    "train/episodes": episodes, "buffer_capacity": buffer_capacity})
@@ -656,6 +699,7 @@ class SAC:
                 episode_return, episode_len = 0, 0
                 if global_timestep < self.steps - 1:
                     obs, info = self.env.reset()
+                    exploration_head_one_hot = None
 
             # Update handling
             if current_task_timestep >= self.update_after and current_task_timestep % self.update_every == 0:
@@ -695,7 +739,7 @@ class SAC:
                 # Test the performance of stochastic and deterministic version of the agent.
                 if self.test and self.test_envs:
                     test_start_time = time.time()
-                    self.test_agent(deterministic=False, num_episodes=self.num_test_eps_stochastic)
+                    self.test_agent(deterministic=False, num_episodes=self.num_test_eps)
                     self.logger.log(f"Time elapsed for the testing procedure: {time.time() - test_start_time}")
 
                 # Determine the current learning rate of the optimizer

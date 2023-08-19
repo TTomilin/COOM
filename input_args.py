@@ -14,8 +14,8 @@ def parse_args():
     arg('--scenarios', type=str, nargs="+", default=None,
         choices=['defend_the_center', 'health_gathering', 'run_and_gun', 'dodge_projectiles', 'chainsaw',
                  'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer', 'parkour', 'pitfall'])
-    arg("--cl_method", type=str, choices=[None, "owl", "l2", "ewc", "mas", "vcl", "packnet", "agem"], default=None,
-        help="If None, the fine-tuning method will be used")
+    arg("--cl_method", type=str, choices=[None, "clonex", "owl", "l2", "ewc", "mas", "vcl", "packnet", "agem"],
+        default=None, help="If None, the fine-tuning method will be used")
     arg("--envs", type=str, nargs="+", default=['default'], help="Name of the environments in the scenario(s) to run")
     arg("--test_envs", type=str, nargs="+", default=[],
         help="Name of the environments to periodically evaluate the agent on")
@@ -66,12 +66,11 @@ def parse_args():
     arg("--replay_size", type=sci2int, default=int(5e4), help="Size of the replay buffer")
     arg("--buffer_type", type=str, default="fifo", choices=[b.value for b in BufferType],
         help="Strategy of inserting examples into the buffer")
+    arg("--episodic_memory_from_buffer", type=str2bool, default=True)
 
     # Training
     arg("--steps_per_env", type=sci2int, default=int(2e5),
         help="Number of steps the algorithm will run per environment")
-    arg("--start_steps", type=sci2int, default=int(10000),
-        help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
     arg("--update_after", type=sci2int, default=int(5000),
         help="Number of env interactions to collect before starting to do update the gradient")
     arg("--update_every", type=sci2int, default=int(500), help="Number of env interactions to do between every update")
@@ -80,19 +79,29 @@ def parse_args():
     arg("--batch_size", type=int, default=128, help="Minibatch size for the optimization")
     arg("--gamma", type=float, default=0.99, help="Discount factor")
     arg("--alpha", type=float_or_str, default="auto",
-        help="Entropy regularization coefficient. Can be either float value, or 'auto', in which case it is dynamically tuned.")
+        help="Entropy regularization coefficient. "
+             "Can be either float value, or 'auto', in which case it is dynamically tuned.")
     arg("--target_output_std", type=float, default=0.089,
-        help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation of the action distribution on every dimension matches target_output_std.")
+        help="If alpha is 'auto', alpha is dynamically tuned so that standard deviation "
+             "of the action distribution on every dimension matches target_output_std.")
     arg("--regularize_critic", default=False, action='store_true',
         help="If True, both actor and critic are regularized; if False, only actor is")
     arg("--clipnorm", type=float, default=None, help="Value for gradient clipping")
-    arg("--agent_policy_exploration", default=False, action='store_true',
-        help="If True, uniform exploration for start_steps steps is used only in the first task (in continual learning). Otherwise, it is used in every task")
 
     # Testing
     arg("--test", type=str2bool, default=True, help="Whether to test the model")
     arg("--test_only", default=False, action='store_true', help="Whether to only test the model")
     arg("--test_episodes", default=3, type=int, help="Number of episodes to test the model")
+
+    # Exploration
+    arg("--start_steps", type=sci2int, default=int(10000),
+        help="Number of steps for uniform-random action selection, before running real policy. Helps exploration.")
+    arg("--agent_policy_exploration", default=False, action='store_true',
+        help="If True, uniform exploration for start_steps steps is used only in the "
+             "first task (in continual learning). Otherwise, it is used in every task")
+    arg("--exploration_kind", type=str, default=None,
+        choices=[None, "previous", "uniform_previous", "uniform_previous_or_current", "best_return"],
+        help="Kind of exploration to use at the beginning of a new task.", )
 
     # Task change
     arg("--reset_buffer_on_task_change", type=str2bool, default=True,

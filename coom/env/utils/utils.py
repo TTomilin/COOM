@@ -1,6 +1,6 @@
 from collections import deque
 
-import tensorflow as tf
+import numpy as np
 from scipy import spatial
 from vizdoom import ScreenResolution
 
@@ -37,4 +37,4 @@ def distance_traversed(game_var_buf: deque, x_index: int, y_index: int) -> float
 
 
 def combine_frames(obs):
-    return tf.reshape(obs, [obs.shape[1], obs.shape[2], obs.shape[0] * obs.shape[3]])
+    return np.concatenate(obs, axis=2)

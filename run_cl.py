@@ -5,12 +5,13 @@ from enum import Enum
 from pathlib import Path
 
 from cl.methods.agem import AGEM_SAC
+from cl.methods.episodic_replay import ClonExSAC
 from cl.methods.ewc import EWC_SAC
 from cl.methods.l2 import L2_SAC
 from cl.methods.mas import MAS_SAC
+from cl.methods.owl import OWL_SAC
 from cl.methods.packnet import PackNet_SAC
 from cl.methods.vcl import VCL_SAC, VclMlpActor
-from cl.methods.owl import OWL_SAC
 from cl.sac.models import MlpActor
 from cl.sac.replay_buffers import BufferType
 from cl.sac.sac import SAC
@@ -31,6 +32,8 @@ class CLMethod(Enum):
     PACKNET = (PackNet_SAC, ['regularize_critic', 'packnet_retrain_steps'])
     AGEM = (AGEM_SAC, ['episodic_mem_per_task', 'episodic_batch_size'])
     OWL = (OWL_SAC, ['cl_reg_coef', 'regularize_critic'])
+    CLONEX = (ClonExSAC, ['episodic_mem_per_task', 'episodic_batch_size', 'regularize_critic', 'cl_reg_coef',
+                          'episodic_memory_from_buffer'])
 
 
 def main(parser: argparse.ArgumentParser):
@@ -107,13 +110,13 @@ def main(parser: argparse.ArgumentParser):
 
     cl_method = args.cl_method if args.cl_method is not None else 'sac'
     actor_cl = VclMlpActor if cl_method == "vcl" else MlpActor
-   
+
     sac_kwargs = dict(
         env=cl_env,
         test_envs=test_envs,
         test=args.test,
         test_only=args.test_only,
-        num_test_eps_stochastic=args.test_episodes,
+        num_test_eps=args.test_episodes,
         logger=logger,
         scenarios=scenarios,
         cl_method=cl_method,
@@ -146,6 +149,7 @@ def main(parser: argparse.ArgumentParser):
         experiment_dir=experiment_dir,
         model_path=args.model_path,
         timestamp=timestamp,
+        exploration_kind=args.exploration_kind,
     )
 
     sac_class, sac_arg_names = CLMethod[cl_method.upper()].value

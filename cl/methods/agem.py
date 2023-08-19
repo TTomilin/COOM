@@ -1,6 +1,5 @@
-from typing import Dict, List, Optional, Tuple
-
 import tensorflow as tf
+from typing import Dict, List, Optional, Tuple
 
 from cl.sac.replay_buffers import EpisodicMemory
 from cl.sac.sac import SAC
@@ -8,7 +7,7 @@ from cl.sac.sac import SAC
 
 class AGEM_SAC(SAC):
     def __init__(
-        self, episodic_mem_per_task: int = 0, episodic_batch_size: int = 0, **vanilla_sac_kwargs
+            self, episodic_mem_per_task: int = 0, episodic_batch_size: int = 0, **vanilla_sac_kwargs
     ):
         """AGEM method. See https://arxiv.org/abs/1812.00420 .
 
@@ -24,17 +23,17 @@ class AGEM_SAC(SAC):
 
         episodic_mem_size = self.episodic_mem_per_task * self.env.num_tasks
         self.episodic_memory = EpisodicMemory(
-            obs_shape=self.obs_shape, size=episodic_mem_size, num_tasks=self.env.num_tasks
+            obs_shape=self.obs_shape, act_dim=self.act_dim, size=episodic_mem_size, num_tasks=self.env.num_tasks
         )
 
     def adjust_gradients(
-        self,
-        actor_gradients: List[tf.Tensor],
-        critic_gradients: List[tf.Tensor],
-        alpha_gradient: List[tf.Tensor],
-        current_task_idx: int,
-        metrics: dict,
-        episodic_batch: Dict[str, tf.Tensor] = None,
+            self,
+            actor_gradients: List[tf.Tensor],
+            critic_gradients: List[tf.Tensor],
+            alpha_gradient: List[tf.Tensor],
+            current_task_idx: int,
+            metrics: dict,
+            episodic_batch: Dict[str, tf.Tensor] = None,
     ) -> Tuple[List[tf.Tensor], List[tf.Tensor], List[tf.Tensor]]:
         if current_task_idx > 0:
             (ref_actor_gradients, ref_critic_gradients, _), _ = self.get_gradients(
@@ -76,11 +75,11 @@ class AGEM_SAC(SAC):
         return None
 
     def _project_gradients(
-        self,
-        new_gradients: List[tf.Tensor],
-        ref_gradients: List[tf.Tensor],
-        dot_prod: tf.Tensor,
-        ref_squared_norm: tf.Tensor,
+            self,
+            new_gradients: List[tf.Tensor],
+            ref_gradients: List[tf.Tensor],
+            dot_prod: tf.Tensor,
+            ref_squared_norm: tf.Tensor,
     ) -> List[tf.Tensor]:
         projected_grads = []
         for new_gradient, ref_gradient in zip(new_gradients, ref_gradients):

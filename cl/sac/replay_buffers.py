@@ -55,7 +55,8 @@ class ReplayBuffer:
 class EpisodicMemory:
     """Buffer which does not support overwriting old samples."""
 
-    def __init__(self, obs_shape: Optional[Tuple[int, ...]], size: int, num_tasks: int) -> None:
+    def __init__(self, obs_shape: Optional[Tuple[int, ...]], act_dim: int, size: int, num_tasks: int,
+                 save_targets: bool = False) -> None:
         self.obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.next_obs_buf = np.zeros([size, *obs_shape], dtype=np.float32)
         self.actions_buf = np.zeros(size, dtype=np.int32)
@@ -63,6 +64,11 @@ class EpisodicMemory:
         self.done_buf = np.zeros(size, dtype=np.float32)
         self.one_hot_buf = np.zeros([size, num_tasks], dtype=np.float32)
         self.size, self.max_size = 0, size
+        self.save_targets = save_targets
+        if self.save_targets:
+            self.actor_logits_buf = np.zeros([size, act_dim], dtype=np.float32)
+            self.critic1_pred_buf = np.zeros([size, act_dim], dtype=np.float32)
+            self.critic2_pred_buf = np.zeros([size, act_dim], dtype=np.float32)
 
     def store_multiple(
             self,
@@ -85,12 +91,22 @@ class EpisodicMemory:
         self.rewards_buf[range_start:range_end] = rewards
         self.done_buf[range_start:range_end] = done
         self.one_hot_buf[range_start:range_end] = one_hot
+        if self.save_targets:
+            self.actor_logits_buf[range_start:range_end] = kwargs['actor_logits']
+            self.critic1_pred_buf[range_start:range_end] = kwargs['critic1_preds']
+            self.critic2_pred_buf[range_start:range_end] = kwargs['critic2_preds']
         self.size = self.size + len(obs)
 
-    def sample_batch(self, batch_size: int) -> Dict[str, tf.Tensor]:
+    def sample_batch(self, batch_size: int, task_weights: Optional[np.ndarray] = None) -> Dict[str, tf.Tensor]:
         batch_size = min(batch_size, self.size)
-        idxs = np.random.choice(self.size, size=batch_size, replace=False)
-        return dict(
+        if task_weights is not None:
+            task_ids = self.one_hot_buf[:self.size]
+            example_weights = task_weights[task_ids]
+            example_weights /= example_weights.sum()
+            idxs = np.random.choice(self.size, size=batch_size, replace=False, p=example_weights)
+        else:
+            idxs = np.random.choice(self.size, size=batch_size, replace=False)
+        batch_dict = dict(
             obs=tf.convert_to_tensor(self.obs_buf[idxs]),
             next_obs=tf.convert_to_tensor(self.next_obs_buf[idxs]),
             actions=tf.convert_to_tensor(self.actions_buf[idxs]),
@@ -98,6 +114,13 @@ class EpisodicMemory:
             done=tf.convert_to_tensor(self.done_buf[idxs]),
             one_hot=tf.convert_to_tensor(self.one_hot_buf[idxs])
         )
+
+        if self.save_targets:
+            batch_dict["actor_logits"] = tf.convert_to_tensor(self.actor_logits_buf[idxs])
+            batch_dict["critic1_preds"] = tf.convert_to_tensor(self.critic1_pred_buf[idxs])
+            batch_dict["critic2_preds"] = tf.convert_to_tensor(self.critic2_pred_buf[idxs])
+
+        return batch_dict
 
 
 class ReservoirReplayBuffer(ReplayBuffer):
