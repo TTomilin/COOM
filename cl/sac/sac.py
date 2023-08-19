@@ -501,6 +501,7 @@ class SAC:
                 "train/q1_vals": results["q1"],
                 "train/q2_vals": results["q2"],
                 "train/entropy": results["entropy"],
+                "train/kl_loss": results["kl_loss"],
                 "train/loss_pi": results["pi_loss"],
                 "train/loss_q1": results["q1_loss"],
                 "train/loss_q2": results["q2_loss"],
