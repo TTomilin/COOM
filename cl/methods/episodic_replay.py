@@ -60,7 +60,7 @@ class ClonExSAC(SAC):
         actor_gradients = g.gradient(actor_loss, self.actor.trainable_variables)
         critic_gradients = g.gradient(critic_loss, self.critic_variables) if self.regularize_critic else None
 
-        return actor_gradients, critic_gradients
+        return actor_gradients, critic_gradients, actor_loss
 
     def adjust_gradients(
             self,
@@ -72,7 +72,7 @@ class ClonExSAC(SAC):
             episodic_batch: Dict[str, tf.Tensor] = None,
     ) -> Tuple[List[tf.Tensor], List[tf.Tensor], List[tf.Tensor]]:
         if current_task_idx > 0:
-            ref_actor_gradients, ref_critic_gradients = self.behavioral_cloning_gradients(
+            ref_actor_gradients, ref_critic_gradients, kl_loss = self.behavioral_cloning_gradients(
                 obs=episodic_batch["obs"],
                 actions=episodic_batch["actions"],
                 task_ids=episodic_batch["one_hot"],
@@ -83,6 +83,7 @@ class ClonExSAC(SAC):
 
             final_actor_gradients = self.merge_gradients(actor_gradients, ref_actor_gradients)
             final_critic_gradients = self.merge_gradients(critic_gradients, ref_critic_gradients)
+            metrics["kl_loss"] = kl_loss
         else:
             final_actor_gradients = actor_gradients
             final_critic_gradients = critic_gradients
