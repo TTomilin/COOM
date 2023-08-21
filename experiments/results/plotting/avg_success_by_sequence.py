@@ -8,10 +8,9 @@ def main(cfg: argparse.Namespace) -> None:
     plt.rcParams['axes.grid'] = True
     seeds, metric, sequences = cfg.seeds, cfg.metric, cfg.sequences
     n_sequences, n_seeds = len(sequences), len(seeds)
-    figsize = (10, 6) if n_sequences > 1 else (9, 3)
+    figsize = (10, 7) if n_sequences > 1 else (9, 3)
     fig, axes = plt.subplots(n_sequences, 1, sharey='all', sharex='all', figsize=figsize)
-    colors = COLORS[cfg.sequence]
-    log_interval = LOG_INTERVAL if n_sequences == 1 else 1
+    log_interval = 1
     assert len(sequences) > 0, "No sequences provided"
 
     for i, sequence in enumerate(sequences):
@@ -23,7 +22,7 @@ def main(cfg: argparse.Namespace) -> None:
         n_data_points = cfg.task_length * n_envs
         for j, method in enumerate(methods):
             data = get_data_per_env(envs, n_data_points, method, metric, seeds, sequence)
-            plot_curve(ax, cfg.confidence, colors[j], TRANSLATIONS[method], iterations, data, n_seeds * n_envs,
+            plot_curve(ax, cfg.confidence, PLOT_COLORS[j], TRANSLATIONS[method], iterations, data, n_seeds * n_envs,
                        agg_axes=(0, 1))
 
         ax.set_ylabel('Average Success')
@@ -44,7 +43,7 @@ def main(cfg: argparse.Namespace) -> None:
     os.makedirs(folder, exist_ok=True)
     plot_name = f'plots/{folder}/{"_".join(sequences)}.png'
     print(f'Saving plot to {plot_name}')
-    plt.savefig(plot_name)
+    plt.savefig(plot_name, dpi=300)
     plt.show()
 
 if __name__ == "__main__":

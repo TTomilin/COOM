@@ -17,6 +17,7 @@ TRANSLATIONS = {
     'vcl': 'VCL',
     'fine_tuning': 'Fine-tuning',
     'perfect_memory': 'Perfect Memory',
+    'clonex': 'ClonEx-SAC',
 
     'pitfall': 'Pitfall',
     'arms_dealer': 'Arms Dealer',
@@ -97,12 +98,12 @@ SEQUENCES = {
 COLORS = {
     'CD4': ['#55A868', '#C44E52', '#4C72B0', '#8172B2'],
     'CO4': ['#4C72B0', '#55A868', '#C44E52', '#8172B2'],
-    'CD8': ['#64B5CD', '#55A868', '#777777', '#8172B2', '#CCB974', '#C44E52', '#4C72B0', '#917113'],
-    'CO8': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113'],
-    'COC': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
+    'CD8': ['#64B5CD', '#55A868', '#777777', '#8172B2', '#CCB974', '#C44E52', '#4C72B0', '#FF8C00', '#917113'],
+    'CO8': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113'],
+    'COC': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
 }
 
-PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
+PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
 
 METRICS = {
     'pitfall': 'distance',
@@ -126,7 +127,7 @@ ENVS = {
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE', 'REPEAT_10']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
-METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'perfect_memory']
+METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'clonex', 'perfect_memory']
 KERNEL_SIGMA = 2
 INTERVAL_INTENSITY = 0.25
 LOG_INTERVAL = 1000
@@ -156,7 +157,7 @@ def common_plot_args() -> argparse.ArgumentParser:
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], nargs='+',
                         help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",
-                        choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning'])
+                        choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning', 'clonex', 'perfect_memory'])
     return parser
 
 
@@ -195,7 +196,7 @@ def add_coloured_task_labels(ax: np.ndarray, sequence: str, iterations: int, fon
 def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_data: np.ndarray, n_seeds: int,
                agg_axes=0, linestyle='-', interval=1):
     mean = np.nanmean(seed_data, axis=agg_axes)
-    std = np.nanstd(seed_data, axis=agg_axes)
+    std = np.mean(np.nanstd(seed_data, axis=1), axis=0) if type(agg_axes) == tuple else np.nanstd(seed_data, axis=agg_axes)
     mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
     std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)

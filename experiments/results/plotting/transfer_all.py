@@ -2,7 +2,7 @@ from experiments.results.common import *
 from experiments.results.common import get_baseline_data
 
 COLOR_SAC = '#C44E52'
-COLORS = ['#1F77B4', '#55A868', '#4C72B0', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#917113']
+COLORS = ['#1F77B4', '#55A868', '#4C72B0', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
 
 
 def main(cfg: argparse.Namespace) -> None:
@@ -67,7 +67,7 @@ def main(cfg: argparse.Namespace) -> None:
     if n_methods == 1:
         bottom_ax.legend(handles, labels)
     else:
-        anchor = -0.9 if n_methods > 1 else -0.55
+        anchor = -1.2 if n_methods > 1 else -0.55
         n_cols = n_envs if n_envs == 4 else n_methods + 1
         bottom_ax.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, anchor), ncol=n_cols, fancybox=True,
                          shadow=True)
