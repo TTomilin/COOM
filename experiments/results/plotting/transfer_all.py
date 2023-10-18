@@ -13,7 +13,7 @@ def main(cfg: argparse.Namespace) -> None:
     if methods is None:
         methods = METHODS if n_envs == 4 else METHODS[:-1]
     n_methods = len(methods)
-    figsize = (12, 12) if n_methods > 1 else (10, 2)
+    figsize = (12, 12) if n_methods > 1 else (10, 2.25)
     fig, ax = plt.subplots(n_methods, 1, sharex='all', sharey='all', figsize=figsize)
     task_length = cfg.task_length
     n_data_points = task_length * n_envs
@@ -54,9 +54,13 @@ def main(cfg: argparse.Namespace) -> None:
     bottom_ax = ax if n_methods == 1 else ax[-1]
     bottom_ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 2))
     bottom_ax.tick_params(labelbottom=True)
-    add_task_labels(top_ax, envs, iterations, n_envs, fontsize=12)
-    main_ax = add_main_ax(fig, fontsize=13)
-    main_ax.set_ylabel('Current Task Success', fontsize=13, labelpad=25)
+    fontsize = 12 if n_methods > 1 else 10
+    add_task_labels(top_ax, envs, iterations, n_envs, fontsize=fontsize)
+    if n_methods > 1:
+        main_ax = add_main_ax(fig, fontsize=13)
+        main_ax.set_ylabel('Current Task Success', fontsize=13, labelpad=25)
+    else:
+        top_ax.set_ylabel('Current Task Success', fontsize=10)
 
     handles, labels = ax.get_legend_handles_labels() if n_methods == 1 else get_handles_and_labels(ax)
     sac_idx = labels.index('sac')
@@ -75,8 +79,9 @@ def main(cfg: argparse.Namespace) -> None:
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
     file_path = 'plots/transfer'
     os.makedirs(file_path, exist_ok=True)
-    file_name = f'{file_path}/{sequence}.png' if not cfg.methods else f'{file_path}/{sequence}_{"_".join(methods)}.png'
-    plt.savefig(file_name)
+    file_name = f'{file_path}/{sequence}.pdf' if not cfg.methods else f'{file_path}/{sequence}_{"_".join(methods)}.pdf'
+    print(f'Saving plot to {file_name}')
+    plt.savefig(file_name, dpi=300)
     plt.show()
 
 

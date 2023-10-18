@@ -10,7 +10,6 @@ def main(cfg: argparse.Namespace) -> None:
     n_sequences, n_seeds = len(sequences), len(seeds)
     figsize = (10, 7) if n_sequences > 1 else (9, 3)
     fig, axes = plt.subplots(n_sequences, 1, sharey='all', sharex='all', figsize=figsize)
-    log_interval = 1
     assert len(sequences) > 0, "No sequences provided"
 
     for i, sequence in enumerate(sequences):
@@ -18,12 +17,12 @@ def main(cfg: argparse.Namespace) -> None:
         envs = SEQUENCES[sequence]
         n_envs = len(envs)
         methods = METHODS if n_envs == 4 else METHODS[:-1]
-        iterations = cfg.task_length * n_envs * log_interval
+        iterations = cfg.task_length * n_envs * LOG_INTERVAL
         n_data_points = cfg.task_length * n_envs
         for j, method in enumerate(methods):
             data = get_data_per_env(envs, n_data_points, method, metric, seeds, sequence)
             plot_curve(ax, cfg.confidence, PLOT_COLORS[j], TRANSLATIONS[method], iterations, data, n_seeds * n_envs,
-                       agg_axes=(0, 1))
+                       agg_axes=(0, 1), interval=LOG_INTERVAL)
 
         ax.set_ylabel('Average Success')
         ax.set_xlim([0, iterations])
@@ -41,7 +40,7 @@ def main(cfg: argparse.Namespace) -> None:
     plt.tight_layout()
     folder = 'success'
     os.makedirs(folder, exist_ok=True)
-    plot_name = f'plots/{folder}/{"_".join(sequences)}.png'
+    plot_name = f'plots/{folder}/{"_".join(sequences)}.pdf'
     print(f'Saving plot to {plot_name}')
     plt.savefig(plot_name, dpi=300)
     plt.show()

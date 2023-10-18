@@ -1,11 +1,12 @@
 import argparse
 import json
-import numpy as np
 import os
+from typing import List, Tuple
+
+import numpy as np
 from matplotlib import pyplot as plt
 from numpy import ndarray
 from scipy.ndimage import gaussian_filter1d
-from typing import List, Tuple
 
 TRANSLATIONS = {
     'sac': 'SAC',
@@ -124,7 +125,8 @@ ENVS = {
     'COC': 'hard',
 }
 
-SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE', 'REPEAT_10']
+SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE',
+                         'REPEAT_10']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'clonex', 'perfect_memory']
@@ -157,7 +159,8 @@ def common_plot_args() -> argparse.ArgumentParser:
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], nargs='+',
                         help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",
-                        choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning', 'clonex', 'perfect_memory'])
+                        choices=['packnet', 'vcl', 'mas', 'ewc', 'agem', 'l2', 'fine_tuning', 'clonex',
+                                 'perfect_memory'])
     return parser
 
 
@@ -194,24 +197,25 @@ def add_coloured_task_labels(ax: np.ndarray, sequence: str, iterations: int, fon
 
 
 def plot_curve(ax, confidence: float, color, label: str, iterations: int, seed_data: np.ndarray, n_seeds: int,
-               agg_axes=0, linestyle='-', interval=1):
+               agg_axes=0, linestyle='-', interval=1, sigma=KERNEL_SIGMA):
     mean = np.nanmean(seed_data, axis=agg_axes)
-    std = np.mean(np.nanstd(seed_data, axis=1), axis=0) if type(agg_axes) == tuple else np.nanstd(seed_data, axis=agg_axes)
-    mean = gaussian_filter1d(mean, sigma=KERNEL_SIGMA)
-    std = gaussian_filter1d(std, sigma=KERNEL_SIGMA)
+    std = np.mean(np.nanstd(seed_data, axis=1), axis=0) if type(agg_axes) == tuple else np.nanstd(seed_data,
+                                                                                                  axis=agg_axes)
+    mean = gaussian_filter1d(mean, sigma=sigma)
+    std = gaussian_filter1d(std, sigma=sigma)
     ci = CRITICAL_VALUES[confidence] * std / np.sqrt(n_seeds)
     x = np.arange(0, iterations, interval)
     ax.plot(x, mean, label=label, linestyle=linestyle, color=color)
-    ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4), useMathText=True)
+    ax.ticklabel_format(style='sci', axis='x', scilimits=(0, 4), useMathText=False)
     ax.tick_params(labelbottom=True)
     ax.fill_between(x, mean - ci, mean + ci, alpha=INTERVAL_INTENSITY, color=color)
 
 
-def add_main_ax(fig, fontsize: int = 11, fontweight='normal', labelpad: int = 25):
+def add_main_ax(fig, fontsize: int = 11, fontweight='normal', labelpad: int = 25, x_label='Timesteps'):
     main_ax = fig.add_subplot(1, 1, 1, frameon=False)
     main_ax.get_xaxis().set_ticks([])
     main_ax.get_yaxis().set_ticks([])
-    main_ax.set_xlabel('Timesteps', fontsize=fontsize, fontweight=fontweight)
+    main_ax.set_xlabel(x_label, fontsize=fontsize, fontweight=fontweight)
     main_ax.xaxis.labelpad = labelpad
     return main_ax
 
@@ -263,12 +267,14 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
 
 def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
                   bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5,
-                  add_xlabel: bool = True) -> None:
+                  add_xlabel: bool = True, add_legend: bool = True) -> None:
     if add_xlabel:
         ax.set_xlabel("Timesteps", fontsize=fontsize)
-    ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
+    if add_legend:
+        ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=-1.0)
     plt.savefig(f'plots/{plot_name}.png')
+    plt.savefig(f'plots/{plot_name}.pdf', dpi=300)
     plt.show()
 
 
