@@ -145,14 +145,7 @@ class ClonExSAC(SAC):
         return None if current_task_idx == 0 else self.episodic_memory.sample_batch(self.episodic_batch_size)
 
 
-def kl_divergence(first_logits, second_logits):
-    # eps = 1e-6
-    # first_probs = tf.nn.softmax(first_logits, axis=-1)
-    # second_probs = tf.nn.softmax(second_logits, axis=-1)
-    # kl = tf.reduce_sum(first_probs * (tf.math.log(first_probs + eps) - tf.math.log(second_probs + eps)), axis=-1)
-
-    first_dist = tfp.distributions.Categorical(logits=first_logits)
-    second_dist = tfp.distributions.Categorical(logits=second_logits)
-
-    kl = tfp.distributions.kl_divergence(first_dist, second_dist, allow_nan_stats=True, name=None)
-    return kl
+def kl_divergence(q_logits, p_logits):
+    first_dist = tfp.distributions.Categorical(logits=q_logits)
+    second_dist = tfp.distributions.Categorical(logits=p_logits)
+    return tfp.distributions.kl_divergence(first_dist, second_dist, allow_nan_stats=True, name=None)
