@@ -4,10 +4,10 @@ import numpy as np
 from scipy import spatial
 from vizdoom import ScreenResolution
 
-resolutions = {'800x600': ScreenResolution.RES_800X600,
-               '640x480': ScreenResolution.RES_640X480,
-               '320x240': ScreenResolution.RES_320X240,
-               '160x120': ScreenResolution.RES_160X120}
+resolutions = {'800X600': ScreenResolution.RES_800X600,
+               '640X480': ScreenResolution.RES_640X480,
+               '320X240': ScreenResolution.RES_320X240,
+               '160X120': ScreenResolution.RES_160X120}
 
 
 def default_action_space():
