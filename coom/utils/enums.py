@@ -14,21 +14,34 @@ from coom.env.utils.augmentations import random_conv, random_shift, random_noise
 
 class DoomScenario(Enum):
     HEALTH_GATHERING = {'class': HealthGathering,
+                        'timeout': 2500,
                         'kwargs': ['reward_frame_survived', 'reward_health_hg', 'penalty_health_hg']}
-    RUN_AND_GUN = {'class': RunAndGun, 'kwargs': ['reward_scaler_traversal', 'reward_kill_rag']}
-    CHAINSAW = {'class': Chainsaw, 'kwargs': ['reward_scaler_traversal', 'reward_kill_chain']}
+    RUN_AND_GUN = {'class': RunAndGun,
+                   'timeout': 1250,
+                   'kwargs': ['reward_scaler_traversal', 'reward_kill_rag']}
+    CHAINSAW = {'class': Chainsaw,
+                'timeout': 2500,
+                'kwargs': ['reward_scaler_traversal', 'reward_kill_chain']}
     RAISE_THE_ROOF = {'class': RaiseTheRoof,
+                      'timeout': 2500,
                       'kwargs': ['reward_scaler_traversal', 'reward_frame_survived', 'reward_switch_pressed']}
     FLOOR_IS_LAVA = {'class': FloorIsLava,
+                     'timeout': 2500,
                      'kwargs': ['reward_scaler_traversal', 'reward_on_platform', 'reward_platform_reached',
                                 'reward_frame_survived', 'penalty_lava']}
     HIDE_AND_SEEK = {'class': HideAndSeek,
+                     'timeout': 2500,
                      'kwargs': ['reward_scaler_traversal', 'reward_health_has', 'reward_frame_survived',
                                 'penalty_health_has']}
     ARMS_DEALER = {'class': ArmsDealer,
+                   'timeout': 1000,
                    'kwargs': ['reward_scaler_traversal', 'reward_weapon_ad', 'reward_delivery', 'penalty_passivity']}
-    PARKOUR = {'class': Parkour, 'kwargs': ['reward_scaler_traversal']}
-    PITFALL = {'class': Pitfall, 'kwargs': ['reward_platform_reached', 'reward_scaler_pitfall', 'penalty_death']}
+    PARKOUR = {'class': Parkour,
+               'timeout': 1000,
+               'kwargs': ['reward_scaler_traversal']}
+    PITFALL = {'class': Pitfall,
+               'timeout': 1000,
+               'kwargs': ['reward_platform_reached', 'reward_scaler_pitfall', 'penalty_death']}
 
 
 class Sequence(Enum):

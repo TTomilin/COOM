@@ -71,7 +71,6 @@ class ContinualLearningEnv(CommonEnv):
             # If we hit limit for current env, end the episode.
             # This may cause border episodes to end before self-terminating.
             done = True
-            info["TimeLimit.truncated"] = True
 
             if self.cur_seq_idx < self.num_tasks - 1:
                 self.cur_seq_idx += 1
