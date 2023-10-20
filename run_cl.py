@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from cl.methods.agem import AGEM_SAC
-from cl.methods.episodic_replay import ClonExSAC
+from cl.methods.clonex import ClonExSAC
 from cl.methods.ewc import EWC_SAC
 from cl.methods.l2 import L2_SAC
 from cl.methods.mas import MAS_SAC
