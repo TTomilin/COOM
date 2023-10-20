@@ -29,8 +29,6 @@ class VCL_SAC(SAC):
           first_task_kl: If True, use KL regularization also for the first task in 'vcl'
             continual learning method.
         """
-        assert regularize_critic is False, "VCL critic reg not supported"
-
         super().__init__(**vanilla_sac_kwargs)
         self.cl_reg_coef = cl_reg_coef
         self.regularize_critic = regularize_critic
