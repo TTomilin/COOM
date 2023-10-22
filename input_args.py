@@ -50,10 +50,9 @@ def parse_args():
     arg("--use_lstm", default=False, action='store_true', help="Whether to use an LSTM after the CNN encoder head")
     arg("--hidden_sizes", type=int, nargs="+", default=[256, 256], help="Hidden sizes list for the MLP models")
     arg("--activation", type=str, default="lrelu", help="Activation kind for the models")
-    arg("--use_layer_norm", type=str2bool, default=True, help="Whether or not use layer normalization")
-    arg("--multihead_archs", type=str2bool, default=True, help="Whether use multi-head architecture")
-    arg("--hide_task_id", type=str2bool, default=True,
-        help="if True, one-hot encoding of the task will not be appended to observation")
+    arg("--use_layer_norm", type=str2bool, default=True, help="Whether to use layer normalization")
+    arg("--multihead_archs", type=str2bool, default=True, help="Whether to use multi-head architecture")
+    arg("--hide_task_id", action='store_true', default=False, help="Whether the model knows the task during test time")
 
     # Learning rate
     arg("--lr", type=float, default=1e-3, help="Learning rate for the optimizer")

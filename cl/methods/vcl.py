@@ -1,3 +1,5 @@
+from typing import Callable, List, Tuple
+
 import gym
 import tensorflow as tf
 from tensorflow.keras.layers import LayerNormalization
@@ -5,7 +7,6 @@ from tensorflow.python.keras import Input, Model, Sequential
 from tensorflow.python.keras.engine.input_layer import InputLayer
 from tensorflow.python.keras.initializers.initializers_v2 import GlorotUniform
 from tensorflow.python.keras.layers import Concatenate, Activation, Layer
-from typing import Callable, List, Tuple
 
 from cl.sac.models import _choose_head, build_conv_head
 from cl.sac.sac import SAC
@@ -171,12 +172,12 @@ class BayesianDense(Layer):
 
 
 def variational_mlp(state_shape: Tuple[int], num_tasks: int, hidden_sizes: Tuple[int], activation: Callable,
-                    use_layer_norm: bool = False, use_lstm: bool = False) -> Model:
+                    use_layer_norm: bool = False, use_lstm: bool = False, hide_task_id: bool = False) -> Model:
     task_input = Input(shape=num_tasks, name='task_input', dtype=tf.float32)
     conv_in = Input(shape=state_shape, name='conv_head_in')
     conv_head = build_conv_head(conv_in, use_lstm)
 
-    model = Concatenate()([conv_head, task_input])
+    model = conv_head if hide_task_id else Concatenate()([conv_head, task_input])
     model = BayesianDense(model.shape[-1], hidden_sizes[0])(model)
     if use_layer_norm:
         model = LayerNormalization()(model)
@@ -186,7 +187,8 @@ def variational_mlp(state_shape: Tuple[int], num_tasks: int, hidden_sizes: Tuple
     for layer_idx in range(1, len(hidden_sizes)):
         prev_size, next_size = hidden_sizes[layer_idx - 1], hidden_sizes[layer_idx]
         model = BayesianDense(prev_size, next_size, activation=activation)(model)
-    model = Model(inputs=[conv_in, task_input], outputs=model)
+    inputs = conv_in if hide_task_id else [conv_in, task_input]
+    model = Model(inputs=inputs, outputs=model)
     return model
 
 
@@ -208,7 +210,8 @@ class VclMlpActor(Model):
         self.num_heads = num_heads
         self.hide_task_id = hide_task_id
 
-        self.core = variational_mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm)
+        self.core = variational_mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm,
+                                    hide_task_id)
 
         self.head_mu = Sequential(
             [
@@ -227,8 +230,8 @@ class VclMlpActor(Model):
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor, samples_num: int = 1) -> Tuple[tf.Tensor]:
         mus = []
         for sample_idx in range(samples_num):
-            x = self.core((obs, one_hot_task_id))
-            mu = self.head_mu(x)
+            logits = self.core(obs) if self.hide_task_id else self.core((obs, one_hot_task_id))
+            mu = self.head_mu(logits)
 
             if self.num_heads > 1:
                 mu = _choose_head(mu, self.num_heads, one_hot_task_id)

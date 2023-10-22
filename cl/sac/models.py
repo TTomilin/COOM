@@ -9,12 +9,12 @@ from tensorflow.python.keras.layers import Conv2D, Flatten, Dense, Activation, C
 
 
 def mlp(state_shape: Tuple[int], num_tasks: int, hidden_sizes: Iterable[int], activation: Callable,
-        use_layer_norm: bool = False, use_lstm: bool = False) -> Model:
+        use_layer_norm: bool = False, use_lstm: bool = False, hide_task_id: bool = False) -> Model:
     task_input = Input(shape=num_tasks, name='task_input', dtype=tf.float32)
     conv_in = Input(shape=state_shape, name='conv_head_in')
     conv_head = build_conv_head(conv_in, use_lstm)
 
-    model = Concatenate()([conv_head, task_input])
+    model = conv_head if hide_task_id else Concatenate()([conv_head, task_input])
     model = Dense(hidden_sizes[0])(model)
     if use_layer_norm:
         model = LayerNormalization()(model)
@@ -23,7 +23,8 @@ def mlp(state_shape: Tuple[int], num_tasks: int, hidden_sizes: Iterable[int], ac
         model = Activation(activation)(model)
     for size in hidden_sizes[1:]:
         model = Dense(size, activation=activation)(model)
-    model = Model(inputs=[conv_in, task_input], outputs=model)
+    inputs = conv_in if hide_task_id else [conv_in, task_input]
+    model = Model(inputs=inputs, outputs=model)
     return model
 
 
@@ -75,7 +76,7 @@ class MlpActor(Model):
         # if True, one-hot encoding of the task will not be appended to observation.
         self.hide_task_id = hide_task_id
 
-        self.core = mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm)
+        self.core = mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm, hide_task_id)
         self.head_mu = Sequential(
             [
                 InputLayer(input_shape=(hidden_sizes[-1],)),
@@ -85,7 +86,7 @@ class MlpActor(Model):
         self.action_space = action_space
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
-        logits = self.core([obs, one_hot_task_id])
+        logits = self.core(obs) if self.hide_task_id else self.core([obs, one_hot_task_id])
         mu = self.head_mu(logits)
 
         if self.num_heads > 1:
@@ -122,13 +123,14 @@ class MlpCritic(Model):
             num_heads  # if True, one-hot encoding of the task will not be appended to observation.
         )
 
-        self.core = mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm)
+        self.core = mlp(state_space.shape, num_tasks, hidden_sizes, activation, use_layer_norm, use_lstm, hide_task_id)
         self.head = Sequential(
             [InputLayer(input_shape=(hidden_sizes[-1],)), Dense(num_heads * action_space.n)]
         )
 
     def call(self, obs: tf.Tensor, one_hot_task_id: tf.Tensor) -> tf.Tensor:
-        value = self.head(self.core([obs, one_hot_task_id]))
+        logits = self.core(obs) if self.hide_task_id else self.core([obs, one_hot_task_id])
+        value = self.head(logits)
         if self.num_heads > 1:
             value = _choose_head(value, self.num_heads, one_hot_task_id)
         return value
