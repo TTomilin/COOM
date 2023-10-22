@@ -42,7 +42,7 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
         method = get_cl_method(run)
         seed = max(run.config["seed"], 1)
         wandb_tags = config['wandb_tags']['value']
-        tag = f"{wandb_tags[0].lower()}/" if tags and any(tag in tags for tag in SEPARATE_STORAGE_TAGS) else ''
+        tag = f'{next((tag for tag in tags if tag in wandb_tags), None).lower()}/' if tags and any(tag in tags for tag in SEPARATE_STORAGE_TAGS) else ''
         path = f'{tag}{sequence}/{method}/seed_{seed}'
         if not os.path.exists(path):
             os.makedirs(path)
