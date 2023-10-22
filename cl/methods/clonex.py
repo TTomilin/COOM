@@ -46,8 +46,8 @@ class ClonExSAC(SAC):
             actor_loss *= self.cl_reg_coef
 
             if self.regularize_critic:
-                critic1_pred = self.critic1(obs, actions)
-                critic2_pred = self.critic2(obs, actions)
+                critic1_pred = self.critic1(obs, task_ids)
+                critic2_pred = self.critic2(obs, task_ids)
 
                 critic1_loss_per_example = (critic1_pred - target_critic1_preds)**2
                 critic2_loss_per_example = (critic2_pred - target_critic2_preds)**2
