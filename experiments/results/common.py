@@ -8,6 +8,8 @@ from matplotlib import pyplot as plt
 from numpy import ndarray
 from scipy.ndimage import gaussian_filter1d
 
+NUM_FINAL_VALS = 10
+
 TRANSLATIONS = {
     'sac': 'SAC',
     'packnet': 'PackNet',
@@ -105,6 +107,17 @@ COLORS = {
 }
 
 PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
+METHOD_COLORS = {
+    'packnet': '#4C72B0',
+    'mas': '#55A868',
+    'agem': '#C44E52',
+    'l2': '#8172B2',
+    'ewc': '#CCB974',
+    'vcl': '#64B5CD',
+    'fine_tuning': '#777777',
+    'clonex': '#FF8C00',
+    'perfect_memory': '#917113'
+}
 
 METRICS = {
     'pitfall': 'distance',
@@ -415,9 +428,9 @@ def get_cl_data(methods: List[str], metric: str, seeds: List[int], sequence: str
 
 def calculate_forgetting(data: np.ndarray):
     end_data = calculate_data_at_the_end(data)
-    forgetting = (np.diagonal(end_data, axis1=1, axis2=2) - end_data[:, :, -1]).clip(0, np.inf)
+    forgetting = (np.diagonal(end_data, axis1=1, axis2=2) - end_data[:, :, -1])
     return forgetting[:, :-1].mean(axis=1)
 
 
 def calculate_data_at_the_end(data):
-    return data[:, :, :, -10:].mean(axis=3)
+    return data[:, :, :, -NUM_FINAL_VALS:].mean(axis=3)
