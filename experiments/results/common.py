@@ -52,6 +52,7 @@ TRANSLATIONS = {
 
     'single_head': 'Single Head',
     'multi_head': 'Multi Head',
+    'no_task_id': 'No Task ID',
 
     'per': 'PER',
     'lstm': 'LSTM',
@@ -139,7 +140,7 @@ ENVS = {
 }
 
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE',
-                         'REPEAT_10']
+                         'REPEAT_10', 'NO_TASK_ID']
 FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'clonex', 'perfect_memory']
