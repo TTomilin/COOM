@@ -44,9 +44,9 @@ def plot_histograms(data: ndarray, default: ndarray, variations: List[str], meth
 
         axes[i].axhline(0, color='black', lw=1)
         variation = TRANSLATIONS[variation]
-        if variation == 'Critic Regularization':
-            variation = 'Critic Reg'
-        axes[i].set_title(f'{variation}')
+        # if variation == 'Critic Regularization':
+        #     variation = 'Critic Reg'
+        axes[i].set_title(f'{variation}', fontsize=11)
         axes[i].set_xticks([])
 
     def format_percent(x, pos):
@@ -69,5 +69,4 @@ def plot_histograms(data: ndarray, default: ndarray, variations: List[str], meth
 if __name__ == "__main__":
     parser = common_plot_args()
     parser.add_argument("--folders", type=str, required=True, nargs='+', help="Names of the folders")
-    parser.add_argument("--alt_sequence", type=str, required=False, help="Name of the alternative sequence")
     main(parser.parse_args())

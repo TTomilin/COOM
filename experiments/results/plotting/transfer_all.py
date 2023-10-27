@@ -71,17 +71,19 @@ def main(cfg: argparse.Namespace) -> None:
     if n_methods == 1:
         bottom_ax.legend(handles, labels)
     else:
-        anchor = -1.2 if n_methods > 1 else -0.55
-        n_cols = n_envs if n_envs == 4 else n_methods + 1
+        anchor = -0.55 if n_methods == 1 else -1.2 if n_envs > 4 else -1.6
+        n_cols = 5 if n_envs == 4 else n_methods + 1
         bottom_ax.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, anchor), ncol=n_cols, fancybox=True,
                          shadow=True)
     bottom_adjust = -0.05 if n_methods > 1 else 0
+    bottom_adjust = 0 if n_methods == 1 else -0.05 if n_envs > 4 else -0.07
     plt.tight_layout(rect=[0, bottom_adjust, 1, 1])
     file_path = 'plots/transfer'
     os.makedirs(file_path, exist_ok=True)
-    file_name = f'{file_path}/{sequence}.pdf' if not cfg.methods else f'{file_path}/{sequence}_{"_".join(methods)}.pdf'
+    file_name = f'{file_path}/{sequence}' if not cfg.methods else f'{file_path}/{sequence}_{"_".join(methods)}'
     print(f'Saving plot to {file_name}')
-    plt.savefig(file_name, dpi=300)
+    plt.savefig(f'{file_name}.png')
+    plt.savefig(f'{file_name}.pdf', dpi=300)
     plt.show()
 
 

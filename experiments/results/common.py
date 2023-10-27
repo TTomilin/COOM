@@ -57,7 +57,7 @@ TRANSLATIONS = {
     'per': 'PER',
     'lstm': 'LSTM',
 
-    'conv': 'Conv',
+    'conv': 'Convolution',
     'shift': 'Shift',
     'noise': 'Noise',
 
@@ -158,6 +158,7 @@ def common_args() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--sequence", type=str, default='CO8',
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], help="Name of the task sequence")
+    parser.add_argument("--alt_sequence", type=str, required=False, help="Name of the alternative sequence for data")
     parser.add_argument("--seeds", type=int, nargs='+', default=[1, 2, 3, 4, 5], help="Seed(s) of the run(s) to plot")
     parser.add_argument("--metric", type=str, default='success', help="Name of the metric to store/plot")
     parser.add_argument("--task_length", type=int, default=200, help="Number of iterations x 1000 per task")
@@ -281,12 +282,12 @@ def suitable_run(run, args: argparse.Namespace) -> bool:
 
 def plot_and_save(ax, plot_name: str, n_col: int, vertical_anchor: float = 0.0, fontsize: int = 11,
                   bottom_adjust: float = 0, loc: str = 'lower center', horizontal_anchor: float = 0.5,
-                  add_xlabel: bool = True, add_legend: bool = True) -> None:
+                  h_pad: float = -1.0, add_xlabel: bool = True, add_legend: bool = True) -> None:
     if add_xlabel:
         ax.set_xlabel("Timesteps", fontsize=fontsize)
     if add_legend:
         ax.legend(loc=loc, bbox_to_anchor=(horizontal_anchor, vertical_anchor), ncol=n_col, fancybox=True, shadow=True)
-    plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=-1.0)
+    plt.tight_layout(rect=[0, bottom_adjust, 1, 1], h_pad=h_pad)
     plt.savefig(f'plots/{plot_name}.png')
     plt.savefig(f'plots/{plot_name}.pdf', dpi=300)
     plt.show()
@@ -430,7 +431,7 @@ def get_cl_data(methods: List[str], metric: str, seeds: List[int], sequence: str
 def calculate_forgetting(data: np.ndarray):
     end_data = calculate_data_at_the_end(data)
     forgetting = (np.diagonal(end_data, axis1=1, axis2=2) - end_data[:, :, -1])
-    return forgetting[:, :-1].mean(axis=1)
+    return forgetting[:, :-1].mean(axis=1), forgetting
 
 
 def calculate_data_at_the_end(data):

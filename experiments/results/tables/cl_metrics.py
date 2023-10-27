@@ -32,17 +32,18 @@ def main(cfg: argparse.Namespace) -> None:
         baseline_data = get_baseline_data(sequence, seeds, cfg.task_length, cfg.metric)
         performance = calculate_performance(cl_data)
         performance_ci = calculate_performance(ci_data)
-        forgetting = calculate_forgetting(cl_data)
-        forgetting_ci = calculate_forgetting(ci_data)
+        forgetting, forgetting_individual = calculate_forgetting(cl_data)
+        forgetting_ci, forgetting_individual_ci = calculate_forgetting(ci_data)
         transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), confidence)
 
-        # if sequence == cfg.forgetting_sequence:
-        #     print_task_forgetting(methods, cfg.forgetting_sequence, forgetting, forgetting_ci)
         for j in range(len(methods)):
             data[i, j] = [performance[j], forgetting[j], transfer[j]]
             data_cis[i, j] = [performance_ci[j], forgetting_ci[j], transfer_ci[j]]
 
-    print_combined(methods, sequences, data, data_cis)
+    if cfg.task_forgetting:
+        print_task_forgetting(methods, sequence, forgetting_individual, forgetting_individual_ci)
+    else:
+        print_combined(methods, sequences, data, data_cis)
 
 
 def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray, cis: ndarray):
@@ -52,8 +53,7 @@ def print_task_forgetting(methods: List[str], sequence: str, forgetting: ndarray
     results = pd.DataFrame(columns=['Scenario'] + method_names + ['Average'])
     for i, env in enumerate(envs):
         env_name = TRANSLATIONS[env]
-        row = [env_name] + ['-' if np.isnan(forgetting[j, i]) or i == len(
-            envs) - 1 else f'{forgetting[j, i]:.2f} \tiny ± {cis[j, i]:.2f}' for j in range(len(methods))]
+        row = [env_name] + ['-' if np.isnan(forgetting[j, i]) or i == len(envs) - 1 else f'{forgetting[j, i]:.2f} \tiny ± {cis[j, i]:.2f}' for j in range(len(methods))]
         method_forget = [forgetting[j, i] for j in range(len(methods))]
         row += [f'{np.nanmean(method_forget):.2f} \tiny ± {np.nanstd(method_forget):.2f}']
         results.loc[len(results)] = row
@@ -94,8 +94,10 @@ def print_combined(methods: List[str], sequences, data, data_cis):
         cell_values = []
         for k in range(data_types):
             value = np.nanmean(data[:, i, k])
+            ci = np.nanmean(data_cis[:, i, k])
             significant = highlight_func[k](np.nanmean(data[:, :, k], axis=0)) == value
-            avg_string = f'\\textbf{{{value:.2f}}}' if significant else f'{value:.2f}' if not np.isnan(value) else '-'
+            avg_string = f'\\textbf{{{value:.2f}}} ± {ci:.2f}' if significant else f'{value:.2f} ± {ci:.2f}' \
+                if not np.isnan(value) else '-'
             cell_values.append(avg_string)
         cell = ' & '.join(cell_values)
         row.append(cell)
@@ -147,6 +149,5 @@ def print_latex_swapped(sequences, mean, ci, highlight_max=True):
 if __name__ == "__main__":
     parser = common_plot_args()
     parser.add_argument("--second_half", default=False, action='store_true', help="Only regard sequence 2nd half")
-    parser.add_argument("--forgetting_sequence", type=str, default='CO8', choices=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
-                        help="Sequence to compare the forgetting of tasks on")
+    parser.add_argument("--task_forgetting", default=False, action='store_true', help="Only print task forgetting")
     main(parser.parse_args())

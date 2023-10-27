@@ -8,7 +8,7 @@ def main(cfg: argparse.Namespace) -> None:
     plt.rcParams['axes.grid'] = True
     seeds, metric, sequences = cfg.seeds, cfg.metric, cfg.sequences
     n_sequences, n_seeds = len(sequences), len(seeds)
-    figsize = (10, 7) if n_sequences > 1 else (9, 3)
+    figsize = (12, 7) if n_sequences > 1 else (9, 3)
     fig, axes = plt.subplots(n_sequences, 1, sharey='all', sharex='all', figsize=figsize)
     assert len(sequences) > 0, "No sequences provided"
 
@@ -40,9 +40,10 @@ def main(cfg: argparse.Namespace) -> None:
     plt.tight_layout()
     folder = 'success'
     os.makedirs(folder, exist_ok=True)
-    plot_name = f'plots/{folder}/{"_".join(sequences)}.pdf'
+    plot_name = f'plots/{folder}/{"_".join(sequences)}'
     print(f'Saving plot to {plot_name}')
-    plt.savefig(plot_name, dpi=300)
+    plt.savefig(f'{plot_name}.png')
+    plt.savefig(f'{plot_name}.pdf', dpi=300)
     plt.show()
 
 if __name__ == "__main__":

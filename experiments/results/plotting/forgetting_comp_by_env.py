@@ -17,7 +17,7 @@ def main(cfg: argparse.Namespace) -> None:
             for k, method in enumerate(methods):
                 data = get_data(env, n_data_points, method, metric, seeds, sequence)
                 plot_curve(ax[j], cfg.confidence, colors[k], f'{TRANSLATIONS[method]} ({sequence})', iterations, data, len(seeds),
-                           linestyle=LINE_STYLES[i], interval=LOG_INTERVAL)
+                           linestyle=LINE_STYLES[i], interval=LOG_INTERVAL, sigma=4)
 
             ax[j].set_ylabel(TRANSLATIONS[metric])
             ax[j].set_title(TRANSLATIONS[env])

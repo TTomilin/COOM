@@ -19,7 +19,7 @@ def main(cfg: argparse.Namespace) -> None:
     confidence_intervals = CRITICAL_VALUES[cfg.confidence] * np.array(stds) / np.sqrt(
         n_seeds) if metric == 'walltime' else None
 
-    colors = mpl.colormaps['tab20c'].colors[:4] + mpl.colormaps['tab20c'].colors[8:12]
+    colors = mpl.colormaps['tab20c'].colors[:4] + mpl.colormaps['tab20c'].colors[8:12] + mpl.colormaps['tab20c'].colors[4:8]
     ax.bar(np.arange(n_methods), means, yerr=confidence_intervals, capsize=4, color=colors)
     ax.set_xticks(np.arange(n_methods))
     ax.set_xticklabels([TRANSLATIONS[method] for method in methods], fontsize=11)
