@@ -104,7 +104,9 @@ COLORS = {
     'CO4': ['#4C72B0', '#55A868', '#C44E52', '#8172B2'],
     'CD8': ['#64B5CD', '#55A868', '#777777', '#8172B2', '#CCB974', '#C44E52', '#4C72B0', '#FF8C00', '#917113'],
     'CO8': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113'],
-    'COC': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
+    'COC': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113'],
+    'CD16': ['#64B5CD', '#55A868', '#777777', '#8172B2', '#CCB974', '#C44E52', '#4C72B0', '#FF8C00'],
+    'CO16': ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00'],
 }
 
 PLOT_COLORS = ['#4C72B0', '#55A868', '#C44E52', '#8172B2', '#CCB974', '#64B5CD', '#777777', '#FF8C00', '#917113']
@@ -195,6 +197,8 @@ def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int, fontsize:
     env_steps = iterations // n_envs
     task_indicators = np.arange(0 + env_steps // 2, iterations + env_steps // 2, env_steps)
     tick_labels = [TRANSLATIONS[env] for env in envs]
+    if len(envs) > 8:  # Shorten the tick labels to only the first word in case of long sequences
+        tick_labels = [label.split()[0] for label in tick_labels]
     ax_twin = ax.twiny()
     ax_twin.set_xlim(ax.get_xlim())
     ax_twin.set_xticks(task_indicators)
@@ -206,7 +210,8 @@ def add_task_labels(ax, envs: List[str], iterations: int, n_envs: int, fontsize:
 def add_coloured_task_labels(ax: np.ndarray, sequence: str, iterations: int, fontsize: int = 9):
     envs = SEQUENCES[sequence]
     ax_twin = add_task_labels(ax, envs, iterations, len(envs), fontsize)
-    for xtick, color in zip(ax_twin.get_xticklabels(), COLORS[sequence]):
+    colours = COLORS[sequence] + COLORS[sequence] if sequence in ['CD16', 'CO16'] else COLORS[sequence]
+    for xtick, color in zip(ax_twin.get_xticklabels(), colours):
         xtick.set_color(color)
         xtick.set_fontweight('bold')
 
@@ -332,8 +337,8 @@ def get_action_data(folder: str, iterations: int, method: str, n_actions: int, s
     return mean
 
 
-def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[int], sequence: str):
-    return get_data_from_file(f'{env}_{metric}', iterations, method, seeds, sequence)
+def get_data(env: str, iterations: int, method: str, metric: str, seeds: List[int], sequence: str, seq_it: str = ''):
+    return get_data_from_file(f'{seq_it}{env}_{metric}', iterations, method, seeds, sequence)
 
 
 def get_data_from_file(file_name: str, iterations: int, method: str, seeds: List[int], sequence: str):
@@ -355,15 +360,16 @@ def get_data_per_env(envs: List[str], iterations: int, method: str, metric: str,
     seed_data = np.empty((len(envs), len(seeds), iterations))
     seed_data[:] = np.nan
     folder = f'/{folder}' if folder else ''
-    for e, env in enumerate(envs):
-        for k, seed in enumerate(seeds):
-            path = f'{os.getcwd()}/data{folder}/{sequence}/{method}/seed_{seed}/{env}_{metric}.json'
+    for i, env in enumerate(envs):
+        sequence_iteration = f'{i // 8}_' if len(envs) > 8 else ''
+        for j, seed in enumerate(seeds):
+            path = f'{os.getcwd()}/data{folder}/{sequence}/{method}/seed_{seed}/{sequence_iteration}{env}_{metric}.json'
             if not os.path.exists(path):
                 print(f'Path {path} does not exist')
                 continue
             with open(path, 'r') as f:
                 data = json.load(f)
-                seed_data[e, k, np.arange(len(data))] = data
+                seed_data[i, j, np.arange(len(data))] = data
     return seed_data
 
 

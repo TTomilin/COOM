@@ -9,17 +9,20 @@ def main(cfg: argparse.Namespace) -> None:
     n_seeds, n_envs = len(seeds), len(envs)
     methods = cfg.methods if cfg.methods else METHODS if n_envs == 4 else METHODS[:-1]
     n_methods = len(methods)
-    figsize = (12, 14) if n_methods > 1 else (11, 2.25)
-    fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=figsize)
+    fig_size = (12, 14) if n_methods > 1 else (11, 2.25)
+    fig, ax = plt.subplots(len(methods), 1, sharey='all', sharex='all', figsize=fig_size)
     n_data_points = cfg.task_length * n_envs
     iterations = n_data_points * LOG_INTERVAL
 
     for i, method in enumerate(methods):
         cur_ax = ax if n_methods == 1 else ax[i]
         for j, env in enumerate(envs):
-            data = get_data(env, n_data_points, method, metric, seeds, sequence)
-            plot_curve(cur_ax, cfg.confidence, colors[j], TRANSLATIONS[env], iterations, data, n_seeds,
-                       interval=LOG_INTERVAL, sigma=4)
+            sequence_iteration = f'{j // 8}_' if len(envs) > 8 else ''
+            data = get_data(env, n_data_points, method, metric, seeds, sequence, sequence_iteration)
+            line_style = LINE_STYLES[j // 8] if len(envs) > 8 else LINE_STYLES[j]
+            sigma = 6 if len(envs) > 8 else 4
+            plot_curve(cur_ax, cfg.confidence, colors[j % 8], TRANSLATIONS[env], iterations, data, n_seeds,
+                       interval=LOG_INTERVAL, sigma=sigma, linestyle=line_style)
         if n_methods > 1:
             cur_ax.set_title(TRANSLATIONS[method], fontsize=12)
         cur_ax.set_ylabel(TRANSLATIONS[metric])

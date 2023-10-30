@@ -1,12 +1,10 @@
-import os
-
 from experiments.results.common import *
 
 
 def main(cfg: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
     plt.rcParams['axes.grid'] = True
-    seeds, metric, sequences = cfg.seeds, cfg.metric, cfg.sequences
+    methods, seeds, metric, sequences = cfg.methods, cfg.seeds, cfg.metric, cfg.sequences
     n_sequences, n_seeds = len(sequences), len(seeds)
     figsize = (12, 7) if n_sequences > 1 else (9, 3)
     fig, axes = plt.subplots(n_sequences, 1, sharey='all', sharex='all', figsize=figsize)
@@ -16,7 +14,8 @@ def main(cfg: argparse.Namespace) -> None:
         ax = axes if n_sequences == 1 else axes[i]
         envs = SEQUENCES[sequence]
         n_envs = len(envs)
-        methods = METHODS if n_envs == 4 else METHODS[:-1]
+        if methods is None:
+            methods = METHODS if n_envs == 4 else METHODS[:-1]
         iterations = cfg.task_length * n_envs * LOG_INTERVAL
         n_data_points = cfg.task_length * n_envs
         for j, method in enumerate(methods):
@@ -31,12 +30,13 @@ def main(cfg: argparse.Namespace) -> None:
             ax.set_title(sequence, fontsize=14)
         add_task_labels(ax, envs, iterations, n_envs, fontsize=9)
 
-    if n_sequences > 1:
-        bottom_ax = axes if n_sequences == 1 else axes[-1]
-        bottom_ax.set_xlabel("Timesteps (K)", fontsize=10)
-        bottom_ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.45), ncol=len(methods), fancybox=True, shadow=True)
-    else:
-        ax.legend(ncol=2)
+    if len(methods) > 1:
+        if n_sequences > 1:
+            bottom_ax = axes if n_sequences == 1 else axes[-1]
+            bottom_ax.set_xlabel("Timesteps (K)", fontsize=10)
+            bottom_ax.legend(loc='lower center', bbox_to_anchor=(0.5, -0.45), ncol=len(methods), fancybox=True, shadow=True)
+        else:
+            ax.legend(ncol=2)
     plt.tight_layout()
     folder = 'success'
     os.makedirs(folder, exist_ok=True)
@@ -45,6 +45,7 @@ def main(cfg: argparse.Namespace) -> None:
     plt.savefig(f'{plot_name}.png')
     plt.savefig(f'{plot_name}.pdf', dpi=300)
     plt.show()
+
 
 if __name__ == "__main__":
     parser = common_plot_args()

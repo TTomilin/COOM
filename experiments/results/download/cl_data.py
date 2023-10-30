@@ -16,7 +16,7 @@ def main(args: argparse.Namespace) -> None:
 def store_data(run: Run, args: argparse.Namespace) -> None:
     sequence, metric, data_type, tags = args.sequence, args.metric, args.type, args.wandb_tags
     config = json.loads(run.json_config)
-    seq_len = 1 if data_type == 'train' else 4 if sequence in ['CD4', 'CO4'] else 8
+    seq_len = 1 if data_type == 'train' else 4 if sequence in ['CD4', 'CO4'] else 8 if sequence in ['CD8', 'CO8'] else 16
     for env_idx in range(seq_len):
         task = SEQUENCES[sequence][env_idx]
         if metric == 'env':
@@ -49,6 +49,8 @@ def store_data(run: Run, args: argparse.Namespace) -> None:
             print(f"Created new directory {path}")
 
         file_name = f'{task}_{metric}.json' if data_type == 'test' else f'train_{metric}.json'
+        if seq_len == 16:
+            file_name = f'{env_idx // 8}_{file_name}'
         file_path = f'{path}/{file_name}'
         if args.overwrite or not os.path.exists(file_path):
             print(f'Saving {run.id} --- {path}/{file_name}')
