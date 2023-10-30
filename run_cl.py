@@ -64,9 +64,6 @@ def main(parser: argparse.ArgumentParser):
         tf.config.experimental.set_visible_devices(gpu, 'GPU')
         logger.log(f"Using GPU: {gpu}", color='magenta')
 
-    for scenario in scenarios:
-        scenario.value['class'].add_cli_args(parser)
-
     args = parser.parse_args()
 
     doom_kwargs = dict(

@@ -16,22 +16,6 @@ from coom.env.utils.utils import get_screen_resolution, default_action_space
 
 class DoomEnv(CommonEnv):
 
-    @classmethod
-    def add_cli_args(cls, parser: argparse.ArgumentParser):
-        def arg(*args, **kwargs):
-            try:
-                parser.add_argument(*args, **kwargs)
-            except argparse.ArgumentError:
-                pass  # Argument already exists
-
-        arg('--render', default=False, action='store_true', help='Render the environment')
-        arg('--render_mode', type=str, default='rgb_array', help='Mode of rendering')
-        arg('--render_sleep', type=float, default=0.0, help='Sleep time between frames when rendering')
-        arg('--variable_queue_length', type=int, default=5, help='Number of game variables to remember')
-        arg('--frame_skip', type=int, default=4, help='Number of frames to skip')
-        arg('--resolution', type=str, default='160X120', choices=['800X600', '640X480', '320X240', '160X120'],
-            help='Screen resolution of the game')
-
     def __init__(self,
                  logger: Logger,
                  env: str = 'default',

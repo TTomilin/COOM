@@ -28,7 +28,6 @@ def main(parser: argparse.ArgumentParser):
     scenario_enum = DoomScenario[scenario.upper()].value
     scenario_class = scenario_enum['class']
     scenario_kwargs = {key: vars(args)[key] for key in scenario_enum['kwargs']}
-    scenario_class.add_cli_args(parser)
 
     # Logging
     if args.with_wandb:

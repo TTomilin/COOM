@@ -67,6 +67,15 @@ def parse_args():
         help="Strategy of inserting examples into the buffer")
     arg("--episodic_memory_from_buffer", type=str2bool, default=True)
 
+    # DOOM
+    arg('--render', default=False, action='store_true', help='Render the environment')
+    arg('--render_mode', type=str, default='rgb_array', help='Mode of rendering')
+    arg('--render_sleep', type=float, default=0.0, help='Sleep time between frames when rendering')
+    arg('--variable_queue_length', type=int, default=5, help='Number of game variables to remember')
+    arg('--frame_skip', type=int, default=4, help='Number of frames to skip')
+    arg('--resolution', type=str, default='160X120', choices=['800X600', '640X480', '320X240', '160X120'],
+        help='Screen resolution of the game')
+
     # Training
     arg("--steps_per_env", type=sci2int, default=int(2e5),
         help="Number of steps the algorithm will run per environment")
