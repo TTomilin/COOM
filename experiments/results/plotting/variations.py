@@ -6,7 +6,7 @@ def main(cfg: argparse.Namespace) -> None:
         cfg.methods, cfg.seeds, cfg.folders, cfg.sequence, cfg.alt_sequence, cfg.metric, cfg.task_length, cfg.confidence
     n_seeds, n_methods, n_folders = len(seeds), len(methods), len(folders)
 
-    data = np.empty((len(METHODS), n_folders - 1))
+    data = np.empty((n_folders - 1, len(methods)))
     data[:] = np.nan
     default = None
 
@@ -33,7 +33,8 @@ def main(cfg: argparse.Namespace) -> None:
 
 def plot_histograms(data: ndarray, default: ndarray, variations: List[str], methods: List[str]):
     plt.style.use('seaborn-deep')
-    figsize = (10, 2)
+    big_plot = len(variations) > 5
+    figsize = (10, 2) if big_plot else (7, 2)
     fig, axes = plt.subplots(1, len(variations) - 1, sharey='all', figsize=figsize)
     variations = variations[1:]  # Remove the original data folder
 
@@ -42,10 +43,10 @@ def plot_histograms(data: ndarray, default: ndarray, variations: List[str], meth
             diff = ((data[i, j] - default[j]) / default[j]) * 100
             axes[i].bar(i + j, [diff], label=TRANSLATIONS[method], color=METHOD_COLORS[method])
 
-        axes[i].axhline(0, color='black', lw=1)
+        axes[i].axhline(0, color='black', lw=0.5)
         variation = TRANSLATIONS[variation]
-        # if variation == 'Critic Regularization':
-        #     variation = 'Critic Reg'
+        if variation == 'LSTM':
+            variation = 'CNN+LSTM'
         axes[i].set_title(f'{variation}', fontsize=11)
         axes[i].set_xticks([])
 

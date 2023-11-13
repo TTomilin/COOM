@@ -143,7 +143,8 @@ ENVS = {
 
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE',
                          'REPEAT_10', 'NO_TASK_ID']
-FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
+FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST', 'PER', 'LSTM', 'CONV', 'SHIFT',
+                  'NOISE', 'REPEAT_10', 'NO_TASK_ID']
 LINE_STYLES = ['-', '--', ':', '-.']
 METHODS = ['packnet', 'mas', 'agem', 'l2', 'ewc', 'fine_tuning', 'vcl', 'clonex', 'perfect_memory']
 KERNEL_SIGMA = 2
@@ -172,7 +173,7 @@ def common_plot_args() -> argparse.ArgumentParser:
     parser = common_args()
     parser.add_argument("--method", type=str, default='packnet', help="CL method name")
     parser.add_argument("--confidence", type=float, default=0.95, choices=[0.9, 0.95, 0.99], help="Confidence interval")
-    parser.add_argument("--sequences", type=str, default=['CO8', 'COC'],
+    parser.add_argument("--sequences", type=str, default=['CD4', 'CO4', 'CD8', 'CO8', 'COC'],
                         choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'], nargs='+',
                         help="Name of the task sequences")
     parser.add_argument("--methods", type=str, nargs="+",

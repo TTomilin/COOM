@@ -29,11 +29,11 @@ def main(args: argparse.Namespace) -> None:
             # Create a percent area stackplot with the values in mean
             sub_plot = ax if n_sequences == 1 else ax[j]
             sub_plot.stackplot(np.arange(iterations), data.T,
-                            labels=[TRANSLATIONS[f'Action {i}'] for i in range(n_actions)],
-                            colors=[cmap(i) for i in range(n_actions)])
+                               labels=[TRANSLATIONS[f'Action {i}'] for i in range(n_actions)],
+                               colors=[cmap(i) for i in range(n_actions)])
             sub_plot.tick_params(labelbottom=True)
             sub_plot.set_title(sequence)
-            sub_plot.set_ylabel("Number of Actions", fontsize=14)
+            sub_plot.set_ylabel("# of Actions", fontsize=14)
             sub_plot.set_xlim(0, iterations)
             sub_plot.set_ylim(0, ep_time_steps)
 
@@ -46,7 +46,8 @@ def main(args: argparse.Namespace) -> None:
         bottom_plot = ax if n_sequences == 1 else ax[-1]
         bottom_plot.set_xlabel("Timesteps (K)", fontsize=14)
         n_cols = 4 if n_envs == 4 else 3
-        bottom_plot.legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_cols, fancybox=True, shadow=True, fontsize=11)
+        bottom_plot.legend(loc='lower center', bbox_to_anchor=(0.5, -0.7), ncol=n_cols, fancybox=True, shadow=True,
+                           fontsize=11)
 
         bottom_adjust = 0.07 if n_envs == 4 else -0.03 if n_sequences > 1 else -0.125
         plt.tight_layout(rect=[0, bottom_adjust, 1, 1])

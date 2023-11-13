@@ -1,5 +1,3 @@
-import os
-
 from experiments.results.common import *
 
 LINE_STYLES = ['-', '--', ':', '-.']
@@ -7,7 +5,6 @@ LINE_STYLES = ['-', '--', ':', '-.']
 
 def main(args: argparse.Namespace) -> None:
     plt.style.use('seaborn-deep')
-    plt.rcParams['axes.grid'] = True
     seeds, metric, sequences, methods = args.seeds, args.metric, args.sequences, args.methods
     colors = COLORS[sequences[0]]
     envs = SEQUENCES[sequences[0]]
@@ -15,7 +12,7 @@ def main(args: argparse.Namespace) -> None:
     metric = None
     n_rows = 2
     n_cols = int(np.ceil(n_envs / n_rows))
-    fig, ax = plt.subplots(n_rows, n_cols, sharex='all', figsize=(10, 4))
+    fig, ax = plt.subplots(n_rows, n_cols, sharex='all', figsize=(8, 4))
     max_steps = -np.inf
     task_length = args.task_length
 
@@ -40,18 +37,20 @@ def main(args: argparse.Namespace) -> None:
 
                 label = f'{TRANSLATIONS[method]} ({TRANSLATIONS[sequence]})'
                 plot_curve(ax[col, row], args.confidence, colors[l], label, args.task_length, seed_data,
-                           len(seeds), linestyle=LINE_STYLES[j])
+                           len(seeds), linestyle=LINE_STYLES[j], sigma=3)
 
-        ax[col, row].set_ylabel(TRANSLATIONS[metric])
         ax[col, row].set_title(TRANSLATIONS[env])
-        ax[col, row].yaxis.set_label_coords(-0.25, 0.5)
+        ax[col, row].set_xlim([0, task_length])
+        ax[col, row].set_ylim([0, 1])
 
-    add_main_ax(fig)
+    main_ax = add_main_ax(fig, x_label='Timesteps (K)', labelpad=20)
+    main_ax.set_ylabel(TRANSLATIONS[metric], fontsize=12)
+    main_ax.yaxis.labelpad = 25
     handles, labels = ax[-1, -1].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', bbox_to_anchor=(0.5, 0), ncol=len(methods) * 2, fancybox=True,
                shadow=True)
-    fig.tight_layout()
-    plt.savefig(f'plots/COC/{"vs".join(methods)}')
+    fig.tight_layout(rect=[-0.05, 0, 1, 1])
+    plt.savefig(f'plots/COC/{"vs".join(methods)}.png')
     plt.show()
 
 

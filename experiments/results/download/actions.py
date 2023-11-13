@@ -1,5 +1,3 @@
-import json
-import os
 import wandb
 from wandb.apis.public import Run
 
@@ -13,38 +11,6 @@ def main(args: argparse.Namespace) -> None:
     for run in runs:
         if suitable_run(run, args):
             store_data(run, args.sequence, args.test_envs)
-
-
-def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the run shouldn't be filtered out
-    if any(logs in run.name for logs in args.include_runs):
-        return True
-    # Check whether the run has successfully finished
-    if run.state != "finished":
-        return False
-    # Load the configuration of the run
-    config = json.loads(run.json_config)
-    # Check whether the provided CL sequence corresponds to the run
-    if args.sequence not in run.url:
-        return False
-    # Check whether the wandb tags are suitable
-    if 'wandb_tags' in config:
-        tags = config['wandb_tags']['value']
-        if any(tag in tags for tag in FORBIDDEN_TAGS):
-            return False
-    # Check whether the run corresponds to one of the provided seeds
-    if args.seeds:
-        if 'seed' not in config:
-            return False
-        seed = config['seed']['value']
-        if seed not in args.seeds:
-            return False
-    if args.method:
-        method = get_cl_method(run)
-        if method != args.method:
-            return False
-    # All filters have been passed
-    return True
 
 
 def store_data_for_env(run: Run, sequence: str, test_env: int) -> None:
