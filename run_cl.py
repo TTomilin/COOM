@@ -67,6 +67,7 @@ def main(parser: argparse.ArgumentParser):
     args = parser.parse_args()
 
     doom_kwargs = dict(
+        test_only=args.test_only,
         num_tasks=num_tasks,
         frame_skip=args.frame_skip,
         record_every=args.record_every,
@@ -78,8 +79,9 @@ def main(parser: argparse.ArgumentParser):
         variable_queue_length=args.variable_queue_length,
     )
 
-    record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
-    task_idx = scenarios.index(test_scenarios[0]) if args.test_only else None
+    cl_method = args.cl_method if args.cl_method is not None else 'sac'
+    record_dir = f"{experiment_dir}/{args.video_folder}/{cl_method}/{sequence.name}_{timestamp}"
+    task_idx = args.start_from if args.start_from else None
     test_envs = get_doom_envs(logger, test_scenarios, test_envs, task_idx=task_idx, doom_kwargs=doom_kwargs)
     test_envs = [wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack,
                           args.use_lstm, args.record, record_dir)
@@ -105,7 +107,6 @@ def main(parser: argparse.ArgumentParser):
         hide_task_id=args.hide_task_id,
     )
 
-    cl_method = args.cl_method if args.cl_method is not None else 'sac'
     actor_cl = VclMlpActor if cl_method == "vcl" else MlpActor
 
     sac_kwargs = dict(
