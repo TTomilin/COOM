@@ -11,7 +11,7 @@ from vizdoom import ScreenResolution, GameVariable
 
 from cl.utils.logx import Logger
 from coom.env.scenario.common import CommonEnv
-from coom.env.utils.utils import get_screen_resolution, default_action_space
+from coom.env.utils.utils import get_screen_resolution, default_action_space, simple_action_space
 
 
 class DoomEnv(CommonEnv):
@@ -57,7 +57,7 @@ class DoomEnv(CommonEnv):
         self.episode_timeout = self.game.get_episode_timeout()
         if render or test_only:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
-            self.frame_skip = 1
+            # self.frame_skip = 1
         elif resolution:  # Use a particular predefined resolution
             self.game.set_screen_resolution(get_screen_resolution(resolution))
         self.game.init()
@@ -67,7 +67,8 @@ class DoomEnv(CommonEnv):
         self._observation_space = gym.spaces.Box(low=0, high=255, shape=self.game_res, dtype=np.uint8)
 
         # Define the action space
-        self.available_actions = default_action_space()
+        # self.available_actions = default_action_space()
+        self.available_actions = simple_action_space()
         self._action_space = gym.spaces.Discrete(len(self.available_actions))
 
         # Initialize the user variable dictionary

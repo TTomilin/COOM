@@ -8,7 +8,7 @@ from cl.sac.sac import SAC
 from cl.utils.logx import EpochLogger
 from cl.utils.run_utils import get_activation_from_str
 from cl.utils.wandb_utils import WandBLogger
-from coom.envs import get_single_env, wrap_env
+from coom.envs import get_single_env, wrap_env, wrap_env_basic
 from coom.utils.enums import DoomScenario
 from input_args import parse_args
 
@@ -57,8 +57,9 @@ def main(parser: argparse.ArgumentParser):
     # Create the environment
     record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
     env = get_single_env(logger, scenario_class, args.envs[0], task_idx, scenario_kwargs, doom_kwargs)
-    env = wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
-                   args.record, record_dir)
+    # env = wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
+    #                args.record, record_dir)
+    env = wrap_env_basic(env, args.sparse_rewards, args.record, record_dir)
     test_envs = [
         wrap_env(get_single_env(logger, scenario_class, task, task_idx, scenario_kwargs, doom_kwargs),
                  args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm, args.record,

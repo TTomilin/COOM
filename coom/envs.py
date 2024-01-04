@@ -146,3 +146,12 @@ def wrap_env(env: DoomEnv, sparse_rewards=False, frame_height=84, frame_width=84
     if record:
         env = RecordVideo(env, record_dir, episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
     return env
+
+
+def wrap_env_basic(env: DoomEnv, sparse_rewards=False, record=False, record_dir='videos') -> gym.Env:
+    reward_wrappers = env.reward_wrappers_sparse() if sparse_rewards else env.reward_wrappers_dense()
+    for wrapper in reward_wrappers:
+        env = wrapper.wrapper_class(env, **wrapper.kwargs)  # Apply the scenario specific reward wrappers
+    if record:
+        env = RecordVideo(env, record_dir, episode_trigger=env.video_schedule, name_prefix=f'{env.name}')
+    return env

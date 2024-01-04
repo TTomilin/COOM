@@ -1,9 +1,15 @@
+import base64
+import io
 import math
 import numpy as np
 import os
+
+import requests
 import tensorflow as tf
 import time
 from pathlib import Path
+
+from PIL import Image
 from tensorflow.python.framework import dtypes
 from tensorflow.python.keras.optimizer_v2.learning_rate_schedule import LearningRateSchedule
 from tensorflow_probability.python.distributions import Categorical
@@ -642,37 +648,119 @@ class SAC:
         one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
         num_actions = self.env.action_space.n
         action_counts = {i: 0 for i in range(num_actions)}
+        justification = ''
 
         for global_timestep in range(self.steps):
             # On task change
-            if current_task_idx != getattr(self.env, "cur_seq_idx", -1):
-                current_task_timestep = 0
-                current_task_idx = getattr(self.env, "cur_seq_idx")
-                self._handle_task_change(current_task_idx)
-                one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
+            # if current_task_idx != getattr(self.env, "cur_seq_idx", -1):
+            #     current_task_timestep = 0
+            #     current_task_idx = getattr(self.env, "cur_seq_idx")
+            #     self._handle_task_change(current_task_idx)
+            #     one_hot_vec = create_one_hot_vec(self.env.num_tasks, self.env.task_id)
+            #
+            # obs_tensor = tf.convert_to_tensor(obs)
+            # if current_task_timestep > self.start_steps or (
+            #         self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
+            #     action = self.get_action(obs_tensor, tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32))
+            # else:
+            #     # Exploration
+            #     if self.exploration_helper is not None:
+            #         # Use strategy provided by exploration helper.
+            #         if exploration_head_one_hot is None:
+            #             exploration_head_one_hot = self.exploration_helper.get_exploration_head_one_hot()
+            #         task_id_tensor = tf.convert_to_tensor(exploration_head_one_hot, dtype=tf.dtypes.float32)
+            #
+            #         if self.exploration_actor is not None:
+            #             action = self.get_exploration_action(obs_tensor, task_id_tensor)
+            #         else:
+            #             action = self.get_action(obs_tensor, task_id_tensor)
+            #     else:
+            #         # Just pure random exploration.
+            #         action = self.env.action_space.sample()
+            #
+            # # Environment step
+            # action = action if type(action) == int else action.numpy()[0]
 
-            obs_tensor = tf.convert_to_tensor(obs)
-            if current_task_timestep > self.start_steps or (
-                    self.agent_policy_exploration and current_task_idx > 0) or self.model_path:
-                action = self.get_action(obs_tensor, tf.convert_to_tensor(one_hot_vec, dtype=tf.dtypes.float32))
-            else:
-                # Exploration
-                if self.exploration_helper is not None:
-                    # Use strategy provided by exploration helper.
-                    if exploration_head_one_hot is None:
-                        exploration_head_one_hot = self.exploration_helper.get_exploration_head_one_hot()
-                    task_id_tensor = tf.convert_to_tensor(exploration_head_one_hot, dtype=tf.dtypes.float32)
+            prompt = f"The agent is tasked to collect health kits in the environment and not running out of health " \
+                     f"by performing an action per timestep. Not that if there are no health kits in sight, " \
+                     f"they might be behind the agent or out of its peripheral vision. " \
+                     f"An item needs to be in the center of the agent's vision to be picked up" \
+                     f"The agent can only perform the following actions: " \
+                     f"'TURN_LEFT' at index 0, " \
+                     f"'TURN_RIGHT' at index 1. " \
+                     f"'MOVE_FORWARD' at index 2, " \
+                     f"Which is the best action to take give the input image?" \
+                     f"Provide the index of the optimal action as the very first token of the output. " \
+                     f"Then also provide a very short justification why you chose this."
 
-                    if self.exploration_actor is not None:
-                        action = self.get_exploration_action(obs_tensor, task_id_tensor)
-                    else:
-                        action = self.get_action(obs_tensor, task_id_tensor)
-                else:
-                    # Just pure random exploration.
-                    action = self.env.action_space.sample()
+            prompt = f"The agent is tasked to pick up a weapon in the environment and deliver it to a blue platform. " \
+                     f"A blue platform appears after a weapon has been picked up. " \
+                     f"If the agent is carrying a weapon, it can be seen at the bottom center part of the agent's view, " \
+                     f"and the agent should then immediately seek for the blue platform. " \
+                     f"Note that if there are no weapons in sight, they are out of the agent's peripheral vision. " \
+                     f"If the agent does not see a weapon or a platform, moving forward will not help. " \
+                     f"An item needs to be in the center of the agent's vision to be picked up, not in the side. " \
+                     f"The agent can only perform the following actions: " \
+                     f"'TURN_LEFT' at index 0, " \
+                     f"'TURN_RIGHT' at index 1, " \
+                     f"'MOVE_FORWARD' at index 2. " \
+                     f"Which is the best action to take give the input image?" \
+                     f"Provide the index of the optimal action as the very first token of the output. " \
+                     f"Then also provide a very short justification why you chose this. " \
+                     f"To further aid you in this task, this is the justification you provided at the previous time step: {justification}" \
 
-            # Environment step
-            action = action if type(action) == int else action.numpy()[0]
+            # Use ChatGPT-V4 to generate the next instruction
+            # OpenAI API Key
+            api_key = "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"
+
+            # Encode the image to base64 from the observation
+            image = Image.fromarray(obs.astype('uint8'), 'RGB')
+            # Save the image to an in-memory buffer in the desired format
+            output_buffer = io.BytesIO()
+            image.save(output_buffer, format='PNG')  # You can replace 'PNG' with the desired format
+            base64_image = base64.b64encode(output_buffer.getvalue()).decode('utf-8')
+
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+
+            payload = {
+                "model": "gpt-4-vision-preview",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": prompt
+                            },
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{base64_image}"
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "max_tokens": 300
+            }
+
+            start_time = time.time()
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+            print()
+            print()
+            print(f"Time taken for the API call: {time.time() - start_time}")
+            try:
+                content = response.json()['choices'][0]['message']['content']
+                print(content)
+                action = int(content[0])
+                justification = content[1:]
+            except Exception:
+                print(f'ERROR in response: {response.json()}. Selecting random action.')
+                action = self.env.action_space.sample()
+
             next_obs, reward, done, _, info = self.env.step(action)
             if self.exploration_helper is not None and exploration_head_one_hot is not None:
                 self.exploration_helper.update_reward(reward)
@@ -684,7 +772,7 @@ class SAC:
             done_to_store = False if episode_len == self.max_episode_len else done
 
             # Store experience to replay buffer
-            self.replay_buffer.store(obs, action, reward, next_obs, done_to_store, one_hot_vec)
+            # self.replay_buffer.store(obs, action, reward, next_obs, done_to_store, one_hot_vec)
 
             # Update the most recent observation
             obs = next_obs

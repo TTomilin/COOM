@@ -73,7 +73,7 @@ def parse_args():
     arg('--render_sleep', type=float, default=0.0, help='Sleep time between frames when rendering')
     arg('--variable_queue_length', type=int, default=5, help='Number of game variables to remember')
     arg('--frame_skip', type=int, default=4, help='Number of frames to skip')
-    arg('--resolution', type=str, default='160X120', choices=['800X600', '640X480', '320X240', '160X120'],
+    arg('--resolution', type=str, default='160X120', choices=['1600X1200', '800X600', '640X480', '320X240', '160X120'],
         help='Screen resolution of the game')
 
     # Training
