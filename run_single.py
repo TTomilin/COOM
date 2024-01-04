@@ -57,8 +57,6 @@ def main(parser: argparse.ArgumentParser):
     # Create the environment
     record_dir = f"{experiment_dir}/{args.video_folder}/sac/{timestamp}"
     env = get_single_env(logger, scenario_class, args.envs[0], task_idx, scenario_kwargs, doom_kwargs)
-    # env = wrap_env(env, args.sparse_rewards, args.frame_height, args.frame_width, args.frame_stack, args.use_lstm,
-    #                args.record, record_dir)
     env = wrap_env_basic(env, args.sparse_rewards, args.record, record_dir)
     test_envs = [
         wrap_env(get_single_env(logger, scenario_class, task, task_idx, scenario_kwargs, doom_kwargs),
@@ -102,6 +100,7 @@ def main(parser: argparse.ArgumentParser):
         test_only=args.test_only,
         num_test_eps=args.test_episodes,
         buffer_type=BufferType(args.buffer_type),
+        api_key=args.api_key,
     )
     sac.run()
 

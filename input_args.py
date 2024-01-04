@@ -27,6 +27,7 @@ def parse_args():
     arg("--sparse_rewards", default=False, action='store_true', help="Whether to use the sparse reward setting")
     arg('--start_from', type=int, default=0, help='Which task to start/continue the training from')
     arg('--repeat_sequence', type=int, default=1, help='How many times to repeat the sequence')
+    arg("--api_key", type=str, default=None, help="API key for OpenAI")
 
     # Save/Load
     arg("--save_freq_epochs", type=int, default=25, help="Save the model parameters after n epochs")

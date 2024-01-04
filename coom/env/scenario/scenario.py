@@ -57,7 +57,6 @@ class DoomEnv(CommonEnv):
         self.episode_timeout = self.game.get_episode_timeout()
         if render or test_only:  # Use a higher resolution for watching gameplay
             self.game.set_screen_resolution(ScreenResolution.RES_1600X1200)
-            # self.frame_skip = 1
         elif resolution:  # Use a particular predefined resolution
             self.game.set_screen_resolution(get_screen_resolution(resolution))
         self.game.init()
