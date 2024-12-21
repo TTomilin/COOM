@@ -2,11 +2,10 @@ from setuptools import find_packages, setup
 
 # Required dependencies
 coom_requirements = [
-    "gymnasium",
-    "numpy",
-    "opencv-python",
     "vizdoom",
+    "opencv-python",
     "scipy==1.11.4",
+    "gymnasium==0.28.1"
 ]
 
 cl_requirements = [
@@ -26,7 +25,7 @@ setup(
     name="COOM",
     description="COOM: Benchmarking Continual Reinforcement Learning on Doom",
     version='1.0.0',
-    url='https://github.com/hyintell/COOM',
+    url='https://github.com/TTomilin/COOM',
     author='Tristan Tomilin',
     author_email='tristan.tomilin@hotmail.com',
     license='MIT',
