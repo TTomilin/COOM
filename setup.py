@@ -14,6 +14,16 @@ cl_requirements = [
     "wandb",
 ]
 
+sf_requirements = [
+    "torch>=1.9,<3.0,!=1.13.0",
+    "psutil>=5.7.0",
+    "threadpoolctl>=2.0.0",
+    "colorlog",
+    "signal-slot-mp>=1.0.3,<2.0",
+    "filelock",
+    "wandb",
+]
+
 results_processing_requirements = [
     "wandb",
     "matplotlib",
@@ -35,6 +45,7 @@ setup(
     install_requires=coom_requirements,
     extras_require={
         'cl': cl_requirements,
+        'sf': sf_requirements,
         'results': results_processing_requirements,
     },
 )
