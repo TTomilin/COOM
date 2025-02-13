@@ -4,7 +4,7 @@ from CL.replay.buffers import BufferType
 from CL.utils.running import str2bool, sci2int, float_or_str
 
 
-def parse_args():
+def get_arg_parser():
     def arg(*args, **kwargs):
         parser.add_argument(*args, **kwargs)
 
@@ -12,8 +12,8 @@ def parse_args():
 
     # Core
     arg('--scenarios', type=str, nargs="+", default=None,
-        choices=['health_gathering', 'run_and_gun', 'dodge_projectiles', 'chainsaw',
-                 'raise_the_roof', 'floor_is_lava', 'hide_and_seek', 'arms_dealer', 'pitfall'])
+        choices=['health_gathering', 'run_and_gun', 'chainsaw', 'raise_the_roof',
+                 'floor_is_lava', 'hide_and_seek', 'arms_dealer', 'pitfall'])
     arg("--envs", type=str, nargs="+", default=['default'], help="Name of the environments in the scenario(s) to run")
     arg("--test_envs", type=str, nargs="+", default=[],
         help="Name of the environments to periodically evaluate the agent on")

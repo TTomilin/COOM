@@ -22,7 +22,7 @@ from COOM.env.builder import make_envs, build_multi_discrete_actions
 from COOM.env.continual import ContinualLearningEnv
 from COOM.utils.config import Sequence, Scenario, sequence_scenarios, sequence_tasks, default_wrapper_config, \
     scenario_config
-from config import parse_args, update_wrapper_config
+from config import update_wrapper_config, get_arg_parser
 
 
 class CLMethod(Enum):
@@ -160,4 +160,4 @@ def main(parser: argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    main(get_arg_parser())

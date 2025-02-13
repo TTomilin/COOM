@@ -10,7 +10,7 @@ from CL.utils.logging import EpochLogger, WandBLogger
 from CL.utils.running import get_activation_from_str
 from COOM.env.builder import make_env, build_multi_discrete_actions
 from COOM.utils.config import Scenario, scenario_config, default_wrapper_config
-from config import parse_args, update_wrapper_config
+from config import update_wrapper_config, get_arg_parser
 
 
 def main(parser: argparse.ArgumentParser):
@@ -105,4 +105,4 @@ def main(parser: argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    main(parse_args())
+    main(get_arg_parser())
