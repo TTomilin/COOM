@@ -15,7 +15,8 @@ def has_single_tag(run: Run) -> bool:
 
 def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
-    runs = api.runs(args.project)
+    filters = build_filters(args)
+    runs = api.runs(args.project, filters=filters)
     for run in runs:
         if has_single_tag(run):
             store_data(run, args)

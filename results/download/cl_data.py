@@ -6,11 +6,11 @@ from results.common import *
 
 def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
-    runs = api.runs(args.project)
+    filters = build_filters(args)
+    runs = api.runs(args.project, filters=filters)
     base_dir = Path(__file__).parent.parent.resolve()
     for run in runs:
-        if suitable_run(run, args):
-            store_data(base_dir, run, args)
+        store_data(base_dir, run, args)
 
 
 def store_data(base_dir: Path, run: Run, args: argparse.Namespace) -> None:
