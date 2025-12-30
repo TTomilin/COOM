@@ -6,43 +6,11 @@ from results.common import *
 
 def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
-    runs = api.runs(args.project)
+    filters = build_filters(args)
+    runs = api.runs(args.project, filters=filters)
     base_dir = Path(__file__).parent.parent.resolve()
     for run in runs:
-        if suitable_run(run, args):
-            store_data(base_dir, run, args.sequence, args.test_envs, args.eval_mode, args.n_actions, args.data_folder)
-
-
-def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the run shouldn't be filtered out
-    if any(logs in run.name for logs in args.include_runs):
-        return True
-    # Check whether the run has successfully finished
-    if run.state != "finished":
-        return False
-    # Load the configuration of the run
-    config = run.config
-    # Check whether the provided CL sequence corresponds to the run
-    if args.sequence not in run.url:
-        return False
-    # Check whether the wandb tags are suitable
-    if 'wandb_tags' in config:
-        tags = config['wandb_tags']
-        if any(tag in tags for tag in FORBIDDEN_TAGS):
-            return False
-    # Check whether the run corresponds to one of the provided seeds
-    if args.seeds:
-        if 'seed' not in config:
-            return False
-        seed = config['seed']
-        if seed not in args.seeds:
-            return False
-    if args.method:
-        method = get_cl_method(run)
-        if method != args.method:
-            return False
-    # All filters have been passed
-    return True
+        store_data(base_dir, run, args.sequence, args.test_envs, args.eval_mode, args.n_actions, args.data_folder)
 
 
 def store_data_for_env(base_dir: Path, run: Run, sequence: str, eval_mode: str, n_actions: int, data_folder: str,

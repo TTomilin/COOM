@@ -6,10 +6,10 @@ from results.common import *
 
 def main(args: argparse.Namespace) -> None:
     api = wandb.Api()
-    runs = api.runs(args.project)
+    filters = build_filters(args)
+    runs = api.runs(args.project, filters=filters)
     for run in runs:
-        if suitable_run(run, args):
-            store_data(run, args)
+        store_data(run, args)
 
 
 def store_data(run: Run, args: argparse.Namespace) -> None:

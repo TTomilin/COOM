@@ -144,7 +144,6 @@ ENVS = {
 
 SEPARATE_STORAGE_TAGS = ['REG_CRITIC', 'NO_REG_CRITIC', 'SINGLE_HEAD', 'PER', 'LSTM', 'CONV', 'SHIFT', 'NOISE',
                          'REPEAT_10', 'NO_TASK_ID']
-FORBIDDEN_TAGS = ['SINGLE_HEAD', 'REG_CRITIC', 'NO_REG_CRITIC', 'SPARSE', 'TEST']
 LINE_STYLES = ['-', '--', ':', '-.']
 KERNEL_SIGMA = 2
 INTERVAL_INTENSITY = 0.25
@@ -208,8 +207,6 @@ def common_dl_args() -> argparse.ArgumentParser:
                         help="Evaluation mode during inference")
     parser.add_argument("--wandb_tags", type=str, nargs='+', default=[], help="WandB tags to filter runs")
     parser.add_argument("--overwrite", default=False, action='store_true', help="Overwrite existing files")
-    parser.add_argument("--include_runs", type=str, nargs="+", default=[],
-                        help="List of runs that shouldn't be filtered out")
     return parser
 
 
@@ -267,43 +264,23 @@ def get_cl_method(run):
         method = 'perfect_memory' if run.config['buffer_type'] == 'reservoir' else 'fine_tuning'
     return method
 
+def build_filters(args: argparse.Namespace) -> dict:
+    """Server-side filters for wandb.Api().runs()."""
+    filters: dict = {"state": "finished"}
 
-def suitable_run(run, args: argparse.Namespace) -> bool:
-    # Check whether the run is in the list of runs to include by exception
-    if any(logs in run.name for logs in args.include_runs):
-        return True
-    # Check whether the provided CL sequence corresponds to the run
-    if args.sequence not in run.url:
-        return False
-    # Check whether the provided method corresponds to the run
-    if args.method and args.method != get_cl_method(run):
-        return False
-    # Load the configuration of the run
-    config = run.config
-    # Check whether the wandb tags are suitable
-    if 'wandb_tags' in config:
-        tags = config['wandb_tags']
-        # Check whether the run includes one of the provided tags
-        if args.wandb_tags and not any(tag in tags for tag in args.wandb_tags):
-            return False
-        # Check whether the run includes one of the forbidden tags which is not in the provided tags
-        if any(tag in tags for tag in FORBIDDEN_TAGS) and not any(tag in tags for tag in args.wandb_tags):
-            return False
-    # Check whether the run corresponds to one of the provided seeds
-    if args.seeds:
-        if 'seed' not in config:
-            return False
-        seed = config['seed']
-        if seed not in args.seeds:
-            return False
+    if args.sequence:
+        filters["config.sequence"] = args.sequence
+
     if args.method:
-        method = get_cl_method(run)
-        if method != args.method:
-            return False
-    if run.state != "finished":
-        return False
-    # All filters have been passed
-    return True
+        filters["config.cl_method"] = args.method
+
+    if args.seeds:
+        filters["config.seed"] = {"$in": list(args.seeds)}
+
+    if args.wandb_tags:
+        filters["tags"] = {"$in": args.wandb_tags}
+
+    return filters
 
 
 #################################### DATA LOADING ####################################
@@ -489,7 +466,6 @@ def save_and_show(ax, plot_name: str, n_col: int = 1, vertical_anchor: float = 0
     file_name = f'{save_dir}/{plot_name}'
     save_with_extension(file_name, 'png')
     save_with_extension(file_name, 'pdf')
-    plt.savefig(f'{save_dir}/{plot_name}.png')
     plt.show()
 
 
