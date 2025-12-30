@@ -743,7 +743,7 @@ class SAC:
                 # Test the performance of stochastic and deterministic version of the agent.
                 if self.test and self.test_envs:
                     test_start_time = time.time()
-                    self.test_agent(deterministic=False, num_episodes=self.num_test_eps)
+                    self.test_agent(deterministic=True, num_episodes=self.num_test_eps)
                     self.logger.log(f"Time elapsed for the testing procedure: {time.time() - test_start_time}")
 
                 # Determine the current learning rate of the optimizer
