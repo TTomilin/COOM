@@ -59,6 +59,7 @@ def make_envs(scenarios: List[Scenario],
     for i, pair in enumerate(itertools.product(zip(scenarios, scenarios_kwargs), tasks)):
         # If task_idx is specified, use that otherwise use the current index.
         task_id = task_idx if task_idx is not None else i
+        doom_kwargs['task_idx'] = task_id
         scenario_and_kwargs = pair[0]
         task = pair[1]
         scenario = scenario_and_kwargs[0]
