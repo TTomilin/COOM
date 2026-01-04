@@ -451,7 +451,7 @@ class SAC:
         for seq_idx, test_env in enumerate(self.test_envs):
             start_time = time.time()
             key_prefix = f"test/{mode}/{seq_idx}/{test_env.name}"
-            one_hot_vec = create_one_hot_vec(test_env.num_tasks, test_env.task_id)
+            one_hot_vec = create_one_hot_vec(test_env.num_tasks, seq_idx)
 
             self.on_test_start(seq_idx)
 
