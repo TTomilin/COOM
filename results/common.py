@@ -396,8 +396,8 @@ def load_cl_data(methods: List[str], metric: str, seeds: List[int], sequence: st
                 if second_half:
                     data = data[len(data) // 2:]
                 task_start = j * task_length
+                data = np.array(data[:iterations], dtype=np.float64)
                 steps = len(data)
-                data = np.array(data).astype(np.float64)
                 data = np.pad(data, (0, iterations - steps), 'constant', constant_values=np.nan)
                 data_per_task = np.array_split(data, n_envs)
                 seed_data[k] = data_per_task

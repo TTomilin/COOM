@@ -1,97 +1,86 @@
-from typing import Callable
-
 import pandas as pd
 
 from results.common import *
-from results.common import calculate_transfer
+
+
+def load_performance_per_method(method, metric, seeds, sequence, data_folder, task_length, confidence, tag):
+    cl_data, _, _ = load_cl_data([method], metric, seeds, sequence, data_folder, task_length, confidence, tag=tag)
+    return calculate_performance(cl_data)[0]
 
 
 def main(args: argparse.Namespace) -> None:
-    methods, seeds, tags, main_sequence, metric, task_length, confidence = \
+    methods, seeds, tags, sequence, metric, task_length, confidence = \
         args.methods, args.seeds, args.tags, args.sequence, args.metric, args.task_length, args.confidence
-    envs = SEQUENCES[main_sequence]
-    n_envs, n_seeds, n_methods, n_tags = len(envs), len(seeds), len(methods), len(tags)
+    ablation_tags = [t for t in tags if t != 'default']
+    n_ablations = len(ablation_tags)
 
-    data = np.empty((n_tags, len(methods), 3))
-    data_cis = np.empty((n_tags, len(methods), 3))
-    data[:] = np.nan
-    data_cis[:] = np.nan
+    sequences_to_try = [sequence]
+    if args.backup_sequence and args.backup_sequence != sequence:
+        sequences_to_try.append(args.backup_sequence)
 
-    for i, tag in enumerate(tags):
-        cl_data, ci_data, transfer_data = load_cl_data(methods, metric, seeds, main_sequence, args.data_folder,
-                                                       task_length, confidence, tag=tag)
-        baseline_data = load_rl_baseline_data(main_sequence, seeds, task_length, args.data_folder, metric)
-        performance = calculate_performance(cl_data)
-        performance_ci = calculate_performance(ci_data)
-        forgetting, _ = calculate_forgetting(cl_data)
-        forgetting_ci, _ = calculate_forgetting(ci_data)
-        transfer, transfer_ci = calculate_transfer(transfer_data, baseline_data, len(seeds), confidence)
+    # Load default and ablation performance for every (method, sequence) combination upfront.
+    default_perf = {}   # (method, seq) -> float
+    ablation_perf = {}  # (method, seq, tag) -> float
+    for method in methods:
+        for seq in sequences_to_try:
+            perf = load_performance_per_method(method, metric, seeds, seq, args.data_folder,
+                                               task_length, confidence, tag='default')
+            if not np.isnan(perf):
+                default_perf[(method, seq)] = perf
+            for tag in ablation_tags:
+                perf = load_performance_per_method(method, metric, seeds, seq, args.data_folder,
+                                                   task_length, confidence, tag=tag)
+                if not np.isnan(perf):
+                    ablation_perf[(method, seq, tag)] = perf
 
-        for j in range(len(methods)):
-            data[i, j] = [performance[j], forgetting[j], transfer[j]]
-            data_cis[i, j] = [performance_ci[j], forgetting_ci[j], transfer_ci[j]]
+    # Pre-compute diffs per sequence independently, then average — matches plotting/ablations.py exactly.
+    diffs = np.full((len(methods), n_ablations), np.nan)
+    for j, method in enumerate(methods):
+        for i, tag in enumerate(ablation_tags):
+            seq_diffs = []
+            for seq in sequences_to_try:
+                if (method, seq) in default_perf and (method, seq, tag) in ablation_perf:
+                    d = default_perf[(method, seq)]
+                    a = ablation_perf[(method, seq, tag)]
+                    seq_diffs.append((a - d) / d * 100)
+            if seq_diffs:
+                diffs[j, i] = np.mean(seq_diffs)
+            else:
+                print(f'Warning: no valid data for method {method}, tag {tag} in any sequence.')
+
+    # Baseline performance per method: first sequence that has data.
+    default_values = np.full(len(methods), np.nan)
+    for j, method in enumerate(methods):
+        for seq in sequences_to_try:
+            if (method, seq) in default_perf:
+                default_values[j] = default_perf[(method, seq)]
+                break
 
     print('Printing ablation study table\n')
-    print_performance(tags, methods, data, data_cis, value_cell)
-    print('\nPrinting ablations result difference table\n')
-    print_performance(tags, methods, data, data_cis, diff_cell)
+    print_ablation_table(ablation_tags, methods, default_values, diffs)
 
 
-def print_performance(tags: List[str], methods: List[str], data: ndarray, data_cis: ndarray,
-                      get_cell_func: Callable):
-    data = data[:, :, 0]
-    data_cis = data_cis[:, :, 0]
-    results = pd.DataFrame(columns=['Method'] + [f'{TRANSLATIONS[folder]}' for folder in tags])
-    for i, method in enumerate(methods):
-        row = [TRANSLATIONS[method]]
-        default = data[0, i]
-        for j in range(len(tags)):
-            value = data[j, i]
-            ci = data_cis[j, i]
-            cell = get_cell_func(value, ci, j, default=default)
-            row.append(cell)
+def print_ablation_table(ablation_tags: List[str], methods: List[str], default_values: ndarray,
+                         diffs: ndarray) -> None:
+    columns = ['Method', 'Default'] + [TRANSLATIONS[tag] for tag in ablation_tags]
+    results = pd.DataFrame(columns=columns)
+    for j, method in enumerate(methods):
+        row = [TRANSLATIONS[method], f'{default_values[j]:.2f}' if not np.isnan(default_values[j]) else '-']
+        for i in range(len(ablation_tags)):
+            diff = diffs[j, i]
+            row.append(f'{diff:+.2f}\\%' if not np.isnan(diff) else '-')
         results.loc[len(results)] = row
     results = results.set_index('Method')
-    multi_col_format = 'c@{\hskip 0.05in}c@{\hskip 0.05in}c'
     pd.set_option('display.max_colwidth', None)
-    latex_table = results.to_latex(escape=False, column_format='l' + multi_col_format * (len(tags)))
-    print(latex_table)
+    n_cols = 1 + len(ablation_tags)
+    print(results.to_latex(escape=False, column_format='l' + 'c' * n_cols))
 
-
-def print_table(tags: List[str], methods: List[str], data: ndarray, data_cis: ndarray, get_cell_func: Callable):
-    data_types = data.shape[-1]
-    results = pd.DataFrame(
-        columns=['Method'] + [f'\multicolumn{{{data_types}}}{{c}}{{{TRANSLATIONS[folder]}}}' for folder in tags])
-    for i, method in enumerate(methods):
-        row = [TRANSLATIONS[method]]
-        defaults = data[0, i]
-        for j in range(len(tags)):
-            cell_values = []
-            for k in range(data_types):
-                value = data[j, i, k]
-                ci = data_cis[j, i, k]
-                cell_string = get_cell_func(value, ci, j, k, defaults[k])
-                cell_values.append(cell_string)
-            cell = ' & '.join(cell_values)
-            row.append(cell)
-        results.loc[len(results)] = row
-    results = results.set_index('Method')
-    multi_col_format = 'c@{\hskip 0.05in}c@{\hskip 0.05in}c'
-    pd.set_option('display.max_colwidth', None)
-    latex_table = results.to_latex(escape=False, column_format='l' + multi_col_format * (len(tags)))
-    print(latex_table)
-
-
-def value_cell(value: float, ci: float, *args, **kwargs) -> str:
-    return f'{value:.2f} \tiny ± {ci:.2f}' if not np.isnan(value) else '-'
-
-
-def diff_cell(value: float, _: float, j: int, k: int = 0, default: ndarray = None) -> str:
-    diff_string = ((value - default) / default) * 100 if k == 0 else value - default
-    return f'{value:.2f}' if j == 0 else f' {diff_string:+.2f}' + (r'\%' if k == 0 else '')
 
 
 if __name__ == "__main__":
     parser = common_plot_args()
     parser.add_argument("--tags", type=str, required=True, nargs='+', help="Names of the wandb tags")
+    parser.add_argument("--backup_sequence", type=str, default='CO8',
+                        choices=['CD4', 'CO4', 'CD8', 'CO8', 'CD16', 'CO16', 'COC'],
+                        help="Fallback sequence to use when no data is found for the main sequence")
     main(parser.parse_args())
